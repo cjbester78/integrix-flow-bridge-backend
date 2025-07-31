@@ -1,0 +1,61 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: backend
+  profiles:
+    active: dev
+  main:
+    allow-bean-definition-overriding: true
+  mvc:
+    pathmatch:
+      matching-strategy: ant_path_matcher
+  jackson:
+    serialization:
+      indent_output: true
+      write-dates-as-timestamps: false
+    default-property-inclusion: non_null
+
+# ✅ JPA default settings
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
+        format_sql: true
+
+# ✅ Logging (used by all profiles unless overridden)
+logging:
+  level:
+    root: INFO
+    org.springframework.web: DEBUG
+    com.integrationlab.controller: DEBUG
+    com.integrationlab: DEBUG
+    com.integrationlab.monitoring: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+
+# ✅ Actuator settings
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  endpoint:
+    health:
+      show-details: always
+
+# ✅ Certificate path (used globally)
+certificates:
+  storage:
+    path: /opt/integrixflowbridge/certs
+
+# ✅ Engine runtime config
+engine:
+  worker:
+    thread-pool-size: 4
+    retry-attempts: 3
+    retry-delay-ms: 2000

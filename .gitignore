@@ -1,0 +1,74 @@
+# Maven
+target/
+!.mvn/wrapper/maven-wrapper.jar
+.mvn/
+.settings/
+.classpath
+.project
+
+# Eclipse
+*.launch
+.metadata
+.classpath
+.project
+.settings/
+bin/
+tmp/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Node
+node_modules/
+dist/
+build/
+.npm/
+.cache/
+.env*
+
+# IDEs
+.idea/
+.vscode/
+
+bin/
+build/
+target/
+*.log
+
+# Eclipse
+.metadata
+.classpath
+.project
+.settings/
+*.launch
+
+# OS
+.DS_Store
+
+# Logs and binaries
+*.log
+*.bak
+*.tmp
+logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?

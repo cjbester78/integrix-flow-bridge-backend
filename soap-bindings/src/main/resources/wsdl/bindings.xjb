@@ -1,0 +1,10 @@
+	<jaxws:bindings xmlns:jaxws="http://java.sun.com/xml/ns/jaxws"
+	                xmlns:xjc="http://java.sun.com/xml/ns/jaxb/xjc"
+	                xmlns:xs="http://www.w3.org/2001/XMLSchema"
+	                xmlns:jaxb="http://java.sun.com/xml/ns/jaxb"
+	                version="2.1">
+	    <jaxws:enableWrapperStyle>false</jaxws:enableWrapperStyle>
+	    <jaxb:globalBindings>
+	        <xjc:simple/>
+	    </jaxb:globalBindings>
+	</jaxws:bindings>

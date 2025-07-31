@@ -1,0 +1,186 @@
+package com.integrationlab.service;
+
+import com.integrationlab.model.CommunicationAdapter;
+import com.integrationlab.repository.CommunicationAdapterRepository;
+import com.integrationlab.shared.dto.adapter.AdapterConfigDTO;
+import com.integrationlab.shared.dto.adapter.AdapterTestResultDTO;
+import com.integrationlab.shared.enums.AdapterType;
+import com.integrationlab.adapters.core.AdapterMode;
+import com.integrationlab.adapters.core.BaseAdapter;
+import com.integrationlab.adapters.factory.AdapterFactoryManager;
+import com.integrationlab.adapters.core.AdapterException;
+import com.integrationlab.adapters.core.AdapterResult;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+@Service
+public class CommunicationAdapterService {
+
+    private static final Logger logger = LoggerFactory.getLogger(CommunicationAdapterService.class);
+    
+    private final CommunicationAdapterRepository repository;
+    private final ObjectMapper objectMapper;
+    private final AdapterFactoryManager factoryManager;
+
+    public CommunicationAdapterService(CommunicationAdapterRepository repository) {
+        this.repository = repository;
+        this.objectMapper = new ObjectMapper();
+        this.factoryManager = AdapterFactoryManager.getInstance();
+    }
+
+    public AdapterConfigDTO createAdapter(AdapterConfigDTO dto) {
+        CommunicationAdapter adapter = new CommunicationAdapter();
+        adapter.setName(dto.getName());
+        adapter.setType(AdapterType.valueOf(dto.getType().toUpperCase()));
+        adapter.setMode(AdapterMode.valueOf(dto.getMode().toUpperCase()));
+        adapter.setConfiguration(dto.getConfigJson());
+        adapter.setDescription(dto.getDescription());
+        adapter.setBusinessComponentId(dto.getBusinessComponentId());
+        adapter.setActive(dto.isActive());
+        return toDTO(repository.save(adapter));
+    }
+
+    public List<AdapterConfigDTO> getAllAdapters() {
+        return repository.findAll()
+                .stream()
+                .map(this::toDTO)
+                .collect(Collectors.toList());
+    }
+
+    public Optional<AdapterConfigDTO> getAdapterById(String id) {
+        return repository.findById(id).map(this::toDTO);
+    }
+
+    public Optional<AdapterConfigDTO> updateAdapter(String id, AdapterConfigDTO dto) {
+        return repository.findById(id).map(adapter -> {
+            adapter.setName(dto.getName());
+            adapter.setType(AdapterType.valueOf(dto.getType().toUpperCase()));
+            adapter.setMode(AdapterMode.valueOf(dto.getMode().toUpperCase()));
+            adapter.setConfiguration(dto.getConfigJson());
+            adapter.setDescription(dto.getDescription());
+            adapter.setBusinessComponentId(dto.getBusinessComponentId());
+            adapter.setActive(dto.isActive());
+            return toDTO(repository.save(adapter));
+        });
+    }
+
+    public void deleteAdapter(String id) {
+        repository.deleteById(id);
+    }
+
+    public Optional<AdapterConfigDTO> activateAdapter(String id) {
+        return repository.findById(id).map(adapter -> {
+            adapter.setActive(true);
+            return toDTO(repository.save(adapter));
+        });
+    }
+
+    public Optional<AdapterConfigDTO> deactivateAdapter(String id) {
+        return repository.findById(id).map(adapter -> {
+            adapter.setActive(false);
+            return toDTO(repository.save(adapter));
+        });
+    }
+
+    /**
+     * Test an adapter configuration by creating and testing the actual adapter instance
+     */
+    public AdapterTestResultDTO testAdapter(String id, String testPayload) {
+        Optional<CommunicationAdapter> adapterOpt = repository.findById(id);
+        if (adapterOpt.isEmpty()) {
+            return createFailureResult("Adapter not found with id: " + id);
+        }
+        
+        CommunicationAdapter adapter = adapterOpt.get();
+        return testAdapterConfiguration(adapter, testPayload);
+    }
+    
+    /**
+     * Test an adapter configuration without saving it first
+     */
+    public AdapterTestResultDTO testAdapterConfiguration(AdapterConfigDTO dto, String testPayload) {
+        CommunicationAdapter adapter = new CommunicationAdapter();
+        adapter.setType(AdapterType.valueOf(dto.getType().toUpperCase()));
+        adapter.setMode(AdapterMode.valueOf(dto.getMode().toUpperCase()));
+        adapter.setConfiguration(dto.getConfigJson());
+        
+        return testAdapterConfiguration(adapter, testPayload);
+    }
+    
+    private AdapterTestResultDTO testAdapterConfiguration(CommunicationAdapter adapter, String testPayload) {
+        try {
+            // Convert AdapterType to com.integrationlab.adapters.core.AdapterType
+            com.integrationlab.adapters.core.AdapterType adapterType = 
+                com.integrationlab.adapters.core.AdapterType.valueOf(adapter.getType().name());
+            
+            // Parse configuration JSON into appropriate config object
+            Object configuration = parseConfiguration(adapter);
+            
+            // Create and initialize adapter
+            BaseAdapter adapterInstance = factoryManager.createAndInitialize(
+                adapterType, adapter.getMode(), configuration);
+            
+            // Test connection
+            AdapterResult connectionTest = adapterInstance.testConnection();
+            
+            AdapterTestResultDTO result = new AdapterTestResultDTO();
+            result.setSuccess(connectionTest.isSuccess());
+            result.setMessage(connectionTest.isSuccess() ? "Connection test successful" : "Connection test failed");
+            
+            return result;
+            
+        } catch (Exception e) {
+            logger.error("Error testing adapter configuration", e);
+            return createFailureResult("Test failed: " + e.getMessage());
+        }
+    }
+    
+    private Object parseConfiguration(CommunicationAdapter adapter) {
+        try {
+            // This is a simplified approach - in reality, you'd have a mapping
+            // from AdapterType + AdapterMode to the appropriate config class
+            String configClassName = String.format("com.integrationlab.adapters.config.%s%sAdapterConfig",
+                adapter.getType().name().substring(0, 1).toUpperCase() + 
+                adapter.getType().name().substring(1).toLowerCase(),
+                adapter.getMode().name().substring(0, 1).toUpperCase() + 
+                adapter.getMode().name().substring(1).toLowerCase());
+                
+            Class<?> configClass = Class.forName(configClassName);
+            return objectMapper.readValue(adapter.getConfiguration(), configClass);
+            
+        } catch (Exception e) {
+            logger.error("Failed to parse adapter configuration", e);
+            throw new RuntimeException("Invalid adapter configuration", e);
+        }
+    }
+    
+    private AdapterTestResultDTO createFailureResult(String message) {
+        AdapterTestResultDTO result = new AdapterTestResultDTO();
+        result.setSuccess(false);
+        result.setMessage(message);
+        return result;
+    }
+
+    private AdapterConfigDTO toDTO(CommunicationAdapter adapter) {
+        AdapterConfigDTO dto = new AdapterConfigDTO();
+        dto.setName(adapter.getName());
+        dto.setType(adapter.getType().name());
+        dto.setMode(adapter.getMode().name());
+        dto.setConfigJson(adapter.getConfiguration());
+        dto.setDescription(adapter.getDescription());
+        dto.setBusinessComponentId(adapter.getBusinessComponentId());
+        dto.setActive(adapter.isActive());
+        
+        // Set direction for clarity
+        dto.setDirection(adapter.getMode() == AdapterMode.SENDER ? "INBOUND" : "OUTBOUND");
+        
+        return dto;
+    }
+}

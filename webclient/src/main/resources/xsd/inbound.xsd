@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           targetNamespace="http://integrationlab.com/inbound"
+           xmlns:tns="http://integrationlab.com/inbound"
+           elementFormDefault="qualified">
+
+    <!-- Generic Inbound SOAP Request -->
+    <xs:element name="InboundSoapRequest">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="adapterId" type="xs:string"/>
+                <xs:element name="payload" type="xs:string"/>
+                <xs:element name="metadata" type="tns:MetadataType" minOccurs="0"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+
+    <!-- Generic Inbound SOAP Response -->
+    <xs:element name="InboundSoapResponse">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="status" type="xs:string"/>
+                <xs:element name="message" type="xs:string"/>
+                <xs:element name="data" type="xs:string" minOccurs="0"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+
+    <!-- Reusable Function Request -->
+    <xs:element name="GetReusableFunctionRequest">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="functionId" type="xs:string"/>
+                <xs:element name="parameters" type="xs:string" minOccurs="0"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+
+    <!-- Reusable Function Response -->
+    <xs:element name="GetReusableFunctionResponse">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="function" type="tns:FunctionType"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+
+    <!-- Complex Types -->
+    <xs:complexType name="MetadataType">
+        <xs:sequence>
+            <xs:element name="property" type="tns:PropertyType" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="PropertyType">
+        <xs:sequence>
+            <xs:element name="key" type="xs:string"/>
+            <xs:element name="value" type="xs:string"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="FunctionType">
+        <xs:sequence>
+            <xs:element name="id" type="xs:string"/>
+            <xs:element name="name" type="xs:string"/>
+            <xs:element name="version" type="xs:string"/>
+            <xs:element name="functionBody" type="xs:string"/>
+            <xs:element name="inputTypes" type="xs:string"/>
+            <xs:element name="outputType" type="xs:string"/>
+            <xs:element name="description" type="xs:string" minOccurs="0"/>
+        </xs:sequence>
+    </xs:complexType>
+
+</xs:schema>

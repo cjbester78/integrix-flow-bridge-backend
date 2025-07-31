@@ -1,0 +1,16 @@
+spring:
+  main:
+    allow-bean-definition-overriding: false
+  datasource:
+    url: jdbc:mysql://prod-db-host:3306/integrixflowbridge
+    username: prod_user
+    password: prod_secure_password
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      maximum-pool-size: 20
+      connection-timeout: 30000
+
+logging:
+  level:
+    root: WARN
+    com.integrationlab: INFO
