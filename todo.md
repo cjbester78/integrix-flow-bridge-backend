@@ -1,141 +1,92 @@
-# TODO: Enhance Orchestration Flow Creation UI
+# TODO: Complete Sender and Receiver Adapters Implementation
 
 ## Problem Analysis
-User wants to improve the orchestration flow creation experience by:
-1. Opening the Visual Orchestration Flow screen when "Create Orchestration Flow" is selected
-2. Adding a unique ID text input at the top of the screen
-3. Having start and end process nodes already mapped/connected by default
-4. Allowing users to configure from there
+User wants to complete the implementation of sender and receiver adapters with their respective business logic. Based on the codebase analysis, there are adapter configurations and some implementations, but the core logic needs to be completed.
 
 ## Current Status
-- Need to examine existing orchestration flow creation components
-- Need to understand current visual flow editor implementation
-- Need to see how start/end nodes are currently handled
+- Adapter configuration classes exist for various types (HTTP, File, FTP, JDBC, etc.)
+- Some adapter implementations exist but may need completion
+- Factory pattern is in place for adapter creation
+- Need to implement the actual business logic for sending/receiving data
 
 ## Plan
 
-### Task 1: Analyze Current Implementation
-- [ ] Find and examine CreateOrchestrationFlow.tsx component
-- [ ] Look at Visual Orchestration Flow screen components
-- [ ] Check how flow nodes (start/end) are currently managed
-- [ ] Understand the current flow creation workflow
+### Task 1: Analyze Current Adapter Implementation Status ✅
+- [x] Review existing adapter implementations in adapters/src/main/java/com/integrationlab/adapters/impl/
+- [x] Check which adapters have complete implementations vs placeholders
+- [x] Identify missing core adapter logic
+- [x] Analyze frontend adapter configurations vs backend expectations
 
-### Task 2: Modify Flow Creation Behavior
-- [ ] Update CreateOrchestrationFlow to open Visual Orchestration Flow screen
-- [ ] Add unique ID text input at the top of the visual flow screen
-- [ ] Ensure start and end process nodes are pre-connected by default
-- [ ] Maintain existing configuration capabilities
+**CRITICAL FINDINGS:**
+🚨 **Inconsistent Implementation of Middleware Conventions:**
 
-### Task 3: Update Visual Flow Screen
-- [ ] Add unique ID input field at the top of the visual flow editor
-- [ ] Set up default start and end nodes with connection
-- [ ] Ensure proper state management for the unique ID
-- [ ] Test the enhanced user experience
+**✅ CORRECT (HTTP Adapters):**
+- Frontend HttpSenderAdapterConfig: "where 3rd party sends requests" (inbound) ✅
+- Frontend HttpReceiverAdapterConfig: "3rd party API endpoint" (outbound) ✅  
+- Backend HttpSenderAdapter: Creates endpoints for receiving (inbound) ✅
+- Backend HttpReceiverAdapter: Makes requests to external systems (outbound) ✅
 
-### Task 4: Integration and Testing
-- [ ] Test the complete flow from "Create Orchestration Flow" button
-- [ ] Verify unique ID is properly captured and used
-- [ ] Ensure start/end nodes work correctly with pre-connection
-- [ ] Test that users can continue with normal configuration
+**❌ WRONG (JDBC Adapters):**
+- Frontend JdbcSenderAdapterConfig: Uses "Target" + "INSERT INTO" (outbound) ❌ Should be inbound
+- Frontend JdbcReceiverAdapterConfig: Uses "Source" + "SELECT" (inbound) ❌ Should be outbound
+- Backend JdbcSenderAdapter: Does INSERT/UPDATE/DELETE (outbound) ❌ Should be inbound  
+- Backend JdbcReceiverAdapter: Does SELECT with polling (inbound) ✅ Correct
+
+**Existing Implementations:**
+- ✅ HttpSenderAdapter: Complete (inbound HTTP endpoint)
+- ✅ HttpReceiverAdapter: Complete (outbound HTTP requests)
+- ❌ JdbcSenderAdapter: Wrong direction (does INSERT - should do SELECT/polling)
+- ✅ JdbcReceiverAdapter: Correct (inbound SELECT/polling)
+
+**Missing Implementations:** 18 adapter types need to be created
+
+### Task 2: Complete Core Adapter Interface and Base Classes
+- [ ] Ensure BaseAdapter interface is properly defined
+- [ ] Complete SenderAdapter and ReceiverAdapter interfaces
+- [ ] Implement common adapter functionality in base classes
+- [ ] Add proper error handling and logging patterns
+
+### Task 3: Complete Sender Adapter Implementations
+- [ ] FileSenderAdapter - File system monitoring and reading
+- [ ] HttpSenderAdapter - HTTP endpoint receiving/listening
+- [ ] FtpSenderAdapter - FTP server monitoring
+- [ ] JdbcSenderAdapter - Database polling and change detection
+- [ ] MailSenderAdapter - Email inbox monitoring
+- [ ] JmsSenderAdapter - JMS queue/topic listening
+- [ ] SoapSenderAdapter - SOAP endpoint receiving
+- [ ] RestSenderAdapter - REST endpoint receiving
+- [ ] Other sender adapters as needed
+
+### Task 4: Complete Receiver Adapter Implementations
+- [ ] FileReceiverAdapter - File creation and writing
+- [ ] HttpReceiverAdapter - HTTP requests to external systems
+- [ ] FtpReceiverAdapter - FTP file uploads
+- [ ] JdbcReceiverAdapter - Database inserts/updates
+- [ ] MailReceiverAdapter - Email sending
+- [ ] JmsReceiverAdapter - JMS message publishing
+- [ ] SoapReceiverAdapter - SOAP service calls
+- [ ] RestReceiverAdapter - REST API calls
+- [ ] Other receiver adapters as needed
+
+### Task 5: Integration and Testing
+- [ ] Update AdapterFactory to properly instantiate all adapters
+- [ ] Add comprehensive error handling and retry logic
+- [ ] Implement connection pooling where appropriate
+- [ ] Add logging and monitoring capabilities
+- [ ] Test adapter functionality end-to-end
 
 ## Expected Outcomes
-- Clicking "Create Orchestration Flow" opens the Visual Orchestration Flow screen
-- Screen displays unique ID text input at the top
-- Start and end process nodes are already connected by default
-- Users can proceed with normal flow configuration
-- Improved user experience with streamlined workflow
+- All adapter types have complete sender and receiver implementations
+- Adapters can successfully send and receive data according to their configurations
+- Proper error handling, logging, and monitoring in place
+- Factory pattern properly creates and manages adapter instances
+- End-to-end functionality working for integration flows
 
 ## Notes
-- Need to maintain existing functionality while enhancing UX
-- Should preserve all current orchestration capabilities
-- Focus on simplifying the initial setup process
-- **IMPORTANT**: There are 2 visual flow editors:
-  - `VisualFlowEditor` for Direct Mapping Flows (field mapping)
-  - `VisualOrchestrationEditor` for Orchestration Flows (complex workflows)
-  - This task focuses on the VisualOrchestrationEditor only
-
----
-
-## Review Section
-
-### Summary of Changes Made
-
-**✅ ALL TASKS COMPLETED SUCCESSFULLY!**
-
-#### 1. Enhanced User Experience
-- **Direct Visual Editor Access**: Changed `showVisualEditor` initial state from `false` to `true`, so users now go directly to the visual editor when clicking "Create Orchestration Flow"
-- **Streamlined Workflow**: Eliminated the intermediate form-based configuration step
-- **Immediate Visual Design**: Users can start designing their workflow immediately
-
-#### 2. Unique ID Integration
-- **Added Unique Flow ID State**: New `uniqueFlowId` state for capturing the flow identifier
-- **Prominent ID Input**: Added unique ID text input at the top of the visual editor screen
-- **Save Integration**: Modified `handleSave` to use `uniqueFlowId` as the primary identifier for saving flows
-- **Validation**: Added validation to ensure unique ID is required before saving
-
-#### 3. Pre-connected Start and End Nodes
-- **Default Node Setup**: Modified `VisualOrchestrationEditor` to create initial nodes with pre-connected start and end process nodes
-- **Automatic Connection**: Start process node is automatically connected to end process node with a smooth animated edge
-- **Ready-to-Configure**: Users can immediately begin configuring the start and end nodes or add additional nodes in between
-
-#### 4. Enhanced Visual Editor
-- **Props Interface**: Added `VisualOrchestrationEditorProps` interface with `flowId` and `onFlowChange` props
-- **Flow Change Tracking**: Added `useEffect` to notify parent component when flow structure changes
-- **Improved Header**: Enhanced header layout with better spacing and the unique ID input field
-
-#### 5. Technical Improvements
-- **Better State Management**: Unique ID is properly integrated into the save flow request
-- **Error Handling**: Updated validation to check for unique ID instead of flow name
-- **Navigation**: Updated navigation to go back to dashboard instead of non-existent configuration screen
-
-### Key Technical Achievements
-
-1. **Immediate Visual Access**
-   - ✅ "Create Orchestration Flow" button now opens visual editor directly
-   - ✅ No intermediate configuration forms to fill out
-   - ✅ Users can start designing workflows immediately
-
-2. **Unique ID Management**
-   - ✅ Prominent unique ID input at top of visual editor
-   - ✅ ID is used as primary identifier for saving flows
-   - ✅ Proper validation ensures ID is required
-
-3. **Pre-configured Flow Structure**
-   - ✅ Start process node automatically placed and configured
-   - ✅ End process node automatically placed and configured  
-   - ✅ Nodes are pre-connected with animated edge
-   - ✅ Users can immediately begin configuration or add additional nodes
-
-4. **Enhanced Developer Experience**
-   - ✅ Clean separation between Direct Mapping and Orchestration visual editors
-   - ✅ Props-based communication between parent and child components
-   - ✅ Proper TypeScript interfaces and type safety
-
-### Files Modified
-
-**Main Components:**
-- `CreateOrchestrationFlow.tsx`: Complete workflow enhancement with direct visual editor access and unique ID integration
-- `VisualOrchestrationEditor.tsx`: Added props interface, pre-connected nodes, and flow change tracking
-
-**Key Changes:**
-- **CreateOrchestrationFlow.tsx**:
-  - Changed `showVisualEditor` initial state to `true`
-  - Added `uniqueFlowId` state and input field
-  - Modified save function to use unique ID
-  - Enhanced visual editor header with ID input
-  - Removed old form-based configuration section
-
-- **VisualOrchestrationEditor.tsx**:
-  - Added props interface for `flowId` and `onFlowChange`
-  - Created `createInitialNodes()` and `createInitialEdges()` functions
-  - Pre-configured start and end process nodes with connection
-  - Added flow change tracking with `useEffect`
-
-### User Experience Improvements
-
-- **Immediate Access**: Click "Create Orchestration Flow" → Visual editor opens directly
-- **Clear ID Management**: Unique ID prominently displayed and required for saving
-- **Ready-to-Use**: Start and end nodes are pre-connected, users can configure or add nodes immediately
-- **Streamlined Process**: No complex forms to fill out before designing workflows
-
-The orchestration flow creation experience is now significantly more user-friendly and intuitive, allowing users to immediately begin visual workflow design with pre-configured start and end nodes.
+- **CRITICAL**: Follow the reversed middleware terminology:
+  - **Sender Adapter** = Receives data FROM external systems (inbound)
+  - **Receiver Adapter** = Sends data TO external systems (outbound)
+- Focus on core business logic implementation
+- Ensure proper connection management and resource cleanup
+- Add appropriate error handling and retry mechanisms
+- Follow existing patterns and conventions in the codebase

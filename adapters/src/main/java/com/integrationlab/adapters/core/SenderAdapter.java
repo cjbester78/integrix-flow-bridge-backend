@@ -1,7 +1,13 @@
 package com.integrationlab.adapters.core;
 
 /**
- * Interface for sender adapters that push data to external systems.
+ * Interface for sender adapters.
+ * 
+ * IMPORTANT: This project uses REVERSED middleware terminology:
+ * - Sender Adapter = Receives data FROM external systems (inbound/receiver in traditional terms)
+ * - Receiver Adapter = Sends data TO external systems (outbound/sender in traditional terms)
+ * 
+ * However, the current interface methods need to be reviewed for consistency with this convention.
  */
 public interface SenderAdapter extends BaseAdapter {
     

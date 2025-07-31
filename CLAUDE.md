@@ -9,7 +9,13 @@ Integrix Flow Bridge is a comprehensive integration middleware platform built wi
 - **Sender Adapter** = Receives data FROM external systems (inbound/receiver in traditional terms)
 - **Receiver Adapter** = Sends data TO external systems (outbound/sender in traditional terms)
 
-Always use this convention when working with adapters. When creating or modifying adapter configurations, remember that "sender" means inbound and "receiver" means outbound.
+**Frontend-Backend Mapping:**
+- **Source = Sender Adapter** (receives data FROM external systems - inbound)
+- **Target = Receiver Adapter** (sends data TO external systems - outbound)
+
+Always use this convention when working with adapters. When creating or modifying adapter configurations:
+- Use "Source" for Sender Adapters (inbound operations like SELECT, polling, listening)
+- Use "Target" for Receiver Adapters (outbound operations like INSERT, POST, sending)
 
 ## Architecture Overview
 

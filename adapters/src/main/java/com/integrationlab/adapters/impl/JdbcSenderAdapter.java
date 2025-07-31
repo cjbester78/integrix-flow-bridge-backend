@@ -10,17 +10,20 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Properties;
+import java.util.Collection;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 
 /**
- * JDBC Sender Adapter implementation for database operations.
- * Supports INSERT, UPDATE, DELETE operations with batch processing and transaction management.
+ * JDBC Sender Adapter implementation for database polling and data retrieval (INBOUND).
+ * Follows middleware convention: Sender = receives data FROM external systems.
+ * Supports SELECT operations with polling, pagination, and incremental data processing.
  */
 public class JdbcSenderAdapter extends AbstractSenderAdapter {
     
     private final JdbcSenderAdapterConfig config;
     private HikariDataSource dataSource;
+    private Object lastProcessedValue; // For incremental polling
     
     public JdbcSenderAdapter(JdbcSenderAdapterConfig config) {
         super(AdapterType.JDBC);
@@ -29,7 +32,7 @@ public class JdbcSenderAdapter extends AbstractSenderAdapter {
     
     @Override
     protected void doSenderInitialize() throws Exception {
-        logger.info("Initializing JDBC sender adapter with URL: {}", maskSensitiveUrl(config.getJdbcUrl()));
+        logger.info("Initializing JDBC sender adapter (inbound) with URL: {}", maskSensitiveUrl(config.getJdbcUrl()));
         
         validateConfiguration();
         dataSource = createDataSource();
@@ -73,7 +76,6 @@ public class JdbcSenderAdapter extends AbstractSenderAdapter {
             try (Connection conn = dataSource.getConnection()) {
                 DatabaseMetaData metaData = conn.getMetaData();
                 
-                // Check if we can access database metadata
                 String databaseName = metaData.getDatabaseProductName();
                 String databaseVersion = metaData.getDatabaseProductVersion();
                 
@@ -88,42 +90,26 @@ public class JdbcSenderAdapter extends AbstractSenderAdapter {
             }
         }));
         
-        // Test 3: Query execution test (if configured)
-        if (config.getInsertQuery() != null && !config.getInsertQuery().trim().isEmpty()) {
+        // Test 3: SELECT Query validation test
+        if (config.getSelectQuery() != null && !config.getSelectQuery().trim().isEmpty()) {
             testResults.add(ConnectionTestUtil.executeConfigurationTest(AdapterType.JDBC, () -> {
                 try (Connection conn = dataSource.getConnection()) {
-                    // Test query preparation (doesn't execute)
-                    try (PreparedStatement stmt = conn.prepareStatement(config.getInsertQuery())) {
-                        ParameterMetaData paramMetaData = stmt.getParameterMetaData();
-                        int paramCount = paramMetaData.getParameterCount();
+                    // Test query preparation and execution with LIMIT 0 (doesn't return data)
+                    String testQuery = addLimitToQuery(config.getSelectQuery(), 0);
+                    
+                    try (PreparedStatement stmt = conn.prepareStatement(testQuery)) {
+                        stmt.setQueryTimeout(5); // Short timeout for test
+                        stmt.executeQuery(); // Execute but don't fetch results
                         
                         return ConnectionTestUtil.createTestSuccess(AdapterType.JDBC, 
-                                "Query Validation", "Insert query validated successfully (" + paramCount + " parameters)");
+                                "Query Validation", "SELECT query validated successfully");
                     }
                 } catch (Exception e) {
                     return ConnectionTestUtil.createTestFailure(AdapterType.JDBC, 
-                            "Query Validation", "Invalid insert query: " + e.getMessage(), e);
+                            "Query Validation", "Invalid SELECT query: " + e.getMessage(), e);
                 }
             }));
         }
-        
-        // Test 4: Transaction support test
-        testResults.add(ConnectionTestUtil.executeConfigurationTest(AdapterType.JDBC, () -> {
-            try (Connection conn = dataSource.getConnection()) {
-                boolean autoCommit = conn.getAutoCommit();
-                boolean supportsTransactions = conn.getMetaData().supportsTransactions();
-                
-                String message = String.format("Transaction support: %s, Auto-commit: %s", 
-                                              supportsTransactions, autoCommit);
-                
-                return ConnectionTestUtil.createTestSuccess(AdapterType.JDBC, 
-                        "Transaction Support", message);
-                        
-            } catch (Exception e) {
-                return ConnectionTestUtil.createTestFailure(AdapterType.JDBC, 
-                        "Transaction Support", "Failed to check transaction support: " + e.getMessage(), e);
-            }
-        }));
         
         return ConnectionTestUtil.combineTestResults(AdapterType.JDBC, 
                 testResults.toArray(new AdapterResult[0]));
@@ -131,91 +117,106 @@ public class JdbcSenderAdapter extends AbstractSenderAdapter {
     
     @Override
     protected AdapterResult doSend(Object payload, Map<String, Object> headers) throws Exception {
-        if (payload == null) {
-            throw new AdapterException.ValidationException(AdapterType.JDBC, "Payload cannot be null");
-        }
-        
-        String query = determineQuery(headers);
-        if (query == null || query.trim().isEmpty()) {
-            throw new AdapterException.ConfigurationException(AdapterType.JDBC, 
-                    "No SQL query configured for operation");
-        }
-        
-        try (Connection conn = dataSource.getConnection()) {
-            
-            // Handle transactions
-            boolean useTransactions = config.isUseTransactions();
-            if (useTransactions) {
-                conn.setAutoCommit(false);
-            }
-            
-            try {
-                AdapterResult result;
-                
-                if (payload instanceof List) {
-                    // Batch operation
-                    result = executeBatchOperation(conn, query, (List<?>) payload, headers);
-                } else {
-                    // Single operation
-                    result = executeSingleOperation(conn, query, payload, headers);
-                }
-                
-                if (useTransactions) {
-                    conn.commit();
-                    logger.debug("Transaction committed successfully");
-                }
-                
-                return result;
-                
-            } catch (Exception e) {
-                if (useTransactions) {
-                    try {
-                        conn.rollback();
-                        logger.debug("Transaction rolled back due to error");
-                    } catch (SQLException rollbackException) {
-                        logger.error("Failed to rollback transaction", rollbackException);
-                    }
-                }
-                throw e;
-            }
-            
-        } catch (SQLException e) {
-            logger.error("JDBC send operation failed", e);
-            
-            if (e.getErrorCode() == 0 && "08S01".equals(e.getSQLState())) {
-                throw new AdapterException.ConnectionException(AdapterType.JDBC, 
-                        "Database connection lost: " + e.getMessage(), e);
-            } else if ("23000".equals(e.getSQLState())) {
-                throw new AdapterException.ValidationException(AdapterType.JDBC, 
-                        "Data integrity constraint violation: " + e.getMessage(), e);
-            } else {
-                throw new AdapterException(AdapterType.JDBC, AdapterMode.SENDER, 
-                        "Database operation failed: " + e.getMessage(), e);
-            }
-        }
+        // For JDBC Sender (inbound), "send" means polling/retrieving data FROM database
+        return pollForData();
     }
     
-    private void validateConfiguration() throws AdapterException {
-        ConnectionTestUtil.validateRequiredField(AdapterType.JDBC, "JDBC URL", config.getJdbcUrl());
-        ConnectionTestUtil.validateRequiredField(AdapterType.JDBC, "Driver Class", config.getDriverClass());
-        
-        if (config.getUsername() == null) {
-            logger.warn("No username configured for JDBC connection");
+    private AdapterResult pollForData() throws Exception {
+        if (config.getSelectQuery() == null || config.getSelectQuery().trim().isEmpty()) {
+            throw new AdapterException.ConfigurationException(AdapterType.JDBC, "SELECT query not configured");
         }
         
-        if (config.getInsertQuery() == null && config.getUpdateQuery() == null && config.getDeleteQuery() == null) {
-            throw new AdapterException.ConfigurationException(AdapterType.JDBC, 
-                    "At least one SQL query (insert, update, or delete) must be configured");
+        List<Map<String, Object>> results = new ArrayList<>();
+        
+        try (Connection conn = dataSource.getConnection()) {
+            conn.setReadOnly(config.isReadOnly());
+            conn.setAutoCommit(config.isAutoCommit());
+            
+            String query = buildIncrementalQuery();
+            
+            try (PreparedStatement stmt = conn.prepareStatement(query)) {
+                stmt.setQueryTimeout(config.getQueryTimeoutSeconds());
+                
+                if (config.getFetchSize() != null) {
+                    stmt.setFetchSize(config.getFetchSize());
+                }
+                
+                if (config.getMaxResults() != null) {
+                    stmt.setMaxRows(config.getMaxResults());
+                }
+                
+                // Set incremental parameter if configured
+                if (config.getIncrementalColumn() != null && lastProcessedValue != null) {
+                    stmt.setObject(1, lastProcessedValue);
+                }
+                
+                try (ResultSet rs = stmt.executeQuery()) {
+                    ResultSetMetaData metaData = rs.getMetaData();
+                    int columnCount = metaData.getColumnCount();
+                    
+                    while (rs.next()) {
+                        Map<String, Object> row = new HashMap<>();
+                        for (int i = 1; i <= columnCount; i++) {
+                            String columnName = metaData.getColumnName(i);
+                            Object value = rs.getObject(i);
+                            row.put(columnName, value);
+                        }
+                        results.add(row);
+                        
+                        // Update last processed value for incremental polling
+                        if (config.getIncrementalColumn() != null) {
+                            Object incrementalValue = row.get(config.getIncrementalColumn());
+                            if (incrementalValue != null) {
+                                lastProcessedValue = incrementalValue;
+                            }
+                        }
+                    }
+                }
+            }
         }
         
-        ConnectionTestUtil.validateNumericRange(AdapterType.JDBC, "Connection Timeout", 
-                config.getConnectionTimeoutSeconds(), 1, 300);
-        ConnectionTestUtil.validateNumericRange(AdapterType.JDBC, "Query Timeout", 
-                config.getQueryTimeoutSeconds(), 1, 600);
+        logger.info("JDBC sender adapter polled {} records from database", results.size());
         
-        if (config.getBatchSize() != null) {
-            ConnectionTestUtil.validateNumericRange(AdapterType.JDBC, "Batch Size", 
-                    config.getBatchSize(), 1, 10000);
+        return AdapterResult.success(results, 
+                String.format("Retrieved %d records from database", results.size()));
+    }
+    
+    private String buildIncrementalQuery() {
+        String baseQuery = config.getSelectQuery();
+        
+        if (config.getIncrementalColumn() != null && lastProcessedValue != null) {
+            // Add WHERE clause for incremental processing
+            if (baseQuery.toUpperCase().contains("WHERE")) {
+                baseQuery += " AND " + config.getIncrementalColumn() + " > ?";
+            } else {
+                baseQuery += " WHERE " + config.getIncrementalColumn() + " > ?";
+            }
+        }
+        
+        // Add ORDER BY for incremental column
+        if (config.getIncrementalColumn() != null) {
+            if (!baseQuery.toUpperCase().contains("ORDER BY")) {
+                baseQuery += " ORDER BY " + config.getIncrementalColumn() + " ASC";
+            }
+        }
+        
+        return baseQuery;
+    }
+    
+    private String addLimitToQuery(String query, int limit) {
+        // Simple LIMIT addition - this would need to be database-specific in production
+        return query + " LIMIT " + limit;
+    }
+    
+    private void validateConfiguration() throws AdapterException.ConfigurationException {
+        if (config.getJdbcUrl() == null || config.getJdbcUrl().trim().isEmpty()) {
+            throw new AdapterException.ConfigurationException(AdapterType.JDBC, "JDBC URL is required");
+        }
+        if (config.getDriverClass() == null || config.getDriverClass().trim().isEmpty()) {
+            throw new AdapterException.ConfigurationException(AdapterType.JDBC, "JDBC driver class is required");
+        }
+        if (config.getSelectQuery() == null || config.getSelectQuery().trim().isEmpty()) {
+            throw new AdapterException.ConfigurationException(AdapterType.JDBC, "SELECT query is required for JDBC sender adapter");
         }
     }
     
@@ -223,239 +224,46 @@ public class JdbcSenderAdapter extends AbstractSenderAdapter {
         HikariConfig hikariConfig = new HikariConfig();
         
         hikariConfig.setJdbcUrl(config.getJdbcUrl());
+        hikariConfig.setDriverClassName(config.getDriverClass());
         hikariConfig.setUsername(config.getUsername());
         hikariConfig.setPassword(config.getPassword());
-        hikariConfig.setDriverClassName(config.getDriverClass());
         
         // Connection pool settings
-        hikariConfig.setMinimumIdle(config.getMinPoolSize() != null ? config.getMinPoolSize() : 1);
-        hikariConfig.setMaximumPoolSize(config.getMaxPoolSize() != null ? config.getMaxPoolSize() : 10);
+        hikariConfig.setMinimumIdle(config.getMinPoolSize());
+        hikariConfig.setMaximumPoolSize(config.getMaxPoolSize());
         hikariConfig.setConnectionTimeout(config.getConnectionTimeoutSeconds() * 1000L);
-        hikariConfig.setIdleTimeout(600000); // 10 minutes
-        hikariConfig.setMaxLifetime(1800000); // 30 minutes
         
-        // Connection validation
-        hikariConfig.setConnectionTestQuery(getValidationQuery());
-        hikariConfig.setValidationTimeout(5000);
-        
-        // Additional properties
-        if (config.getConnectionProperties() != null && !config.getConnectionProperties().isEmpty()) {
-            Properties props = new Properties();
-            String[] propertyPairs = config.getConnectionProperties().split(",");
-            for (String pair : propertyPairs) {
-                String[] keyValue = pair.split("=", 2);
-                if (keyValue.length == 2) {
-                    props.setProperty(keyValue[0].trim(), keyValue[1].trim());
-                }
-            }
+        // Connection properties
+        if (config.getConnectionProperties() != null && !config.getConnectionProperties().trim().isEmpty()) {
+            Properties props = parseConnectionProperties(config.getConnectionProperties());
             hikariConfig.setDataSourceProperties(props);
         }
         
         return new HikariDataSource(hikariConfig);
     }
     
-    private String getValidationQuery() {
-        String driverClass = config.getDriverClass().toLowerCase();
-        
-        if (driverClass.contains("mysql")) {
-            return "SELECT 1";
-        } else if (driverClass.contains("postgresql")) {
-            return "SELECT 1";
-        } else if (driverClass.contains("oracle")) {
-            return "SELECT 1 FROM DUAL";
-        } else if (driverClass.contains("sqlserver")) {
-            return "SELECT 1";
-        } else if (driverClass.contains("h2")) {
-            return "SELECT 1";
-        } else {
-            return "SELECT 1"; // Default
-        }
-    }
-    
-    private String determineQuery(Map<String, Object> headers) {
-        // Check for operation type in headers
-        if (headers != null) {
-            String operationType = (String) headers.get("operation");
-            if ("UPDATE".equalsIgnoreCase(operationType) && config.getUpdateQuery() != null) {
-                return config.getUpdateQuery();
-            } else if ("DELETE".equalsIgnoreCase(operationType) && config.getDeleteQuery() != null) {
-                return config.getDeleteQuery();
+    private Properties parseConnectionProperties(String connectionProperties) {
+        Properties props = new Properties();
+        String[] pairs = connectionProperties.split(",");
+        for (String pair : pairs) {
+            String[] keyValue = pair.split("=");
+            if (keyValue.length == 2) {
+                props.setProperty(keyValue[0].trim(), keyValue[1].trim());
             }
         }
-        
-        // Default to insert query
-        return config.getInsertQuery();
-    }
-    
-    private AdapterResult executeSingleOperation(Connection conn, String query, Object payload, 
-                                               Map<String, Object> headers) throws SQLException {
-        
-        try (PreparedStatement stmt = conn.prepareStatement(query, Statement.RETURN_GENERATED_KEYS)) {
-            
-            stmt.setQueryTimeout(config.getQueryTimeoutSeconds());
-            
-            // Set parameters
-            setStatementParameters(stmt, payload, headers);
-            
-            long startTime = System.currentTimeMillis();
-            int rowsAffected = stmt.executeUpdate();
-            long duration = System.currentTimeMillis() - startTime;
-            
-            AdapterResult result = AdapterResult.success(rowsAffected, 
-                    "Database operation completed successfully, " + rowsAffected + " rows affected");
-            
-            // Add generated keys if available
-            try (ResultSet generatedKeys = stmt.getGeneratedKeys()) {
-                if (generatedKeys.next()) {
-                    result.addMetadata("generatedKey", generatedKeys.getObject(1));
-                }
-            } catch (SQLException e) {
-                // Ignore if generated keys not supported
-            }
-            
-            result.addMetadata("rowsAffected", rowsAffected);
-            result.addMetadata("executionTimeMs", duration);
-            result.addMetadata("query", maskSensitiveQuery(query));
-            
-            logger.debug("Single operation completed: {} rows affected in {}ms", rowsAffected, duration);
-            
-            return result;
-        }
-    }
-    
-    private AdapterResult executeBatchOperation(Connection conn, String query, List<?> payloadList, 
-                                              Map<String, Object> headers) throws SQLException {
-        
-        int batchSize = config.getBatchSize() != null ? config.getBatchSize() : 1000;
-        int totalRowsAffected = 0;
-        List<Object> generatedKeys = new ArrayList<>();
-        
-        try (PreparedStatement stmt = conn.prepareStatement(query, Statement.RETURN_GENERATED_KEYS)) {
-            
-            stmt.setQueryTimeout(config.getQueryTimeoutSeconds());
-            
-            long startTime = System.currentTimeMillis();
-            
-            for (int i = 0; i < payloadList.size(); i++) {
-                setStatementParameters(stmt, payloadList.get(i), headers);
-                stmt.addBatch();
-                
-                // Execute batch when batch size is reached or at the end
-                if ((i + 1) % batchSize == 0 || i == payloadList.size() - 1) {
-                    int[] batchResults = stmt.executeBatch();
-                    
-                    for (int result : batchResults) {
-                        if (result >= 0) {
-                            totalRowsAffected += result;
-                        } else if (result == Statement.SUCCESS_NO_INFO) {
-                            // Operation successful but no row count
-                            totalRowsAffected++;
-                        }
-                    }
-                    
-                    // Collect generated keys
-                    try (ResultSet keys = stmt.getGeneratedKeys()) {
-                        while (keys.next()) {
-                            generatedKeys.add(keys.getObject(1));
-                        }
-                    } catch (SQLException e) {
-                        // Ignore if generated keys not supported
-                    }
-                    
-                    stmt.clearBatch();
-                    logger.debug("Batch executed: {} operations processed so far", i + 1);
-                }
-            }
-            
-            long duration = System.currentTimeMillis() - startTime;
-            
-            AdapterResult result = AdapterResult.success(totalRowsAffected, 
-                    "Batch operation completed successfully, " + totalRowsAffected + " rows affected");
-            
-            result.addMetadata("rowsAffected", totalRowsAffected);
-            result.addMetadata("batchSize", batchSize);
-            result.addMetadata("totalOperations", payloadList.size());
-            result.addMetadata("executionTimeMs", duration);
-            result.addMetadata("query", maskSensitiveQuery(query));
-            
-            if (!generatedKeys.isEmpty()) {
-                result.addMetadata("generatedKeys", generatedKeys);
-            }
-            
-            logger.debug("Batch operation completed: {} operations, {} rows affected in {}ms", 
-                        payloadList.size(), totalRowsAffected, duration);
-            
-            return result;
-        }
-    }
-    
-    private void setStatementParameters(PreparedStatement stmt, Object payload, 
-                                      Map<String, Object> headers) throws SQLException {
-        
-        if (payload instanceof Map) {
-            // Map-based parameter setting
-            @SuppressWarnings("unchecked")
-            Map<String, Object> paramMap = (Map<String, Object>) payload;
-            
-            ParameterMetaData paramMetaData = stmt.getParameterMetaData();
-            int paramCount = paramMetaData.getParameterCount();
-            
-            for (int i = 1; i <= paramCount; i++) {
-                String paramName = "param" + i; // Default parameter name
-                
-                // Try to get parameter value from payload map
-                Object paramValue = paramMap.get(paramName);
-                if (paramValue == null) {
-                    paramValue = paramMap.get("p" + i);
-                }
-                if (paramValue == null) {
-                    paramValue = paramMap.get(String.valueOf(i));
-                }
-                
-                if (paramValue != null) {
-                    stmt.setObject(i, paramValue);
-                } else {
-                    stmt.setNull(i, Types.VARCHAR);
-                }
-            }
-            
-        } else if (payload instanceof List) {
-            // List-based parameter setting
-            @SuppressWarnings("unchecked")
-            List<Object> paramList = (List<Object>) payload;
-            
-            for (int i = 0; i < paramList.size(); i++) {
-                stmt.setObject(i + 1, paramList.get(i));
-            }
-            
-        } else {
-            // Single parameter
-            stmt.setObject(1, payload);
-        }
+        return props;
     }
     
     private String maskSensitiveUrl(String url) {
         if (url == null) return null;
-        
-        // Mask password in JDBC URL
         return url.replaceAll("password=[^;&]*", "password=***");
-    }
-    
-    private String maskSensitiveQuery(String query) {
-        if (query == null) return null;
-        
-        // Return first 100 characters for logging (avoid logging sensitive data)
-        return query.length() > 100 ? query.substring(0, 100) + "..." : query;
     }
     
     @Override
     public String getConfigurationSummary() {
-        return String.format("JdbcSenderAdapter{url=%s, driver=%s, pool=%d-%d, transactions=%s, active=%s}",
+        return String.format("JDBC Sender (Inbound): %s, Query: %s, Polling: %dms", 
                 maskSensitiveUrl(config.getJdbcUrl()),
-                config.getDriverClass(),
-                config.getMinPoolSize() != null ? config.getMinPoolSize() : 1,
-                config.getMaxPoolSize() != null ? config.getMaxPoolSize() : 10,
-                config.isUseTransactions(),
-                isActive());
+                config.getSelectQuery() != null ? config.getSelectQuery().substring(0, Math.min(50, config.getSelectQuery().length())) + "..." : "Not configured",
+                config.getPollingInterval() != null ? config.getPollingInterval() : 0);
     }
 }
