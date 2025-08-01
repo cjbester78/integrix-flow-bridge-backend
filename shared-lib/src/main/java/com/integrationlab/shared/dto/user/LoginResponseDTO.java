@@ -1,24 +1,55 @@
 package com.integrationlab.shared.dto.user;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import jakarta.validation.constraints.NotBlank;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.time.LocalDateTime;
+
 /**
- * DTO for LoginResponseDTO.
- * Encapsulates data for transport between layers.
+ * DTO for successful login responses.
+ * 
+ * <p>Contains authentication token and user information after
+ * successful authentication.
+ * 
+ * @author Integration Team
+ * @since 1.0.0
  */
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class LoginResponseDTO {
+    
+    /**
+     * JWT authentication token
+     */
+    @NotBlank
     private String token;
+    
+    /**
+     * Username of authenticated user
+     */
+    @NotBlank
     private String username;
-
-    public LoginResponseDTO(String token, String username) {
-        this.token = token;
-        this.username = username;
-    }
-
-    // Getters
-    public String getToken() {
-        return token;
-    }
-
-    public String getUsername() {
-        return username;
-    }
+    
+    /**
+     * User role (administrator, integrator, viewer)
+     */
+    private String role;
+    
+    /**
+     * Token expiration time
+     */
+    private LocalDateTime expiresAt;
+    
+    /**
+     * Token type (typically "Bearer")
+     */
+    @Builder.Default
+    private String tokenType = "Bearer";
 }

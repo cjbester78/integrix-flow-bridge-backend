@@ -1,55 +1,102 @@
 package com.integrationlab.shared.dto.adapter;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
+
 /**
- * DTO for AdapterConfigDTO supporting separated sender/receiver configurations.
- * Encapsulates data for transport between layers with middleware conventions.
+ * Data Transfer Object for Adapter Configuration.
+ * 
+ * <p>This DTO represents the configuration for communication adapters in the integration platform.
+ * It follows the reversed middleware convention where:</p>
+ * <ul>
+ *   <li><b>SENDER</b> adapters receive data FROM external systems (inbound)</li>
+ *   <li><b>RECEIVER</b> adapters send data TO external systems (outbound)</li>
+ * </ul>
+ * 
+ * <p>The adapter configuration includes both the adapter metadata and its specific
+ * configuration stored as JSON for flexibility across different adapter types.</p>
+ * 
+ * @author Integration Team
+ * @since 1.0.0
+ * @see com.integrationlab.adapters.core.AdapterMode
+ * @see com.integrationlab.adapters.core.AdapterType
  */
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class AdapterConfigDTO {
-    private String name;
-    private String type;
-    private String mode; // SENDER or RECEIVER
-    private String configJson;
-    private String description;
-    private boolean active = true;
-    
-    // Middleware convention fields
-    private String direction; // INBOUND or OUTBOUND for clarity
-    private String businessComponentId;
-
-    public String getName() { return name; }
-    public void setName(String name) { this.name = name; }
-
-    public String getType() { return type; }
-    public void setType(String type) { this.type = type; }
-
-    public String getMode() { return mode; }
-    public void setMode(String mode) { this.mode = mode; }
-
-    public String getConfigJson() { return configJson; }
-    public void setConfigJson(String configJson) { this.configJson = configJson; }
-    
-    public String getDescription() { return description; }
-    public void setDescription(String description) { this.description = description; }
-    
-    public boolean isActive() { return active; }
-    public void setActive(boolean active) { this.active = active; }
-    
-    public String getDirection() { return direction; }
-    public void setDirection(String direction) { this.direction = direction; }
-    
-    public String getBusinessComponentId() { return businessComponentId; }
-    public void setBusinessComponentId(String businessComponentId) { this.businessComponentId = businessComponentId; }
     
     /**
-     * Helper method to determine if this is a sender adapter (receives FROM external systems)
+     * Name of the adapter configuration.
+     * Should be unique within a business component.
      */
+    private String name;
+    
+    /**
+     * Type of the adapter (HTTP, JDBC, FILE, etc.).
+     * @see com.integrationlab.shared.enums.AdapterType
+     */
+    private String type;
+    
+    /**
+     * Adapter mode determining data flow direction.
+     * SENDER = receives FROM external systems (inbound)
+     * RECEIVER = sends TO external systems (outbound)
+     */
+    private String mode;
+    
+    /**
+     * JSON string containing adapter-specific configuration.
+     * Structure varies based on adapter type.
+     */
+    private String configJson;
+    
+    /**
+     * Human-readable description of the adapter's purpose.
+     */
+    private String description;
+    
+    /**
+     * Indicates if the adapter is currently active.
+     * Inactive adapters are not available for flow execution.
+     */
+    @Builder.Default
+    private boolean active = true;
+    
+    /**
+     * Alternative direction indicator for clarity.
+     * INBOUND = SENDER mode, OUTBOUND = RECEIVER mode
+     * @deprecated Use {@link #mode} instead for consistency
+     */
+    private String direction;
+    
+    /**
+     * ID of the business component this adapter belongs to.
+     */
+    private String businessComponentId;
+
+    /**
+     * Determines if this adapter receives data FROM external systems.
+     * 
+     * @return true if adapter is in SENDER mode or INBOUND direction
+     */
+    @JsonIgnore
     public boolean isSender() {
         return "SENDER".equalsIgnoreCase(mode) || "INBOUND".equalsIgnoreCase(direction);
     }
     
     /**
-     * Helper method to determine if this is a receiver adapter (sends TO external systems)
+     * Determines if this adapter sends data TO external systems.
+     * 
+     * @return true if adapter is in RECEIVER mode or OUTBOUND direction
      */
+    @JsonIgnore
     public boolean isReceiver() {
         return "RECEIVER".equalsIgnoreCase(mode) || "OUTBOUND".equalsIgnoreCase(direction);
     }

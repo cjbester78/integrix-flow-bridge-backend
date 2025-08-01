@@ -362,6 +362,110 @@ java -jar backend/target/backend-0.0.1-SNAPSHOT.jar
 - REST APIs: RESTful design, consistent HTTP status codes
 - Database: Use JPA annotations, maintain referential integrity
 
+### Code Documentation Standards
+
+#### Java Documentation
+- **Classes**: Add Javadoc with purpose and author
+  ```java
+  /**
+   * Handles HTTP adapter configurations for inbound REST API connections.
+   * Manages authentication, SSL, and request processing settings.
+   * 
+   * @author Integration Team
+   * @since 1.0.0
+   */
+  ```
+
+- **Methods**: Document purpose, parameters, return values, and exceptions
+  ```java
+  /**
+   * Validates adapter configuration before saving.
+   * 
+   * @param config The adapter configuration to validate
+   * @return ValidationResult containing any errors found
+   * @throws InvalidConfigurationException if critical settings are missing
+   */
+  ```
+
+- **Complex Logic**: Add inline comments explaining decisions
+  ```java
+  // Use synchronous processing for batch operations to maintain order
+  if (config.isBatchMode()) {
+      processingMode = ProcessingMode.SYNCHRONOUS;
+  }
+  ```
+
+#### TypeScript/React Documentation
+- **Components**: Document purpose and props
+  ```typescript
+  /**
+   * Displays and manages SSL certificate selection for secure adapters.
+   * Filters certificates by business component and status.
+   */
+  interface CertificateSelectionProps {
+    /** Business component ID to filter certificates */
+    businessComponentId?: string;
+    /** Callback when certificate is selected */
+    onChange: (certId: string) => void;
+  }
+  ```
+
+- **Functions**: Document complex logic and decisions
+  ```typescript
+  // Fetch from API instead of using mock data
+  // Empty array on failure to allow user to see UI
+  const fetchData = async () => {
+    try {
+      const result = await api.get('/certificates');
+      setCertificates(result.data || []);
+    } catch (error) {
+      setCertificates([]); // Show empty state, not error
+    }
+  };
+  ```
+
+- **Hooks**: Document purpose and return values
+  ```typescript
+  /**
+   * Custom hook for managing adapter data with automatic refresh.
+   * @returns {Object} Adapter data, loading state, and refresh function
+   */
+  ```
+
+#### General Comment Guidelines
+1. **WHY over WHAT**: Explain why code makes certain decisions, not just what it does
+2. **Business Logic**: Document business rules and adapter conventions
+3. **TODOs**: Mark incomplete features with TODO comments and ticket numbers
+4. **Warnings**: Use WARNING comments for critical sections
+5. **Performance**: Document performance-critical decisions
+
+#### Examples of Good Comments
+```java
+// CRITICAL: Sender adapters receive data (inbound), despite the name
+// This reverses typical middleware conventions
+public class HttpSenderAdapter extends BaseSenderAdapter {
+    
+    // WARNING: Certificate validation must occur before any network operations
+    // to prevent security vulnerabilities
+    private void validateCertificate() {
+        // Implementation
+    }
+    
+    // TODO: Implement connection pooling for better performance (TICKET-123)
+    private Connection getConnection() {
+        // Temporary implementation - single connection
+    }
+}
+```
+
+```typescript
+// Decision: Remove mock data fallback to ensure UI reflects actual system state
+// Users need to see when no data exists so they can create new items
+useEffect(() => {
+  // Fetch real data from API, no mock fallback
+}, []);
+```
+
 ### Git Workflow
 - Feature branches from `master`
 - Descriptive commit messages
@@ -416,6 +520,28 @@ logging:
 5. Please every step of the way just give me a high level explanation of what changes you made
 6. Make every task and code change you do as simple as possible. We want to avoid making any massive or complex changes. Every change should impact as little code as possible. Everything is about simplicity.
 7. Finally, add a review section to the todo.md file with a summary of the changes you made and any other relevant information.
+
+## Git Configuration
+
+### Repository Structure
+This project consists of two separate git repositories:
+1. **Backend Repository**: `/Users/cjbester/git/integrix-flow-bridge/` - Java Spring Boot backend
+2. **Frontend Repository**: `/Users/cjbester/git/integrix-flow-bridge/frontend-ui/` - React TypeScript frontend
+
+### Git Commit Guidelines
+- Always ensure you're in the correct repository directory before committing
+- Use clear, descriptive commit messages
+- Backend commits should be made from the root directory
+- Frontend commits should be made from the frontend-ui directory
+- Follow conventional commit format: `type(scope): description`
+  - Types: feat, fix, docs, style, refactor, test, chore
+  - Example: `fix(adapters): resolve compilation errors in JmsSenderAdapter`
+
+### Git Configuration Requirements
+To enable git commits, ensure:
+1. Git is configured with user name and email
+2. You have write access to both repositories
+3. The repositories are properly initialized
 
 ## Important Reminders
 - Do what has been asked; nothing more, nothing less.

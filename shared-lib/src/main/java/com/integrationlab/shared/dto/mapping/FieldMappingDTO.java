@@ -1,147 +1,121 @@
 package com.integrationlab.shared.dto.mapping;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
 import java.time.LocalDateTime;
 
 /**
- * DTO for FieldMappingDTO.
- * Encapsulates data for transport between layers.
+ * DTO for field mapping configuration.
+ * 
+ * <p>Defines how fields from source data are transformed and mapped
+ * to target fields using JavaScript functions or mapping rules.
+ * 
+ * @author Integration Team
+ * @since 1.0.0
  */
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class FieldMappingDTO {
-
+    
+    /**
+     * Unique identifier for the field mapping
+     */
     private String id;
+    
+    /**
+     * ID of the parent transformation
+     */
+    @NotBlank(message = "Transformation ID is required")
     private String transformationId;
+    
+    /**
+     * Source fields (JSON array of field paths)
+     * Example: ["customer.firstName", "customer.lastName"]
+     */
+    @NotBlank(message = "Source fields are required")
     private String sourceFields;
+    
+    /**
+     * Target field path
+     * Example: "contact.fullName"
+     */
+    @NotBlank(message = "Target field is required")
     private String targetField;
+    
+    /**
+     * JavaScript function for transformation
+     * Mutually exclusive with mappingRule
+     */
+    @Size(max = 10000, message = "Function cannot exceed 10000 characters")
     private String javaFunction;
+    
+    /**
+     * Simple mapping rule (for direct mappings)
+     * Mutually exclusive with javaFunction
+     */
+    @Size(max = 1000, message = "Mapping rule cannot exceed 1000 characters")
     private String mappingRule;
-
-    // New metadata fields
-    private String inputTypes;   // JSON string representing list of input types
+    
+    /**
+     * Input data types (JSON array)
+     * Example: ["string", "string"]
+     */
+    private String inputTypes;
+    
+    /**
+     * Output data type
+     * Example: "string"
+     */
+    @Pattern(regexp = "^(string|number|boolean|object|array|date)$",
+             message = "Output type must be: string, number, boolean, object, array, or date")
     private String outputType;
+    
+    /**
+     * Description of the mapping logic
+     */
+    @Size(max = 500, message = "Description cannot exceed 500 characters")
     private String description;
+    
+    /**
+     * Version of the mapping (for change tracking)
+     */
+    @Pattern(regexp = "^\\d+\\.\\d+\\.\\d+$", message = "Version must be in format X.Y.Z")
     private String version;
+    
+    /**
+     * Name of the function (for reusable functions)
+     */
+    @Size(max = 100, message = "Function name cannot exceed 100 characters")
     private String functionName;
-
-    private boolean isActive;
+    
+    /**
+     * Whether this mapping is active
+     */
+    @NotNull(message = "Active status is required")
+    @Builder.Default
+    private boolean isActive = true;
+    
+    /**
+     * Timestamp when the mapping was created
+     */
     private LocalDateTime createdAt;
+    
+    /**
+     * Timestamp when the mapping was last updated
+     */
     private LocalDateTime updatedAt;
-
-    public FieldMappingDTO() {
-        // no-args constructor
-    }
-
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
-    }
-
-    public String getTransformationId() {
-        return transformationId;
-    }
-
-    public void setTransformationId(String transformationId) {
-        this.transformationId = transformationId;
-    }
-
-    public String getSourceFields() {
-        return sourceFields;
-    }
-
-    public void setSourceFields(String sourceFields) {
-        this.sourceFields = sourceFields;
-    }
-
-    public String getTargetField() {
-        return targetField;
-    }
-
-    public void setTargetField(String targetField) {
-        this.targetField = targetField;
-    }
-
-    public String getJavaFunction() {
-        return javaFunction;
-    }
-
-    public void setJavaFunction(String javaFunction) {
-        this.javaFunction = javaFunction;
-    }
-
-    public String getMappingRule() {
-        return mappingRule;
-    }
-
-    public void setMappingRule(String mappingRule) {
-        this.mappingRule = mappingRule;
-    }
-
-    public String getInputTypes() {
-        return inputTypes;
-    }
-
-    public void setInputTypes(String inputTypes) {
-        this.inputTypes = inputTypes;
-    }
-
-    public String getOutputType() {
-        return outputType;
-    }
-
-    public void setOutputType(String outputType) {
-        this.outputType = outputType;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
-    public String getVersion() {
-        return version;
-    }
-
-    public void setVersion(String version) {
-        this.version = version;
-    }
-
-    public String getFunctionName() {
-        return functionName;
-    }
-
-    public void setFunctionName(String functionName) {
-        this.functionName = functionName;
-    }
-
-    public boolean isActive() {
-        return isActive;
-    }
-
-    public void setActive(boolean active) {
-        isActive = active;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
-    }
-
-    public void setUpdatedAt(LocalDateTime updatedAt) {
-        this.updatedAt = updatedAt;
-    }
-
+    
     @Override
     public String toString() {
         return "FieldMappingDTO{" +
