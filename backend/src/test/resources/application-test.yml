@@ -1,0 +1,79 @@
+# Test-specific configuration
+spring:
+  datasource:
+    # Use H2 in-memory database for unit tests
+    url: jdbc:h2:mem:testdb;MODE=MySQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: 
+    
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+        format_sql: true
+        show_sql: false
+        
+  h2:
+    console:
+      enabled: false
+      
+  cache:
+    type: none # Disable caching in tests
+    
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8080
+          
+# Disable rate limiting in tests
+app:
+  security:
+    rate-limiting:
+      enabled: false
+    jwt:
+      secret: test-secret-key-for-testing-only
+      access-token-expiration: 900000
+      refresh-token-expiration: 604800000
+      
+# Logging
+logging:
+  level:
+    root: WARN
+    com.integrationlab: DEBUG
+    org.springframework.web: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+    
+# Server configuration
+server:
+  port: 0 # Random port for tests
+  
+# Management endpoints
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+        
+# Test profiles
+---
+spring:
+  config:
+    activate:
+      on-profile: integration-test
+      
+  datasource:
+    # Use Testcontainers MySQL for integration tests
+    url: jdbc:tc:mysql:8.0:///testdb
+    driver-class-name: org.testcontainers.jdbc.ContainerDatabaseDriver
+    
+  jpa:
+    hibernate:
+      ddl-auto: create
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQL8Dialect
