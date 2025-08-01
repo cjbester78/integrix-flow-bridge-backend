@@ -13,6 +13,9 @@ import com.integrationlab.shared.dto.user.UserDTO;
 import jakarta.transaction.Transactional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -70,6 +73,7 @@ public class UserService {
         return userRepository.save(user);
     }
 
+    @Cacheable(value = "users", key = "#user.id")
     public UserDTO mapToDTO(User user) {
         UserDTO dto = new UserDTO();
         dto.setId(user.getId());
@@ -96,6 +100,7 @@ public class UserService {
         return dto;
     }
 
+    @Cacheable(value = "users", key = "#id")
     public Optional<UserDTO> findById(String id) {
         return userRepository.findById(id).map(this::mapToDTO);
     }
@@ -109,6 +114,7 @@ public class UserService {
             .collect(Collectors.toList());
     }
 
+    @CachePut(value = "users", key = "#id")
     public Optional<UserDTO> update(String id, UpdateUserRequestDTO dto) {
         return userRepository.findById(id).map(user -> {
             user.setEmail(dto.getEmail());
@@ -121,6 +127,7 @@ public class UserService {
         });
     }
 
+    @CacheEvict(value = "users", key = "#id")
     public boolean deleteById(String id) {
         if (userRepository.existsById(id)) {
             userRepository.deleteById(id);

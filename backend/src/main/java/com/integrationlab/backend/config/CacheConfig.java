@@ -10,9 +10,11 @@ import org.springframework.cache.caffeine.CaffeineCacheManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
+import org.springframework.scheduling.annotation.Scheduled;
 
 import java.lang.ref.WeakReference;
 import java.util.concurrent.TimeUnit;
+import java.util.Arrays;
 
 /**
  * Memory-aware caching configuration with automatic eviction.
@@ -37,6 +39,13 @@ public class CacheConfig {
         CaffeineCacheManager cacheManager = new CaffeineCacheManager();
         cacheManager.setCaffeine(defaultCaffeineConfig());
         cacheManager.setAllowNullValues(false);
+        
+        // Register specific caches with custom configurations
+        cacheManager.registerCustomCache("flows", flowsCacheConfig().build());
+        cacheManager.registerCustomCache("adapters", adaptersCacheConfig().build());
+        cacheManager.registerCustomCache("users", usersCacheConfig().build());
+        cacheManager.registerCustomCache("businessComponents", businessComponentsCacheConfig().build());
+        
         return cacheManager;
     }
     
@@ -48,6 +57,30 @@ public class CacheConfig {
         CaffeineCacheManager cacheManager = new CaffeineCacheManager("sessions", "tokens");
         cacheManager.setCaffeine(sessionCaffeineConfig());
         cacheManager.setAllowNullValues(false);
+        return cacheManager;
+    }
+    
+    /**
+     * Query result cache manager for database query caching.
+     */
+    @Bean
+    public CacheManager queryCacheManager() {
+        CaffeineCacheManager cacheManager = new CaffeineCacheManager();
+        cacheManager.setCaffeine(queryCacheConfig());
+        cacheManager.setAllowNullValues(false);
+        
+        // Register query-specific caches
+        Arrays.asList(
+            "flowsByStatus",
+            "flowsByUser",
+            "activeFlows",
+            "adaptersByType",
+            "userPermissions",
+            "componentAdapters"
+        ).forEach(cacheName -> 
+            cacheManager.registerCustomCache(cacheName, queryCacheConfig().build())
+        );
+        
         return cacheManager;
     }
     
@@ -82,6 +115,67 @@ public class CacheConfig {
                         log.debug("Session cache entry expired: {}", key);
                     }
                 })
+                .build();
+    }
+    
+    /**
+     * Query cache configuration for database results.
+     */
+    private Caffeine<Object, Object> queryCacheConfig() {
+        return Caffeine.newBuilder()
+                .maximumSize(5_000)
+                .expireAfterWrite(5, TimeUnit.MINUTES) // Short TTL for query results
+                .expireAfterAccess(2, TimeUnit.MINUTES)
+                .recordStats()
+                .removalListener(new LoggingRemovalListener())
+                .build();
+    }
+    
+    /**
+     * Flows cache configuration.
+     */
+    private Caffeine<Object, Object> flowsCacheConfig() {
+        return Caffeine.newBuilder()
+                .maximumSize(1_000)
+                .expireAfterWrite(10, TimeUnit.MINUTES)
+                .expireAfterAccess(5, TimeUnit.MINUTES)
+                .recordStats()
+                .build();
+    }
+    
+    /**
+     * Adapters cache configuration.
+     */
+    private Caffeine<Object, Object> adaptersCacheConfig() {
+        return Caffeine.newBuilder()
+                .maximumSize(500)
+                .expireAfterWrite(30, TimeUnit.MINUTES)
+                .expireAfterAccess(15, TimeUnit.MINUTES)
+                .recordStats()
+                .build();
+    }
+    
+    /**
+     * Users cache configuration.
+     */
+    private Caffeine<Object, Object> usersCacheConfig() {
+        return Caffeine.newBuilder()
+                .maximumSize(200)
+                .expireAfterWrite(15, TimeUnit.MINUTES)
+                .expireAfterAccess(5, TimeUnit.MINUTES)
+                .recordStats()
+                .build();
+    }
+    
+    /**
+     * Business components cache configuration.
+     */
+    private Caffeine<Object, Object> businessComponentsCacheConfig() {
+        return Caffeine.newBuilder()
+                .maximumSize(100)
+                .expireAfterWrite(60, TimeUnit.MINUTES) // Longer TTL for rarely changing data
+                .expireAfterAccess(30, TimeUnit.MINUTES)
+                .recordStats()
                 .build();
     }
     
@@ -137,11 +231,34 @@ public class CacheConfig {
             this.cacheManager = cacheManager;
         }
         
+        @Scheduled(fixedDelay = 300000) // Every 5 minutes
         public void logCacheStats() {
             cacheManager.getCacheNames().forEach(cacheName -> {
                 var cache = cacheManager.getCache(cacheName);
-                if (cache != null) {
-                    log.info("Cache '{}' statistics logged", cacheName);
+                if (cache != null && cache.getNativeCache() instanceof com.github.benmanes.caffeine.cache.Cache) {
+                    var caffeineCache = (com.github.benmanes.caffeine.cache.Cache<?, ?>) cache.getNativeCache();
+                    var stats = caffeineCache.stats();
+                    
+                    if (stats.requestCount() > 0) {
+                        log.info("Cache '{}' stats - Hit rate: {:.2f}%, Evictions: {}, Size: {}",
+                                cacheName,
+                                stats.hitRate() * 100,
+                                stats.evictionCount(),
+                                caffeineCache.estimatedSize());
+                    }
+                }
+            });
+        }
+        
+        /**
+         * Clear cache entries that haven't been accessed recently.
+         */
+        public void cleanupStaleEntries() {
+            cacheManager.getCacheNames().forEach(cacheName -> {
+                var cache = cacheManager.getCache(cacheName);
+                if (cache != null && cache.getNativeCache() instanceof com.github.benmanes.caffeine.cache.Cache) {
+                    var caffeineCache = (com.github.benmanes.caffeine.cache.Cache<?, ?>) cache.getNativeCache();
+                    caffeineCache.cleanUp();
                 }
             });
         }

@@ -21,11 +21,36 @@ spring:
   jpa:
     hibernate:
       ddl-auto: update
-    show-sql: true
+    show-sql: false  # Set to true in dev profile only
     properties:
       hibernate:
         dialect: org.hibernate.dialect.MySQLDialect
         format_sql: true
+        # Performance optimizations
+        jdbc:
+          batch_size: 25
+          batch_versioned_data: true
+          order_inserts: true
+          order_updates: true
+        # Second-level cache configuration
+        cache:
+          use_second_level_cache: true
+          use_query_cache: true
+          region:
+            factory_class: org.hibernate.cache.jcache.JCacheRegionFactory
+        # Statistics (disable in production)
+        generate_statistics: false
+        # Connection handling
+        connection:
+          provider_disables_autocommit: true
+        # Query plan cache
+        query:
+          plan_cache_max_size: 2048
+          plan_parameter_metadata_max_size: 128
+        # Default fetch settings
+        default_batch_fetch_size: 16
+        # Enable lazy loading outside transactions (use with caution)
+        enable_lazy_load_no_trans: false
 
 # ✅ Logging (used by all profiles unless overridden)
 logging:
