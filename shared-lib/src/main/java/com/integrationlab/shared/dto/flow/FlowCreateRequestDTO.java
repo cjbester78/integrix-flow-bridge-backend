@@ -1,91 +1,94 @@
 package com.integrationlab.shared.dto.flow;
 
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.util.ArrayList;
 import java.util.List;
 
 /**
- * DTO for FlowCreateRequestDTO.
- * Encapsulates data for transport between layers.
+ * DTO for creating a new integration flow.
+ * 
+ * <p>Contains all required information to create a new flow including
+ * source/target adapters and transformation configurations.
+ * 
+ * @author Integration Team
+ * @since 1.0.0
  */
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class FlowCreateRequestDTO {
+    
+    /**
+     * Name of the integration flow
+     */
+    @NotBlank(message = "Flow name is required")
+    @Size(min = 3, max = 100, message = "Flow name must be between 3 and 100 characters")
     private String name;
+    
+    /**
+     * Description of the flow's purpose
+     */
+    @Size(max = 500, message = "Description cannot exceed 500 characters")
     private String description;
+    
+    /**
+     * Source adapter ID (sender - receives data FROM external systems)
+     */
+    @NotBlank(message = "Source adapter is required")
     private String sourceAdapterId;
+    
+    /**
+     * Target adapter ID (receiver - sends data TO external systems)
+     */
+    @NotBlank(message = "Target adapter is required")
     private String targetAdapterId;
+    
+    /**
+     * Source data structure ID
+     */
     private String sourceStructureId;
+    
+    /**
+     * Target data structure ID
+     */
     private String targetStructureId;
+    
+    /**
+     * Flow configuration in JSON format
+     */
+    @Size(max = 10000, message = "Configuration cannot exceed 10000 characters")
     private String configuration;
+    
+    /**
+     * Username of the user creating the flow
+     */
+    @NotBlank(message = "Created by is required")
     private String createdBy;
-    private List<FlowTransformationDTO> transformations;
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
-    public String getSourceAdapterId() {
-        return sourceAdapterId;
-    }
-
-    public void setSourceAdapterId(String sourceAdapterId) {
-        this.sourceAdapterId = sourceAdapterId;
-    }
-
-    public String getTargetAdapterId() {
-        return targetAdapterId;
-    }
-
-    public void setTargetAdapterId(String targetAdapterId) {
-        this.targetAdapterId = targetAdapterId;
-    }
-
-    public String getSourceStructureId() {
-        return sourceStructureId;
-    }
-
-    public void setSourceStructureId(String sourceStructureId) {
-        this.sourceStructureId = sourceStructureId;
-    }
-
-    public String getTargetStructureId() {
-        return targetStructureId;
-    }
-
-    public void setTargetStructureId(String targetStructureId) {
-        this.targetStructureId = targetStructureId;
-    }
-
-    public String getConfiguration() {
-        return configuration;
-    }
-
-    public void setConfiguration(String configuration) {
-        this.configuration = configuration;
-    }
-
-    public String getCreatedBy() {
-        return createdBy;
-    }
-
-    public void setCreatedBy(String createdBy) {
-        this.createdBy = createdBy;
-    }
-
-    public List<FlowTransformationDTO> getTransformations() {
-        return transformations;
-    }
-
-    public void setTransformations(List<FlowTransformationDTO> transformations) {
-        this.transformations = transformations;
-    }
+    
+    /**
+     * List of transformations to apply in this flow
+     */
+    @Valid
+    @Builder.Default
+    private List<FlowTransformationDTO> transformations = new ArrayList<>();
+    
+    /**
+     * Initial status of the flow (defaults to INACTIVE)
+     */
+    @Builder.Default
+    private String status = "INACTIVE";
+    
+    /**
+     * Whether to activate the flow immediately after creation
+     */
+    @Builder.Default
+    private boolean activateOnCreation = false;
 }
