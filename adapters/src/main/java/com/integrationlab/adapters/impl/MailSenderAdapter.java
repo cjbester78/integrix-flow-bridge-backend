@@ -3,10 +3,10 @@ package com.integrationlab.adapters.impl;
 import com.integrationlab.adapters.core.*;
 import com.integrationlab.adapters.config.MailSenderAdapterConfig;
 
-import javax.mail.*;
-import javax.mail.internet.MimeBodyPart;
-import javax.mail.internet.MimeMultipart;
-import javax.mail.search.*;
+import jakarta.mail.*;
+import jakarta.mail.internet.MimeBodyPart;
+import jakarta.mail.internet.MimeMultipart;
+import jakarta.mail.search.*;
 import java.io.*;
 import java.text.SimpleDateFormat;
 import java.util.*;

@@ -36,15 +36,65 @@ public class CommunicationAdapterService {
     }
 
     public AdapterConfigDTO createAdapter(AdapterConfigDTO dto) {
+        logger.info("Creating {} adapter of type {} for business component {}", 
+                    dto.getMode(), dto.getType(), dto.getBusinessComponentId());
+        
+        // Validate mode-specific configuration
+        validateAdapterConfiguration(dto);
+        
         CommunicationAdapter adapter = new CommunicationAdapter();
         adapter.setName(dto.getName());
         adapter.setType(AdapterType.valueOf(dto.getType().toUpperCase()));
-        adapter.setMode(AdapterMode.valueOf(dto.getMode().toUpperCase()));
+        
+        // Map DTO modes to internal AdapterMode
+        AdapterMode adapterMode = mapDtoModeToAdapterMode(dto.getMode(), dto.getDirection());
+        adapter.setMode(adapterMode);
+        
         adapter.setConfiguration(dto.getConfigJson());
         adapter.setDescription(dto.getDescription());
         adapter.setBusinessComponentId(dto.getBusinessComponentId());
         adapter.setActive(dto.isActive());
-        return toDTO(repository.save(adapter));
+        
+        CommunicationAdapter savedAdapter = repository.save(adapter);
+        logger.info("Successfully created adapter: {} with ID: {}", savedAdapter.getName(), savedAdapter.getId());
+        
+        return toDTO(savedAdapter);
+    }
+    
+    /**
+     * Map DTO mode values to internal AdapterMode enum
+     */
+    private AdapterMode mapDtoModeToAdapterMode(String mode, String direction) {
+        // Support both mode and direction fields for flexibility
+        if ("SENDER".equalsIgnoreCase(mode) || "INBOUND".equalsIgnoreCase(direction)) {
+            return AdapterMode.SENDER;
+        } else if ("RECEIVER".equalsIgnoreCase(mode) || "OUTBOUND".equalsIgnoreCase(direction)) {
+            return AdapterMode.RECEIVER;
+        } else {
+            throw new IllegalArgumentException("Invalid adapter mode: " + mode + " / direction: " + direction);
+        }
+    }
+    
+    /**
+     * Validate adapter configuration based on mode and type
+     */
+    private void validateAdapterConfiguration(AdapterConfigDTO dto) {
+        if (dto.getName() == null || dto.getName().trim().isEmpty()) {
+            throw new IllegalArgumentException("Adapter name is required");
+        }
+        
+        if (dto.getType() == null || dto.getType().trim().isEmpty()) {
+            throw new IllegalArgumentException("Adapter type is required");
+        }
+        
+        if (dto.getBusinessComponentId() == null || dto.getBusinessComponentId().trim().isEmpty()) {
+            throw new IllegalArgumentException("Business component ID is required");
+        }
+        
+        // Mode-specific validation would go here
+        // For now, we rely on the frontend to send only relevant fields
+        logger.debug("Adapter configuration validation passed for {} {} adapter", 
+                     dto.getType(), dto.getMode());
     }
 
     public List<AdapterConfigDTO> getAllAdapters() {

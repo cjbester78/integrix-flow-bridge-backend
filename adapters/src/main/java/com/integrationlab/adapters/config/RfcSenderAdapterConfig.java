@@ -252,6 +252,16 @@ public class RfcSenderAdapterConfig {
     public String getPortNumber() { return serverPort; }
     public String getConnectionType() { return "RFC_SERVER"; }
     
+    // Get allowed functions as comma-separated string
+    public String getAllowedFunctions() {
+        return allowedRfcFunctions != null ? String.join(",", allowedRfcFunctions) : null;
+    }
+    
+    // Connection count methods
+    private int connectionCount = 0;
+    public int getConnectionCount() { return connectionCount; }
+    public void setConnectionCount(int connectionCount) { this.connectionCount = connectionCount; }
+    
     @Override
     public String toString() {
         return String.format("RfcSenderAdapterConfig{serverName='%s', programId='%s', sapSystem='%s', maxConnections=%d}",

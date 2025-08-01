@@ -247,6 +247,24 @@ public class OdataReceiverAdapterConfig {
     public boolean isUseUpsert() { return useUpsert; }
     public void setUseUpsert(boolean useUpsert) { this.useUpsert = useUpsert; }
     
+    // Convenience method for backward compatibility
+    public String getServiceUrl() { 
+        return targetServiceEndpointUrl != null ? targetServiceEndpointUrl : targetBaseUrl; 
+    }
+    
+    // Additional methods needed by adapter
+    public String getDefaultOperation() { return operation; }
+    public void setDefaultOperation(String defaultOperation) { this.operation = defaultOperation; }
+    
+    public String getNamespace() { return targetServiceName; }
+    public void setNamespace(String namespace) { this.targetServiceName = namespace; }
+    
+    public String getEntitySetName() { return targetEntitySet; }
+    public String getEntityTypeName() { return targetEntityType; }
+    
+    public String getUsername() { return targetUsername; }
+    public String getPassword() { return targetPassword; }
+    
     public boolean isEnableBatchProcessing() { return enableBatchProcessing; }
     public void setEnableBatchProcessing(boolean enableBatchProcessing) { this.enableBatchProcessing = enableBatchProcessing; }
     
@@ -388,8 +406,6 @@ public class OdataReceiverAdapterConfig {
     public String getServiceName() { return targetServiceName; }
     public String getEntitySet() { return targetEntitySet; }
     public String getEntityType() { return targetEntityType; }
-    public String getUsername() { return targetUsername; }
-    public String getPassword() { return targetPassword; }
     public String getBatchProcessing() { return String.valueOf(enableBatchProcessing); }
     public String getProxySettings() { return proxyHost != null ? proxyHost + ":" + proxyPort : null; }
     

@@ -3,11 +3,11 @@ package com.integrationlab.adapters.impl;
 import com.integrationlab.adapters.core.*;
 import com.integrationlab.adapters.config.MailReceiverAdapterConfig;
 
-import javax.mail.*;
-import javax.mail.internet.*;
-import javax.activation.DataHandler;
-import javax.activation.DataSource;
-import javax.activation.FileDataSource;
+import jakarta.mail.*;
+import jakarta.mail.internet.*;
+import jakarta.activation.DataHandler;
+import jakarta.activation.DataSource;
+import jakarta.activation.FileDataSource;
 import java.io.*;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -148,7 +148,6 @@ public class MailReceiverAdapter extends AbstractReceiverAdapter {
         }
     }
     
-    @Override
     protected AdapterResult doReceive() throws Exception {
         // Default receive without criteria
         throw new AdapterException.OperationException(AdapterType.MAIL, 
@@ -294,9 +293,13 @@ public class MailReceiverAdapter extends AbstractReceiverAdapter {
         message.setReplyTo(InternetAddress.parse(fromAddress != null ? fromAddress : config.getFromAddress()));
         
         // Add custom headers if configured
-        if (config.getCustomHeaders() != null) {
-            for (Map.Entry<String, String> header : config.getCustomHeaders().entrySet()) {
-                message.setHeader(header.getKey(), header.getValue());
+        if (config.getCustomHeaders() != null && !config.getCustomHeaders().isEmpty()) {
+            String[] headers = config.getCustomHeaders().split(",");
+            for (String header : headers) {
+                String[] keyValue = header.split(":");
+                if (keyValue.length == 2) {
+                    message.setHeader(keyValue[0].trim(), keyValue[1].trim());
+                }
             }
         }
         
@@ -510,6 +513,12 @@ public class MailReceiverAdapter extends AbstractReceiverAdapter {
         if (config.getFromAddress() == null || config.getFromAddress().trim().isEmpty()) {
             throw new AdapterException.ConfigurationException(AdapterType.MAIL, "From address is required");
         }
+    }
+    
+    @Override
+    protected long getPollingIntervalMs() {
+        // Mail receivers typically don't poll, they send emails
+        return 0;
     }
     
     @Override

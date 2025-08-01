@@ -50,6 +50,23 @@ public class IntegrationFlow {
 	@Column(name = "is_active")
 	private boolean isActive = true;
 
+	@Enumerated(EnumType.STRING)
+	@Column(name = "mapping_mode", length = 50, nullable = false)
+	private MappingMode mappingMode = MappingMode.WITH_MAPPING;
+
+	// Deployment information
+	@Column(name = "deployed_at")
+	private LocalDateTime deployedAt;
+
+	@Column(name = "deployed_by", columnDefinition = "char(36)")
+	private String deployedBy;
+
+	@Column(name = "deployment_endpoint", length = 500)
+	private String deploymentEndpoint;
+
+	@Column(name = "deployment_metadata", columnDefinition = "json")
+	private String deploymentMetadata;
+
 	@Column(name = "created_at")
     /** Timestamp of entity creation */
 	private LocalDateTime createdAt;
@@ -92,10 +109,6 @@ public class IntegrationFlow {
 	protected void onUpdate() {
     /** Timestamp of last entity update */
 		updatedAt = LocalDateTime.now();
-	}
-
-	public enum FlowStatus {
-		DRAFT, ACTIVE, INACTIVE, ERROR
 	}
 
 	public String getId() {
@@ -176,6 +189,46 @@ public class IntegrationFlow {
 
 	public void setActive(boolean active) {
 		isActive = active;
+	}
+
+	public MappingMode getMappingMode() {
+		return mappingMode;
+	}
+
+	public void setMappingMode(MappingMode mappingMode) {
+		this.mappingMode = mappingMode;
+	}
+
+	public LocalDateTime getDeployedAt() {
+		return deployedAt;
+	}
+
+	public void setDeployedAt(LocalDateTime deployedAt) {
+		this.deployedAt = deployedAt;
+	}
+
+	public String getDeployedBy() {
+		return deployedBy;
+	}
+
+	public void setDeployedBy(String deployedBy) {
+		this.deployedBy = deployedBy;
+	}
+
+	public String getDeploymentEndpoint() {
+		return deploymentEndpoint;
+	}
+
+	public void setDeploymentEndpoint(String deploymentEndpoint) {
+		this.deploymentEndpoint = deploymentEndpoint;
+	}
+
+	public String getDeploymentMetadata() {
+		return deploymentMetadata;
+	}
+
+	public void setDeploymentMetadata(String deploymentMetadata) {
+		this.deploymentMetadata = deploymentMetadata;
 	}
 
 	public LocalDateTime getCreatedAt() {

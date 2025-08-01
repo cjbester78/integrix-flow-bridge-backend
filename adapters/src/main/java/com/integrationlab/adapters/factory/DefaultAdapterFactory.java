@@ -132,8 +132,8 @@ public class DefaultAdapterFactory implements AdapterFactory {
             throw new AdapterException.ConfigurationException(AdapterType.REST, 
                     "REST sender requires RestSenderAdapterConfig, got: " + configuration.getClass().getSimpleName());
         }
-        // TODO: Implement when RestSenderAdapter is created
-        throw new AdapterException.ConfigurationException(AdapterType.REST, "REST sender not yet implemented");
+        return new com.integrationlab.adapters.impl.RestSenderAdapter(
+                (com.integrationlab.adapters.config.RestSenderAdapterConfig) configuration);
     }
     
     private SenderAdapter createSoapSender(Object configuration) throws AdapterException {
@@ -141,8 +141,8 @@ public class DefaultAdapterFactory implements AdapterFactory {
             throw new AdapterException.ConfigurationException(AdapterType.SOAP, 
                     "SOAP sender requires SoapSenderAdapterConfig, got: " + configuration.getClass().getSimpleName());
         }
-        // TODO: Implement when SoapSenderAdapter is created
-        throw new AdapterException.ConfigurationException(AdapterType.SOAP, "SOAP sender not yet implemented");
+        return new com.integrationlab.adapters.impl.SoapSenderAdapter(
+                (com.integrationlab.adapters.config.SoapSenderAdapterConfig) configuration);
     }
     
     private SenderAdapter createFileSender(Object configuration) throws AdapterException {
@@ -150,8 +150,8 @@ public class DefaultAdapterFactory implements AdapterFactory {
             throw new AdapterException.ConfigurationException(AdapterType.FILE, 
                     "File sender requires FileSenderAdapterConfig, got: " + configuration.getClass().getSimpleName());
         }
-        // TODO: Implement when FileSenderAdapter is created
-        throw new AdapterException.ConfigurationException(AdapterType.FILE, "File sender not yet implemented");
+        return new com.integrationlab.adapters.impl.FileSenderAdapter(
+                (com.integrationlab.adapters.config.FileSenderAdapterConfig) configuration);
     }
     
     private SenderAdapter createMailSender(Object configuration) throws AdapterException {
@@ -159,8 +159,8 @@ public class DefaultAdapterFactory implements AdapterFactory {
             throw new AdapterException.ConfigurationException(AdapterType.MAIL, 
                     "Mail sender requires MailSenderAdapterConfig, got: " + configuration.getClass().getSimpleName());
         }
-        // TODO: Implement when MailSenderAdapter is created
-        throw new AdapterException.ConfigurationException(AdapterType.MAIL, "Mail sender not yet implemented");
+        return new com.integrationlab.adapters.impl.MailSenderAdapter(
+                (com.integrationlab.adapters.config.MailSenderAdapterConfig) configuration);
     }
     
     private SenderAdapter createFtpSender(Object configuration) throws AdapterException {
@@ -168,8 +168,8 @@ public class DefaultAdapterFactory implements AdapterFactory {
             throw new AdapterException.ConfigurationException(AdapterType.FTP, 
                     "FTP sender requires FtpSenderAdapterConfig, got: " + configuration.getClass().getSimpleName());
         }
-        // TODO: Implement when FtpSenderAdapter is created
-        throw new AdapterException.ConfigurationException(AdapterType.FTP, "FTP sender not yet implemented");
+        return new com.integrationlab.adapters.impl.FtpSenderAdapter(
+                (com.integrationlab.adapters.config.FtpSenderAdapterConfig) configuration);
     }
     
     private SenderAdapter createSftpSender(Object configuration) throws AdapterException {
@@ -177,8 +177,8 @@ public class DefaultAdapterFactory implements AdapterFactory {
             throw new AdapterException.ConfigurationException(AdapterType.SFTP, 
                     "SFTP sender requires SftpSenderAdapterConfig, got: " + configuration.getClass().getSimpleName());
         }
-        // TODO: Implement when SftpSenderAdapter is created
-        throw new AdapterException.ConfigurationException(AdapterType.SFTP, "SFTP sender not yet implemented");
+        return new com.integrationlab.adapters.impl.SftpSenderAdapter(
+                (com.integrationlab.adapters.config.SftpSenderAdapterConfig) configuration);
     }
     
     private SenderAdapter createRfcSender(Object configuration) throws AdapterException {
@@ -186,8 +186,8 @@ public class DefaultAdapterFactory implements AdapterFactory {
             throw new AdapterException.ConfigurationException(AdapterType.RFC, 
                     "RFC sender requires RfcSenderAdapterConfig, got: " + configuration.getClass().getSimpleName());
         }
-        // TODO: Implement when RfcSenderAdapter is created
-        throw new AdapterException.ConfigurationException(AdapterType.RFC, "RFC sender not yet implemented");
+        return new com.integrationlab.adapters.impl.RfcSenderAdapter(
+                (com.integrationlab.adapters.config.RfcSenderAdapterConfig) configuration);
     }
     
     private SenderAdapter createIdocSender(Object configuration) throws AdapterException {
@@ -195,8 +195,8 @@ public class DefaultAdapterFactory implements AdapterFactory {
             throw new AdapterException.ConfigurationException(AdapterType.IDOC, 
                     "IDOC sender requires IdocSenderAdapterConfig, got: " + configuration.getClass().getSimpleName());
         }
-        // TODO: Implement when IdocSenderAdapter is created
-        throw new AdapterException.ConfigurationException(AdapterType.IDOC, "IDOC sender not yet implemented");
+        return new com.integrationlab.adapters.impl.IdocSenderAdapter(
+                (com.integrationlab.adapters.config.IdocSenderAdapterConfig) configuration);
     }
     
     private SenderAdapter createJmsSender(Object configuration) throws AdapterException {
@@ -204,8 +204,8 @@ public class DefaultAdapterFactory implements AdapterFactory {
             throw new AdapterException.ConfigurationException(AdapterType.JMS, 
                     "JMS sender requires JmsSenderAdapterConfig, got: " + configuration.getClass().getSimpleName());
         }
-        // TODO: Implement when JmsSenderAdapter is created
-        throw new AdapterException.ConfigurationException(AdapterType.JMS, "JMS sender not yet implemented");
+        return new com.integrationlab.adapters.impl.JmsSenderAdapter(
+                (com.integrationlab.adapters.config.JmsSenderAdapterConfig) configuration);
     }
     
     private SenderAdapter createOdataSender(Object configuration) throws AdapterException {
@@ -213,8 +213,8 @@ public class DefaultAdapterFactory implements AdapterFactory {
             throw new AdapterException.ConfigurationException(AdapterType.ODATA, 
                     "ODATA sender requires OdataSenderAdapterConfig, got: " + configuration.getClass().getSimpleName());
         }
-        // TODO: Implement when OdataSenderAdapter is created
-        throw new AdapterException.ConfigurationException(AdapterType.ODATA, "ODATA sender not yet implemented");
+        return new com.integrationlab.adapters.impl.OdataSenderAdapter(
+                (com.integrationlab.adapters.config.OdataSenderAdapterConfig) configuration);
     }
     
     // Factory methods for receiver adapters - these will be implemented as we build each adapter
@@ -242,8 +242,8 @@ public class DefaultAdapterFactory implements AdapterFactory {
             throw new AdapterException.ConfigurationException(AdapterType.REST, 
                     "REST receiver requires RestReceiverAdapterConfig, got: " + configuration.getClass().getSimpleName());
         }
-        // TODO: Implement when RestReceiverAdapter is created
-        throw new AdapterException.ConfigurationException(AdapterType.REST, "REST receiver not yet implemented");
+        return new com.integrationlab.adapters.impl.RestReceiverAdapter(
+                (com.integrationlab.adapters.config.RestReceiverAdapterConfig) configuration);
     }
     
     private ReceiverAdapter createSoapReceiver(Object configuration) throws AdapterException {
@@ -251,8 +251,8 @@ public class DefaultAdapterFactory implements AdapterFactory {
             throw new AdapterException.ConfigurationException(AdapterType.SOAP, 
                     "SOAP receiver requires SoapReceiverAdapterConfig, got: " + configuration.getClass().getSimpleName());
         }
-        // TODO: Implement when SoapReceiverAdapter is created
-        throw new AdapterException.ConfigurationException(AdapterType.SOAP, "SOAP receiver not yet implemented");
+        return new com.integrationlab.adapters.impl.SoapReceiverAdapter(
+                (com.integrationlab.adapters.config.SoapReceiverAdapterConfig) configuration);
     }
     
     private ReceiverAdapter createFileReceiver(Object configuration) throws AdapterException {
@@ -260,8 +260,8 @@ public class DefaultAdapterFactory implements AdapterFactory {
             throw new AdapterException.ConfigurationException(AdapterType.FILE, 
                     "File receiver requires FileReceiverAdapterConfig, got: " + configuration.getClass().getSimpleName());
         }
-        // TODO: Implement when FileReceiverAdapter is created
-        throw new AdapterException.ConfigurationException(AdapterType.FILE, "File receiver not yet implemented");
+        return new com.integrationlab.adapters.impl.FileReceiverAdapter(
+                (com.integrationlab.adapters.config.FileReceiverAdapterConfig) configuration);
     }
     
     private ReceiverAdapter createMailReceiver(Object configuration) throws AdapterException {
@@ -269,8 +269,8 @@ public class DefaultAdapterFactory implements AdapterFactory {
             throw new AdapterException.ConfigurationException(AdapterType.MAIL, 
                     "Mail receiver requires MailReceiverAdapterConfig, got: " + configuration.getClass().getSimpleName());
         }
-        // TODO: Implement when MailReceiverAdapter is created
-        throw new AdapterException.ConfigurationException(AdapterType.MAIL, "Mail receiver not yet implemented");
+        return new com.integrationlab.adapters.impl.MailReceiverAdapter(
+                (com.integrationlab.adapters.config.MailReceiverAdapterConfig) configuration);
     }
     
     private ReceiverAdapter createFtpReceiver(Object configuration) throws AdapterException {
@@ -278,8 +278,8 @@ public class DefaultAdapterFactory implements AdapterFactory {
             throw new AdapterException.ConfigurationException(AdapterType.FTP, 
                     "FTP receiver requires FtpReceiverAdapterConfig, got: " + configuration.getClass().getSimpleName());
         }
-        // TODO: Implement when FtpReceiverAdapter is created
-        throw new AdapterException.ConfigurationException(AdapterType.FTP, "FTP receiver not yet implemented");
+        return new com.integrationlab.adapters.impl.FtpReceiverAdapter(
+                (com.integrationlab.adapters.config.FtpReceiverAdapterConfig) configuration);
     }
     
     private ReceiverAdapter createSftpReceiver(Object configuration) throws AdapterException {
@@ -287,8 +287,8 @@ public class DefaultAdapterFactory implements AdapterFactory {
             throw new AdapterException.ConfigurationException(AdapterType.SFTP, 
                     "SFTP receiver requires SftpReceiverAdapterConfig, got: " + configuration.getClass().getSimpleName());
         }
-        // TODO: Implement when SftpReceiverAdapter is created
-        throw new AdapterException.ConfigurationException(AdapterType.SFTP, "SFTP receiver not yet implemented");
+        return new com.integrationlab.adapters.impl.SftpReceiverAdapter(
+                (com.integrationlab.adapters.config.SftpReceiverAdapterConfig) configuration);
     }
     
     private ReceiverAdapter createRfcReceiver(Object configuration) throws AdapterException {
@@ -296,8 +296,8 @@ public class DefaultAdapterFactory implements AdapterFactory {
             throw new AdapterException.ConfigurationException(AdapterType.RFC, 
                     "RFC receiver requires RfcReceiverAdapterConfig, got: " + configuration.getClass().getSimpleName());
         }
-        // TODO: Implement when RfcReceiverAdapter is created
-        throw new AdapterException.ConfigurationException(AdapterType.RFC, "RFC receiver not yet implemented");
+        return new com.integrationlab.adapters.impl.RfcReceiverAdapter(
+                (com.integrationlab.adapters.config.RfcReceiverAdapterConfig) configuration);
     }
     
     private ReceiverAdapter createIdocReceiver(Object configuration) throws AdapterException {
@@ -305,8 +305,8 @@ public class DefaultAdapterFactory implements AdapterFactory {
             throw new AdapterException.ConfigurationException(AdapterType.IDOC, 
                     "IDOC receiver requires IdocReceiverAdapterConfig, got: " + configuration.getClass().getSimpleName());
         }
-        // TODO: Implement when IdocReceiverAdapter is created
-        throw new AdapterException.ConfigurationException(AdapterType.IDOC, "IDOC receiver not yet implemented");
+        return new com.integrationlab.adapters.impl.IdocReceiverAdapter(
+                (com.integrationlab.adapters.config.IdocReceiverAdapterConfig) configuration);
     }
     
     private ReceiverAdapter createJmsReceiver(Object configuration) throws AdapterException {
@@ -314,8 +314,8 @@ public class DefaultAdapterFactory implements AdapterFactory {
             throw new AdapterException.ConfigurationException(AdapterType.JMS, 
                     "JMS receiver requires JmsReceiverAdapterConfig, got: " + configuration.getClass().getSimpleName());
         }
-        // TODO: Implement when JmsReceiverAdapter is created
-        throw new AdapterException.ConfigurationException(AdapterType.JMS, "JMS receiver not yet implemented");
+        return new com.integrationlab.adapters.impl.JmsReceiverAdapter(
+                (com.integrationlab.adapters.config.JmsReceiverAdapterConfig) configuration);
     }
     
     private ReceiverAdapter createOdataReceiver(Object configuration) throws AdapterException {
@@ -323,7 +323,7 @@ public class DefaultAdapterFactory implements AdapterFactory {
             throw new AdapterException.ConfigurationException(AdapterType.ODATA, 
                     "ODATA receiver requires OdataReceiverAdapterConfig, got: " + configuration.getClass().getSimpleName());
         }
-        // TODO: Implement when OdataReceiverAdapter is created
-        throw new AdapterException.ConfigurationException(AdapterType.ODATA, "ODATA receiver not yet implemented");
+        return new com.integrationlab.adapters.impl.OdataReceiverAdapter(
+                (com.integrationlab.adapters.config.OdataReceiverAdapterConfig) configuration);
     }
 }

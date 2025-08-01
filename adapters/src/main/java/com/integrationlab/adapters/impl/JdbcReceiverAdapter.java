@@ -137,7 +137,6 @@ public class JdbcReceiverAdapter extends AbstractReceiverAdapter {
         return insertOrUpdateData(criteria);
     }
     
-    @Override
     protected AdapterResult doReceive() throws Exception {
         // Default receive without criteria
         throw new AdapterException.OperationException(AdapterType.JDBC, 
@@ -338,6 +337,12 @@ public class JdbcReceiverAdapter extends AbstractReceiverAdapter {
     private String maskSensitiveUrl(String url) {
         if (url == null) return null;
         return url.replaceAll("password=[^;&]*", "password=***");
+    }
+    
+    @Override
+    protected long getPollingIntervalMs() {
+        // JDBC receivers typically don't poll, they write data
+        return 0;
     }
     
     @Override

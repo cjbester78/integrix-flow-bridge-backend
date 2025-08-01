@@ -333,6 +333,18 @@ public class RfcReceiverAdapterConfig {
     public String getTableParameters() { return tableParameterMapping; }
     public String getErrorHandling() { return errorHandlingStrategy; }
     
+    // Additional methods needed by adapter
+    public String getSystemId() { return targetSapSystemId; }
+    public String getApplicationServerHost() { return targetSapApplicationServerHost; }
+    public String getSystemNumber() { return targetSapSystemNumber; }
+    public String getClient() { return targetSapClientNumber; }
+    public String getUser() { return targetUsername; }
+    public int getPoolCapacity() { return maxConnections; }
+    public void setPoolCapacity(int poolCapacity) { this.maxConnections = poolCapacity; }
+    public int getPeakLimit() { return maxConnections + 5; } // Peak limit is typically higher than pool capacity
+    public void setPeakLimit(int peakLimit) { /* Implementation not needed for this adapter */ }
+    public String getDefaultFunction() { return targetRfcFunctionName; }
+    
     @Override
     public String toString() {
         return String.format("RfcReceiverAdapterConfig{targetSystem='%s', function='%s', callType='%s', pooling=%s}",

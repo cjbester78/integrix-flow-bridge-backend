@@ -1,5 +1,7 @@
 package com.integrationlab.adapters.config;
 
+import com.integrationlab.shared.dto.adapter.XmlMappingConfig;
+
 /**
  * Configuration for JDBC Sender Adapter (Backend).
  * In middleware terminology, sender adapters receive data FROM external source systems.
@@ -66,8 +68,19 @@ public class JdbcSenderAdapterConfig {
     private long slowQueryThresholdMs = 10000; // 10 seconds
     private boolean enableMetrics = true;
     
+    // XML Mapping Configuration
+    private XmlMappingConfig xmlMappingConfig;
+    
     // Constructors
-    public JdbcSenderAdapterConfig() {}
+    public JdbcSenderAdapterConfig() {
+        // Initialize with default XML mapping config
+        this.xmlMappingConfig = XmlMappingConfig.builder()
+                .rootElementName("records")
+                .rowElementName("record")
+                .includeXmlDeclaration(true)
+                .prettyPrint(true)
+                .build();
+    }
     
     // Getters and Setters
     public String getJdbcUrl() { return jdbcUrl; }
@@ -186,6 +199,9 @@ public class JdbcSenderAdapterConfig {
     
     public boolean isEnableMetrics() { return enableMetrics; }
     public void setEnableMetrics(boolean enableMetrics) { this.enableMetrics = enableMetrics; }
+    
+    public XmlMappingConfig getXmlMappingConfig() { return xmlMappingConfig; }
+    public void setXmlMappingConfig(XmlMappingConfig xmlMappingConfig) { this.xmlMappingConfig = xmlMappingConfig; }
     
     @Override
     public String toString() {

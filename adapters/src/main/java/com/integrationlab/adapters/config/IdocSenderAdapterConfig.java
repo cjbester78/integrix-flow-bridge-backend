@@ -39,6 +39,8 @@ public class IdocSenderAdapterConfig {
     private String qualityOfService = "ExactlyOnce"; // BestEffort, ExactlyOnce, ExactlyOnceInOrder
     private String serialization = "XML"; // XML, EDI, SAP
     private String transactionalMode = "transactional"; // transactional, non-transactional
+    private String allowedIdocTypes; // Comma-separated list of allowed IDoc types
+    private boolean enableTidManagement = true; // Enable transaction ID management
     
     // Polling Configuration
     private long pollingInterval = 60000L; // 1 minute default
@@ -334,6 +336,12 @@ public class IdocSenderAdapterConfig {
     public String getIdocType() { return sourceIdocType; }
     public String getMessageType() { return sourceMessageType; }
     public String getBasicType() { return sourceBasicType; }
+    
+    // Additional methods needed by adapter
+    public String getGatewayHost() { return sourceSapGatewayHost; }
+    public String getGatewayService() { return sourceSapGatewayService; }
+    public String getAllowedIdocTypes() { return allowedIdocTypes; }
+    public boolean isEnableTidManagement() { return enableTidManagement; }
     
     @Override
     public String toString() {

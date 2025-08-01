@@ -46,6 +46,7 @@ public class IdocReceiverAdapterConfig {
     private int idocSendTimeout = 60000; // 60 seconds
     private boolean enableConnectionPooling = true;
     private long connectionIdleTime = 300000; // 5 minutes
+    private int maxIdocsPerPacket = 1; // Number of IDocs per packet
     
     // IDOC Structure and Mapping
     private String idocStructureMapping; // Mapping configuration
@@ -57,6 +58,8 @@ public class IdocReceiverAdapterConfig {
     private String targetSystem; // Name/identifier of target SAP system
     private String targetLogicalSystem;
     private String receiverPort;
+    private boolean enableQueueProcessing = false; // Enable queue-based processing
+    private String senderPartner; // Sender partner system
     private String receiverPartnerProfile;
     
     // Error Handling for Outbound
@@ -257,6 +260,21 @@ public class IdocReceiverAdapterConfig {
     // Legacy compatibility
     public String getConfigParam() { return configParam; }
     public void setConfigParam(String configParam) { this.configParam = configParam; }
+    
+    // Additional methods needed by adapter
+    public String getSystemId() { return targetSapSystemId; }
+    public String getIdocPort() { return targetPortNumber; }
+    public int getPacketSize() { return maxIdocsPerPacket; }
+    public void setPacketSize(int packetSize) { this.maxIdocsPerPacket = packetSize; }
+    public String getApplicationServerHost() { return targetSapApplicationServerHost; }
+    public String getSystemNumber() { return targetSapSystemNumber; }
+    public boolean isQueueProcessing() { return enableQueueProcessing; }
+    public String getDefaultIdocType() { return targetIdocType; }
+    public String getDefaultMessageType() { return targetMessageType; }
+    public String getSenderPartner() { return senderPartner; }
+    public String getReceiverPartner() { return targetPartnerNumber; }
+    public String getClient() { return targetSapClientNumber; }
+    public String getUser() { return targetUsername; }
     
     @Override
     public String toString() {

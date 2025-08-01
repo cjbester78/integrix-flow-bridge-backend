@@ -181,7 +181,6 @@ public class FtpReceiverAdapter extends AbstractReceiverAdapter {
         }
     }
     
-    @Override
     protected AdapterResult doReceive() throws Exception {
         // Default receive without criteria
         throw new AdapterException.OperationException(AdapterType.FTP, 
@@ -650,6 +649,12 @@ public class FtpReceiverAdapter extends AbstractReceiverAdapter {
         if (config.getTargetDirectory() == null || config.getTargetDirectory().trim().isEmpty()) {
             throw new AdapterException.ConfigurationException(AdapterType.FTP, "FTP target directory is required");
         }
+    }
+    
+    @Override
+    protected long getPollingIntervalMs() {
+        // FTP receivers typically don't poll, they push files
+        return 0;
     }
     
     @Override

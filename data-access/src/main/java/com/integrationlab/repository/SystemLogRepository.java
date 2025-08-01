@@ -3,6 +3,7 @@ package com.integrationlab.repository;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.data.domain.Pageable;
 
 import com.integrationlab.model.SystemLog;
 
@@ -28,4 +29,10 @@ public interface SystemLogRepository extends JpaRepository<SystemLog, String> {
         @Param("from") LocalDateTime from,
         @Param("to") LocalDateTime to
     );
+    
+    long countByCreatedAtAfter(LocalDateTime date);
+    long countByComponentIdAndCreatedAtAfter(String componentId, LocalDateTime date);
+    long countByLevelAndCreatedAtAfter(String level, LocalDateTime date);
+    long countByComponentIdAndLevelAndCreatedAtAfter(String componentId, String level, LocalDateTime date);
+    List<SystemLog> findByComponentId(String componentId, Pageable pageable);
 }

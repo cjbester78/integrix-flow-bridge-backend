@@ -124,7 +124,7 @@ public class RestReceiverAdapter extends AbstractReceiverAdapter {
                 HttpEntity<String> entity = new HttpEntity<>(testData, headers);
                 
                 String endpoint = config.getBaseUrl() + config.getTargetEndpoint();
-                HttpMethod method = HttpMethod.valueOf(config.getHttpMethod().toUpperCase());
+                org.springframework.http.HttpMethod method = org.springframework.http.HttpMethod.valueOf(config.getHttpMethod().name());
                 
                 ResponseEntity<String> response = restTemplate.exchange(
                         endpoint, method, entity, String.class);
@@ -152,7 +152,6 @@ public class RestReceiverAdapter extends AbstractReceiverAdapter {
         }
     }
     
-    @Override
     protected AdapterResult doReceive() throws Exception {
         // Default receive without criteria
         throw new AdapterException.OperationException(AdapterType.REST, 
@@ -230,11 +229,11 @@ public class RestReceiverAdapter extends AbstractReceiverAdapter {
             // Build URL
             String url = config.getBaseUrl() + config.getTargetEndpoint();
             if (config.getQueryParameters() != null && !config.getQueryParameters().isEmpty()) {
-                url += "?" + buildQueryString(config.getQueryParameters());
+                url += "?" + config.getQueryParameters();
             }
             
             // Make API call
-            HttpMethod method = HttpMethod.valueOf(config.getHttpMethod().toUpperCase());
+            org.springframework.http.HttpMethod method = org.springframework.http.HttpMethod.valueOf(config.getHttpMethod().name());
             ResponseEntity<String> response = restTemplate.exchange(url, method, entity, String.class);
             
             // Process response
@@ -315,7 +314,7 @@ public class RestReceiverAdapter extends AbstractReceiverAdapter {
         
         // Authentication
         if (config.getAuthenticationType() != null) {
-            switch (config.getAuthenticationType().toLowerCase()) {
+            switch (config.getAuthenticationType().name().toLowerCase()) {
                 case "basic":
                     if (config.getUsername() != null && config.getPassword() != null) {
                         String auth = config.getUsername() + ":" + config.getPassword();
@@ -341,8 +340,14 @@ public class RestReceiverAdapter extends AbstractReceiverAdapter {
         }
         
         // Custom headers
-        if (config.getCustomHeaders() != null) {
-            config.getCustomHeaders().forEach(headers::set);
+        if (config.getCustomHeaders() != null && !config.getCustomHeaders().isEmpty()) {
+            String[] customHeaders = config.getCustomHeaders().split(",");
+            for (String header : customHeaders) {
+                String[] keyValue = header.split(":");
+                if (keyValue.length == 2) {
+                    headers.set(keyValue[0].trim(), keyValue[1].trim());
+                }
+            }
         }
         
         // User agent
@@ -383,13 +388,13 @@ public class RestReceiverAdapter extends AbstractReceiverAdapter {
         if (config.getTargetEndpoint() == null || config.getTargetEndpoint().trim().isEmpty()) {
             throw new AdapterException.ConfigurationException(AdapterType.REST, "Target endpoint is required");
         }
-        if (config.getHttpMethod() == null || config.getHttpMethod().trim().isEmpty()) {
+        if (config.getHttpMethod() == null) {
             throw new AdapterException.ConfigurationException(AdapterType.REST, "HTTP method is required");
         }
         
         // Validate HTTP method
         try {
-            HttpMethod.valueOf(config.getHttpMethod().toUpperCase());
+            config.getHttpMethod();
         } catch (IllegalArgumentException e) {
             throw new AdapterException.ConfigurationException(AdapterType.REST, 
                     "Invalid HTTP method: " + config.getHttpMethod());
@@ -416,6 +421,12 @@ public class RestReceiverAdapter extends AbstractReceiverAdapter {
                         "API key is required for API key authentication");
             }
         }
+    }
+    
+    @Override
+    protected long getPollingIntervalMs() {
+        // REST receivers typically don't poll, they push data
+        return 0;
     }
     
     @Override

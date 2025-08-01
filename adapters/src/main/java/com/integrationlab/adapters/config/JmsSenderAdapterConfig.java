@@ -15,6 +15,9 @@ public class JmsSenderAdapterConfig {
     private int port;
     private String channel;
     private String connectionFactory; // JNDI name
+    private String initialContextFactory; // Initial context factory class
+    private String providerUrl; // JNDI provider URL
+    private String jndiProperties; // Additional JNDI properties
     private String transportType = "CLIENT"; // CLIENT, BINDINGS
     
     // Authentication
@@ -26,6 +29,8 @@ public class JmsSenderAdapterConfig {
     private String sourceTopicName;
     private String destinationType = "QUEUE"; // QUEUE, TOPIC
     private String messageSelector; // SQL-like selector for filtering messages
+    private boolean durableSubscription = false; // For topic subscriptions
+    private String subscriptionName; // Name for durable subscriptions
     
     // Message Consumption Configuration
     private String messageFormat = "TEXT"; // TEXT, BYTES, OBJECT
@@ -37,6 +42,9 @@ public class JmsSenderAdapterConfig {
     private int maxMessages = 100; // Maximum messages to consume per poll
     private boolean enablePolling = true;
     private String consumerType = "SYNC"; // SYNC, ASYNC
+    private boolean enableBatchProcessing = false; // Enable batch message processing
+    private Integer batchSize = 10; // Messages per batch
+    private long receiveTimeout = 5000L; // Timeout for receiving messages (ms)
     
     // Connection Pool Settings for Consumer
     private int maxConnections = 10;
@@ -247,6 +255,39 @@ public class JmsSenderAdapterConfig {
     public String getTopicName() { return sourceTopicName; }
     public String getPollingIntervalStr() { return pollingInterval != null ? pollingInterval.toString() : null; }
     public String getMaxMessagesStr() { return String.valueOf(maxMessages); }
+    
+    // Additional methods needed by adapter
+    public String getDestinationName() { 
+        return sourceQueueName != null ? sourceQueueName : sourceTopicName; 
+    }
+    public boolean isEnableBatchReceive() { return enableBatchProcessing; }
+    public Integer getBatchSize() { return batchSize; }
+    public long getReceiveTimeout() { return receiveTimeout; }
+    public int getAcknowledgementMode() {
+        switch (acknowledgmentMode.toUpperCase()) {
+            case "AUTO_ACKNOWLEDGE": return 1;
+            case "CLIENT_ACKNOWLEDGE": return 2;
+            case "DUPS_OK_ACKNOWLEDGE": return 3;
+            default: return 1;
+        }
+    }
+    public String getClientId() { return "JmsSender-" + System.currentTimeMillis(); }
+    public boolean isTransacted() { return useTransactions; }
+    public boolean isDurableSubscription() { return durableSubscription; }
+    public String getSubscriptionName() { return subscriptionName; }
+    public String getJndiName() { return connectionFactory; }
+    public String getInitialContextFactory() { return initialContextFactory; }
+    public String getProviderUrl() { return providerUrl; }
+    public String getJndiProperties() { return jndiProperties; }
+    public void setAcknowledgementMode(int mode) {
+        switch (mode) {
+            case 1: acknowledgmentMode = "AUTO_ACKNOWLEDGE"; break;
+            case 2: acknowledgmentMode = "CLIENT_ACKNOWLEDGE"; break;
+            case 3: acknowledgmentMode = "DUPS_OK_ACKNOWLEDGE"; break;
+            default: acknowledgmentMode = "AUTO_ACKNOWLEDGE";
+        }
+    }
+    public void setReceiveTimeout(int timeout) { this.receiveTimeout = timeout; }
     
     @Override
     public String toString() {

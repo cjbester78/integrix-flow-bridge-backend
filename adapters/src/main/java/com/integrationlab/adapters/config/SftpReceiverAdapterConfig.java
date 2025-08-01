@@ -30,6 +30,14 @@ public class SftpReceiverAdapterConfig {
     // File Upload Configuration
     private String fileConstructionMode = "create"; // create, append, overwrite
     private boolean overwriteExistingFile = false;
+    private boolean validateBeforeUpload = false; // Validate file before upload
+    private boolean enableFileBackup = false; // Create backup of existing files
+    private String emptyMessageHandling = "process"; // skip, error, process
+    private String fileNamePattern; // Dynamic file naming pattern
+    private boolean includeTimestamp = false; // Include timestamp in filename
+    private String timestampFormat = "yyyyMMdd_HHmmss"; // Timestamp format
+    private long maxFileSize = Long.MAX_VALUE; // Maximum file size in bytes
+    private String checksumValidation = "none"; // none, md5, sha1, sha256
     private String fileEncoding = "UTF-8";
     private String filePermissions = "644"; // Unix file permissions
     
@@ -40,6 +48,7 @@ public class SftpReceiverAdapterConfig {
     private boolean useAtomicUpload = true; // Upload to temp file then rename
     
     // Connection Pool and Performance
+    private String connectionMode = "per-file-transfer"; // permanently, per-file-transfer
     private int maxConcurrentConnections = 5;
     private boolean enableConnectionPooling = true;
     private long connectionIdleTime = 300000; // 5 minutes
@@ -58,6 +67,10 @@ public class SftpReceiverAdapterConfig {
     private String[] supportedMacs; // Supported MAC algorithms
     private boolean strictHostKeyChecking = true;
     private String knownHostsFile; // Path to known_hosts file
+    private boolean logSSHDebug = false; // Enable SSH debug logging
+    private String preferredAuthentications = "publickey,password"; // SSH auth methods
+    private String hostKeyVerification = "strict"; // strict, relaxed, disabled
+    private String sshCompression = "none"; // none, zlib, zlib@openssh.com
     
     // Batch Processing
     private boolean enableBatching = false;
@@ -328,6 +341,33 @@ public class SftpReceiverAdapterConfig {
     public String getPrivateKey() { return targetPrivateKeyPath; }
     public String getPublicKey() { return targetPublicKeyPath; }
     public String getPassphrase() { return targetPassphrase; }
+    
+    // Additional methods needed by adapter
+    public String getConnectionMode() { return connectionMode; }
+    public boolean isCreateFileDirectory() { return createTargetDirectory; }
+    public boolean isValidateBeforeUpload() { return validateBeforeUpload; }
+    public boolean isEnableFileBackup() { return enableFileBackup; }
+    public String getTempFileExtension() { return temporaryFileExtension; }
+    public String getEmptyMessageHandling() { return emptyMessageHandling; }
+    public String getFileNamingPattern() { return fileNamePattern; }
+    public boolean isIncludeTimestamp() { return includeTimestamp; }
+    public String getTimestampFormat() { return timestampFormat; }
+    public long getMaxFileSize() { return maxFileSize; }
+    public String getChecksumValidation() { return checksumValidation; }
+    public boolean isLogSSHDebug() { return logSSHDebug; }
+    public String getPreferredAuthentications() { return preferredAuthentications; }
+    public String getHostKeyVerification() { return hostKeyVerification; }
+    public String getSshCompression() { return sshCompression; }
+    public String getCipherSuites() { 
+        return supportedCiphers != null ? String.join(",", supportedCiphers) : null; 
+    }
+    public String getMacAlgorithms() { 
+        return supportedMacs != null ? String.join(",", supportedMacs) : null; 
+    }
+    public String getKexAlgorithms() { 
+        return supportedKeyExchanges != null ? String.join(",", supportedKeyExchanges) : null; 
+    }
+    public String getTimeout() { return String.valueOf(connectionTimeout); }
     
     @Override
     public String toString() {

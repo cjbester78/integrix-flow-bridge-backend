@@ -1,6 +1,7 @@
 package com.integrationlab.adapters.config;
 
 import java.util.Map;
+import com.integrationlab.shared.dto.adapter.JsonXmlWrapperConfig;
 
 /**
  * Configuration for REST Sender Adapter (Backend).
@@ -13,13 +14,16 @@ public class RestSenderAdapterConfig {
     private String baseEndpointUrl; // Base URL of the source REST API
     private String resourcePath; // Specific resource path to poll
     private String endpointUrl; // Full endpoint URL (computed or provided)
+    private String healthCheckPath; // Health check endpoint path
     private String apiVersion;
+    private boolean enableDuplicateDetection = false; // Enable duplicate handling
     
     // Request Configuration for Data Retrieval
     private HttpMethod httpMethod = HttpMethod.GET; // Usually GET for polling
     private String acceptHeader = "application/json"; // What data format we accept
     private Map<String, String> headers;
     private String customHeaders; // String format: "key1:value1,key2:value2"
+    private String userAgent = "IntegrixFlowBridge/1.0"; // User agent header
     private int connectionTimeout = 30; // seconds
     private int readTimeout = 60; // seconds
     
@@ -66,6 +70,7 @@ public class RestSenderAdapterConfig {
     private String requestTemplate; // Template for request body if POST/PUT
     private boolean validateResponse = true;
     private String responseValidationRules;
+    private boolean includeResponseHeaders = false; // Include response headers in result
     
     // Pagination and Data Limits
     private Integer pageSize; // For paginated APIs
@@ -96,8 +101,19 @@ public class RestSenderAdapterConfig {
     private boolean logSlowRequests = true;
     private long slowRequestThresholdMs = 5000;
     
+    // JSON to XML Wrapper Configuration
+    private JsonXmlWrapperConfig jsonXmlWrapperConfig;
+    
     // Constructors
-    public RestSenderAdapterConfig() {}
+    public RestSenderAdapterConfig() {
+        // Initialize with default JSON to XML wrapper config
+        this.jsonXmlWrapperConfig = JsonXmlWrapperConfig.builder()
+                .rootElementName("restApiResponse")
+                .includeXmlDeclaration(true)
+                .prettyPrint(true)
+                .convertPropertyNames(true)
+                .build();
+    }
     
     // Getters and Setters
     public String getBaseEndpointUrl() { return baseEndpointUrl; }
@@ -282,6 +298,22 @@ public class RestSenderAdapterConfig {
     
     public String getAsyncCallbackUrl() { return asyncCallbackUrl; }
     public void setAsyncCallbackUrl(String asyncCallbackUrl) { this.asyncCallbackUrl = asyncCallbackUrl; }
+    
+    public JsonXmlWrapperConfig getJsonXmlWrapperConfig() { return jsonXmlWrapperConfig; }
+    public void setJsonXmlWrapperConfig(JsonXmlWrapperConfig jsonXmlWrapperConfig) { this.jsonXmlWrapperConfig = jsonXmlWrapperConfig; }
+    
+    // Additional methods needed by adapter
+    public String getBaseUrl() { return baseEndpointUrl; }
+    public String getHealthCheckEndpoint() { return healthCheckPath; }
+    public String getPollingEndpoint() { return resourcePath; }
+    public boolean isEnableDuplicateHandling() { return enableDuplicateDetection; }
+    public boolean isIncludeResponseHeaders() { return includeResponseHeaders; }
+    public String getContentType() { return "application/json"; } // Default content type
+    public String getAcceptType() { return acceptHeader; }
+    public String getUsername() { return basicUsername; }
+    public String getPassword() { return basicPassword; }
+    public String getApiKeyHeader() { return apiKeyHeaderName != null ? apiKeyHeaderName : "X-API-Key"; }
+    public String getUserAgent() { return userAgent; }
     
     @Override
     public String toString() {

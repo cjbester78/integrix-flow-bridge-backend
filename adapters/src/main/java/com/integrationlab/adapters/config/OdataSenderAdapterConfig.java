@@ -332,6 +332,35 @@ public class OdataSenderAdapterConfig {
     public String getPassword() { return sourcePassword; }
     public String getDeltaQueries() { return String.valueOf(enableDeltaQueries); }
     
+    // Additional methods needed by adapter
+    public String getServiceUrl() { return sourceServiceEndpointUrl; }
+    public String getEntitySetName() { return sourceEntitySet; }
+    public String getFilter() { return filterCriteria; }
+    public String getOrderBy() { return sortOrder; }
+    public String getSelect() { return queryOptions; }
+    public String getExpand() { return null; } // Default expansion
+    public String getSkipStr() { return "0"; } // Default skip value as string
+    public String getTopStr() { return String.valueOf(pageSize); }
+    public String getFormat() { return requestFormat; }
+    public String getInlineCount() { return "allpages"; } // Default inline count
+    public boolean isEnableDeltaToken() { return enableDeltaQueries; }
+    public String getCustomParameter(String name) { 
+        // Parse custom parameters if needed
+        return null; 
+    }
+    public String getMetadataUrl() { return sourceMetadataUrl; }
+    public String getBaseUrl() { return sourceBaseUrl; }
+    public String getServiceRoot() { return sourceServiceEndpointUrl; }
+    public boolean isUseProxy() { return proxyHost != null && !proxyHost.isEmpty(); }
+    
+    // Additional methods called by adapter implementation
+    public boolean isEnableChangeTracking() { return enableDeltaQueries; }
+    public boolean isExpandNavigationProperties() { return true; } // Default to expand navigation properties
+    public boolean isEnableDuplicateHandling() { return false; } // Default duplicate handling
+    public boolean isIncludeCount() { return true; } // Default include count
+    public int getTop() { return pageSize; }
+    public int getSkip() { return 0; } // Default skip value
+    
     @Override
     public String toString() {
         return String.format("OdataSenderAdapterConfig{sourceEndpoint='%s', entitySet='%s', polling=%dms, auth='%s'}",

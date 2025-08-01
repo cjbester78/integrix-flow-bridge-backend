@@ -120,6 +120,7 @@ public class SoapReceiverAdapterConfig {
     private long slowRequestThresholdMs = 5000;
     private boolean logRequestPayload = false; // Log actual data being sent
     private boolean logResponsePayload = false; // Log actual response data
+    private boolean logRequestResponse = false; // Log request/response messages
     
     // Constructors
     public SoapReceiverAdapterConfig() {}
@@ -290,11 +291,20 @@ public class SoapReceiverAdapterConfig {
     public String getAsyncCorrelationId() { return asyncCorrelationId; }
     public void setAsyncCorrelationId(String asyncCorrelationId) { this.asyncCorrelationId = asyncCorrelationId; }
     
+    public boolean isLogRequestResponse() { return logRequestResponse; }
+    public void setLogRequestResponse(boolean logRequestResponse) { this.logRequestResponse = logRequestResponse; }
+    
     @Override
     public String toString() {
         return String.format("SoapReceiverAdapterConfig{endpoint='%s', operation='%s', auth='%s', batching=%s}",
                 getEffectiveEndpoint(), operationName, authenticationType, enableBatching);
     }
+    
+    // Additional getters needed by adapter
+    public String getTargetNamespace() { return namespace; }
+    public String getUsername() { return basicUsername; }
+    public String getPassword() { return basicPassword; }
+    public boolean isLogMessages() { return logRequestResponse; }
     
     public String getEffectiveEndpoint() {
         return serviceEndpointUrl != null ? serviceEndpointUrl : endpointUrl;

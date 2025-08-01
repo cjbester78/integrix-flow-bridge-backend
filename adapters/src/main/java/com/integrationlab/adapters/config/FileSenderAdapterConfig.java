@@ -2,6 +2,7 @@ package com.integrationlab.adapters.config;
 
 import java.util.List;
 import java.util.ArrayList;
+import com.integrationlab.shared.dto.adapter.XmlMappingConfig;
 
 /**
  * Configuration for File Sender Adapter (Backend).
@@ -83,10 +84,22 @@ public class FileSenderAdapterConfig {
     // Legacy compatibility
     private String filename; // For backward compatibility
     
+    // XML Mapping Configuration
+    private XmlMappingConfig xmlMappingConfig;
+    
     // Constructors
-    public FileSenderAdapterConfig() {}
+    public FileSenderAdapterConfig() {
+        // Initialize with default XML mapping config for CSV/text files
+        this.xmlMappingConfig = XmlMappingConfig.builder()
+                .rootElementName("fileContent")
+                .rowElementName("row")
+                .includeXmlDeclaration(true)
+                .prettyPrint(true)
+                .build();
+    }
     
     public FileSenderAdapterConfig(String sourceDirectory, String fileName) {
+        this();  // Call default constructor to initialize xmlMappingConfig
         this.sourceDirectory = sourceDirectory;
         this.fileName = fileName;
     }
@@ -239,6 +252,9 @@ public class FileSenderAdapterConfig {
     // Legacy compatibility
     public String getFilename() { return filename; }
     public void setFilename(String filename) { this.filename = filename; }
+    
+    public XmlMappingConfig getXmlMappingConfig() { return xmlMappingConfig; }
+    public void setXmlMappingConfig(XmlMappingConfig xmlMappingConfig) { this.xmlMappingConfig = xmlMappingConfig; }
     
     @Override
     public String toString() {

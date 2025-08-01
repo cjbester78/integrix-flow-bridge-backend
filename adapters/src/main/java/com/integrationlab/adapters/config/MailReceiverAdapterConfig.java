@@ -106,6 +106,7 @@ public class MailReceiverAdapterConfig {
     private boolean enableMetrics = true;
     private boolean logSentEmails = true;
     private boolean logEmailContent = false;
+    private boolean enableDebug = false; // Enable SMTP debug logging
     private long slowSendThresholdMs = 5000;
     
     // Legacy compatibility
@@ -302,6 +303,15 @@ public class MailReceiverAdapterConfig {
     // Legacy compatibility
     public String getConfigParam() { return configParam; }
     public void setConfigParam(String configParam) { this.configParam = configParam; }
+    
+    // Additional methods needed by adapter
+    public String getEmailTemplate() { return emailBodyTemplate; }
+    public String getMailEncoding() { return emailEncoding; }
+    public String getToAddress() { return toAddresses; }
+    public String getCcAddress() { return ccAddresses; }
+    public String getBccAddress() { return bccAddresses; }
+    public boolean isUseSSLTLS() { return smtpUseSSLTLS; }
+    public boolean isEnableDebug() { return enableDebug; }
     
     @Override
     public String toString() {

@@ -15,6 +15,10 @@ public class JmsReceiverAdapterConfig {
     private int targetPort;
     private String targetChannel;
     private String targetConnectionFactory; // JNDI name
+    private String jndiName; // JNDI lookup name
+    private String initialContextFactory; // Initial context factory class
+    private String providerUrl; // JNDI provider URL
+    private String jndiProperties; // Additional JNDI properties
     private String transportType = "CLIENT"; // CLIENT, BINDINGS
     
     // Target Authentication
@@ -49,6 +53,7 @@ public class JmsReceiverAdapterConfig {
     // Transaction Settings for Message Production
     private String transactionMode = "AUTO_ACKNOWLEDGE";
     private boolean useTransactions = false;
+    private boolean sessionTransacted = false; // Whether JMS session is transacted
     private long transactionTimeout = 30000; // 30 seconds
     
     // Message Properties and Headers
@@ -128,6 +133,18 @@ public class JmsReceiverAdapterConfig {
     public String getTargetConnectionFactory() { return targetConnectionFactory; }
     public void setTargetConnectionFactory(String targetConnectionFactory) { this.targetConnectionFactory = targetConnectionFactory; }
     
+    public String getJndiName() { return jndiName; }
+    public void setJndiName(String jndiName) { this.jndiName = jndiName; }
+    
+    public String getInitialContextFactory() { return initialContextFactory; }
+    public void setInitialContextFactory(String initialContextFactory) { this.initialContextFactory = initialContextFactory; }
+    
+    public String getProviderUrl() { return providerUrl; }
+    public void setProviderUrl(String providerUrl) { this.providerUrl = providerUrl; }
+    
+    public String getJndiProperties() { return jndiProperties; }
+    public void setJndiProperties(String jndiProperties) { this.jndiProperties = jndiProperties; }
+    
     public String getTransportType() { return transportType; }
     public void setTransportType(String transportType) { this.transportType = transportType; }
     
@@ -193,6 +210,9 @@ public class JmsReceiverAdapterConfig {
     
     public boolean isUseTransactions() { return useTransactions; }
     public void setUseTransactions(boolean useTransactions) { this.useTransactions = useTransactions; }
+    
+    public boolean isSessionTransacted() { return sessionTransacted; }
+    public void setSessionTransacted(boolean sessionTransacted) { this.sessionTransacted = sessionTransacted; }
     
     public long getTransactionTimeout() { return transactionTimeout; }
     public void setTransactionTimeout(long transactionTimeout) { this.transactionTimeout = transactionTimeout; }
@@ -303,6 +323,35 @@ public class JmsReceiverAdapterConfig {
     public String getUsername() { return targetUsername; }
     public String getPassword() { return targetPassword; }
     public String getConnectionFactory() { return targetConnectionFactory; }
+    
+    // Additional methods needed by adapter
+    public String getDestinationName() { 
+        return targetQueueName != null ? targetQueueName : targetTopicName; 
+    }
+    
+    public boolean isPersistent() { 
+        return "PERSISTENT".equals(deliveryMode); 
+    }
+    
+    public String getMessageProperties() { return ""; }
+    public boolean isTransacted() { return sessionTransacted; }
+    public String getClientId() { return "JmsReceiver-" + System.currentTimeMillis(); }
+    public int getAcknowledgementMode() { 
+        switch (transactionMode.toUpperCase()) {
+            case "AUTO_ACKNOWLEDGE": return 1;
+            case "CLIENT_ACKNOWLEDGE": return 2;
+            case "DUPS_OK_ACKNOWLEDGE": return 3;
+            default: return 1;
+        }
+    }
+    public void setAcknowledgementMode(int mode) {
+        switch (mode) {
+            case 1: transactionMode = "AUTO_ACKNOWLEDGE"; break;
+            case 2: transactionMode = "CLIENT_ACKNOWLEDGE"; break;
+            case 3: transactionMode = "DUPS_OK_ACKNOWLEDGE"; break;
+            default: transactionMode = "AUTO_ACKNOWLEDGE";
+        }
+    }
     
     @Override
     public String toString() {

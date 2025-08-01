@@ -339,6 +339,18 @@ public class RestReceiverAdapterConfig {
     public String getAsyncCorrelationId() { return asyncCorrelationId; }
     public void setAsyncCorrelationId(String asyncCorrelationId) { this.asyncCorrelationId = asyncCorrelationId; }
     
+    // Additional methods needed by adapter
+    public String getBaseUrl() { return baseEndpointUrl; }
+    public String getTargetEndpoint() { return resourcePath; }
+    public String getHealthCheckEndpoint() { return "/health"; }
+    public String getQueryParameters() { return ""; }
+    public boolean isIncludeResponseHeaders() { return false; }
+    public String getAcceptType() { return acceptHeader; }
+    public String getUsername() { return basicUsername; }
+    public String getPassword() { return basicPassword; }
+    public String getApiKeyHeader() { return apiKeyHeaderName != null ? apiKeyHeaderName : "X-API-Key"; }
+    public String getUserAgent() { return "IntegrixFlowBridge/1.0"; }
+    
     @Override
     public String toString() {
         return String.format("RestReceiverAdapterConfig{endpoint='%s', method=%s, auth=%s, batching=%s, operation='%s'}",

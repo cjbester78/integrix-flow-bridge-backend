@@ -133,4 +133,30 @@ public class AdapterException extends Exception {
             super(adapterType, null, "TIMEOUT_ERROR", message, cause);
         }
     }
+    
+    /**
+     * Processing exceptions
+     */
+    public static class ProcessingException extends AdapterException {
+        public ProcessingException(AdapterType adapterType, String message) {
+            super(adapterType, null, "PROCESSING_ERROR", message, null);
+        }
+        
+        public ProcessingException(AdapterType adapterType, String message, Throwable cause) {
+            super(adapterType, null, "PROCESSING_ERROR", message, cause);
+        }
+    }
+    
+    /**
+     * Operation exceptions
+     */
+    public static class OperationException extends AdapterException {
+        public OperationException(AdapterType adapterType, String message) {
+            super(adapterType, null, "OPERATION_ERROR", message, null);
+        }
+        
+        public OperationException(AdapterType adapterType, String message, Throwable cause) {
+            super(adapterType, null, "OPERATION_ERROR", message, cause);
+        }
+    }
 }

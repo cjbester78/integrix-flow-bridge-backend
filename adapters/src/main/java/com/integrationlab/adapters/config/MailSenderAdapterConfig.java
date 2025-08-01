@@ -258,6 +258,10 @@ public class MailSenderAdapterConfig {
     public String getConfigParam() { return configParam; }
     public void setConfigParam(String configParam) { this.configParam = configParam; }
     
+    // Additional methods needed by adapter
+    public String getConnectionMode() { return mailProtocol; }
+    public boolean isIncludeHeaders() { return true; } // Default include headers
+    
     @Override
     public String toString() {
         return String.format("MailSenderAdapterConfig{server='%s', protocol='%s', folder='%s', polling=%sms}",

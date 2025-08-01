@@ -1,6 +1,8 @@
 package com.integrationlab.config;
 
 import com.integrationlab.adapters.config.HttpSenderAdapterConfig;
+import com.integrationlab.adapters.factory.AdapterFactory;
+import com.integrationlab.adapters.factory.DefaultAdapterFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -9,6 +11,14 @@ import org.springframework.context.annotation.Configuration;
  */
 @Configuration
 public class AdapterConfiguration {
+
+    /**
+     * Provides the default AdapterFactory bean
+     */
+    @Bean
+    public AdapterFactory adapterFactory() {
+        return new DefaultAdapterFactory();
+    }
 
     /**
      * Provides a default HttpSenderAdapterConfig bean for the HTTP adapter controller

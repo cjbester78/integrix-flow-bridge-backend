@@ -137,7 +137,6 @@ public class FileReceiverAdapter extends AbstractReceiverAdapter {
         }
     }
     
-    @Override
     protected AdapterResult doReceive() throws Exception {
         // Default receive without criteria
         throw new AdapterException.OperationException(AdapterType.FILE, 
@@ -619,6 +618,12 @@ public class FileReceiverAdapter extends AbstractReceiverAdapter {
                 }
             }
         }
+    }
+    
+    @Override
+    protected long getPollingIntervalMs() {
+        // File receivers typically don't poll, they write files
+        return 0;
     }
     
     @Override

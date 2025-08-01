@@ -197,7 +197,6 @@ public class SftpReceiverAdapter extends AbstractReceiverAdapter {
         }
     }
     
-    @Override
     protected AdapterResult doReceive() throws Exception {
         // Default receive without criteria
         throw new AdapterException.OperationException(AdapterType.SFTP, 
@@ -212,7 +211,7 @@ public class SftpReceiverAdapter extends AbstractReceiverAdapter {
             
             // Check size-based flushing
             if ("SIZE_BASED".equals(config.getBatchStrategy()) || "MIXED".equals(config.getBatchStrategy())) {
-                if (config.getBatchSize() != null && batchBuffer.size() >= config.getBatchSize()) {
+                if (config.getBatchSize() > 0 && batchBuffer.size() >= config.getBatchSize()) {
                     shouldFlush = true;
                 }
             }
@@ -231,7 +230,7 @@ public class SftpReceiverAdapter extends AbstractReceiverAdapter {
                 return AdapterResult.success(null, 
                         String.format("Added to batch (%d/%d items)", 
                                 batchBuffer.size(), 
-                                config.getBatchSize() != null ? config.getBatchSize() : "unlimited"));
+                                config.getBatchSize() > 0 ? config.getBatchSize() : "unlimited"));
             }
         }
     }
@@ -742,6 +741,12 @@ public class SftpReceiverAdapter extends AbstractReceiverAdapter {
         if (config.getTargetDirectory() == null || config.getTargetDirectory().trim().isEmpty()) {
             throw new AdapterException.ConfigurationException(AdapterType.SFTP, "SFTP target directory is required");
         }
+    }
+    
+    @Override
+    protected long getPollingIntervalMs() {
+        // SFTP receivers typically don't poll, they upload files
+        return 0;
     }
     
     @Override

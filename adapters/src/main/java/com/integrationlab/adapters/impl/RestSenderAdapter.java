@@ -138,7 +138,7 @@ public class RestSenderAdapter extends AbstractSenderAdapter {
             
             // Add query parameters if configured
             if (config.getQueryParameters() != null && !config.getQueryParameters().isEmpty()) {
-                pollUrl += "?" + buildQueryString(config.getQueryParameters());
+                pollUrl += "?" + config.getQueryParameters();
             }
             
             HttpHeaders httpHeaders = createHeaders();
@@ -269,7 +269,7 @@ public class RestSenderAdapter extends AbstractSenderAdapter {
         
         // Authentication
         if (config.getAuthenticationType() != null) {
-            switch (config.getAuthenticationType().toLowerCase()) {
+            switch (config.getAuthenticationType().name().toLowerCase()) {
                 case "basic":
                     if (config.getUsername() != null && config.getPassword() != null) {
                         String auth = config.getUsername() + ":" + config.getPassword();
@@ -295,8 +295,8 @@ public class RestSenderAdapter extends AbstractSenderAdapter {
         }
         
         // Custom headers
-        if (config.getCustomHeaders() != null) {
-            config.getCustomHeaders().forEach(headers::set);
+        if (config.getHeaders() != null) {
+            config.getHeaders().forEach(headers::set);
         }
         
         // User agent

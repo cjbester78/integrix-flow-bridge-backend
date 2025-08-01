@@ -61,7 +61,7 @@ public class FlowCompositionService {
         flow.setTargetAdapterId(request.getTargetAdapterId());
         flow.setSourceStructureId(request.getSourceStructureId());
         flow.setTargetStructureId(request.getTargetStructureId());
-        flow.setStatus(IntegrationFlow.FlowStatus.DRAFT);
+        flow.setStatus(FlowStatus.DRAFT);
         flow.setCreatedBy(request.getCreatedBy());
         
         // Save additional configuration as JSON
@@ -119,7 +119,7 @@ public class FlowCompositionService {
         flow.setDescription(request.getDescription());
         flow.setSourceAdapterId(request.getSourceAdapterId());
         flow.setTargetAdapterId(request.getTargetAdapterId());
-        flow.setStatus(IntegrationFlow.FlowStatus.DRAFT);
+        flow.setStatus(FlowStatus.DRAFT);
         flow.setCreatedBy(request.getCreatedBy());
         
         // Save orchestration configuration as JSON

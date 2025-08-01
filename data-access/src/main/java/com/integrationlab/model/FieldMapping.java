@@ -40,6 +40,22 @@ public class FieldMapping {
     @Column(name = "mapping_rule", columnDefinition = "TEXT")
     private String mappingRule;
 
+    // Support for hierarchical XML mapping
+    @Column(name = "source_xpath", length = 1000)
+    private String sourceXPath;
+
+    @Column(name = "target_xpath", length = 1000)
+    private String targetXPath;
+
+    @Column(name = "is_array_mapping", nullable = false)
+    private boolean isArrayMapping = false;
+
+    @Column(name = "array_context_path", length = 500)
+    private String arrayContextPath;
+
+    @Column(name = "namespace_aware", nullable = false)
+    private boolean namespaceAware = false;
+
     // New metadata fields
     @Column(name = "input_types", columnDefinition = "json")
     private String inputTypes;
@@ -250,6 +266,46 @@ public class FieldMapping {
     public void setUpdatedAt(LocalDateTime updatedAt) {
     /** Timestamp of last entity update */
         this.updatedAt = updatedAt;
+    }
+
+    public String getSourceXPath() {
+        return sourceXPath;
+    }
+
+    public void setSourceXPath(String sourceXPath) {
+        this.sourceXPath = sourceXPath;
+    }
+
+    public String getTargetXPath() {
+        return targetXPath;
+    }
+
+    public void setTargetXPath(String targetXPath) {
+        this.targetXPath = targetXPath;
+    }
+
+    public boolean isArrayMapping() {
+        return isArrayMapping;
+    }
+
+    public void setArrayMapping(boolean arrayMapping) {
+        isArrayMapping = arrayMapping;
+    }
+
+    public String getArrayContextPath() {
+        return arrayContextPath;
+    }
+
+    public void setArrayContextPath(String arrayContextPath) {
+        this.arrayContextPath = arrayContextPath;
+    }
+
+    public boolean isNamespaceAware() {
+        return namespaceAware;
+    }
+
+    public void setNamespaceAware(boolean namespaceAware) {
+        this.namespaceAware = namespaceAware;
     }
 
     @Override

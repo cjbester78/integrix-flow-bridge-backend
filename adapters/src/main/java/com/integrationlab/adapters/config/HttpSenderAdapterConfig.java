@@ -2,6 +2,7 @@ package com.integrationlab.adapters.config;
 
 import java.util.Map;
 import java.util.HashMap;
+import com.integrationlab.shared.dto.adapter.JsonXmlWrapperConfig;
 
 /**
  * Configuration for HTTP Sender Adapter (Backend). In middleware terminology,
@@ -58,8 +59,18 @@ public class HttpSenderAdapterConfig {
 	private String asyncResponseFormat = "HTTP_202"; // HTTP_202, CUSTOM_RESPONSE
 	private String asyncCallbackUrl; // URL to send async response (if applicable)
 
+	// JSON to XML Wrapper Configuration
+	private JsonXmlWrapperConfig jsonXmlWrapperConfig;
+
 	// Constructors
 	public HttpSenderAdapterConfig() {
+		// Initialize with default JSON to XML wrapper config
+		this.jsonXmlWrapperConfig = JsonXmlWrapperConfig.builder()
+				.rootElementName("httpMessage")
+				.includeXmlDeclaration(true)
+				.prettyPrint(true)
+				.convertPropertyNames(true)
+				.build();
 	}
 
 	// Getters and Setters
@@ -343,6 +354,14 @@ public class HttpSenderAdapterConfig {
 
 	public void setAsyncCallbackUrl(String asyncCallbackUrl) {
 		this.asyncCallbackUrl = asyncCallbackUrl;
+	}
+
+	public JsonXmlWrapperConfig getJsonXmlWrapperConfig() {
+		return jsonXmlWrapperConfig;
+	}
+
+	public void setJsonXmlWrapperConfig(JsonXmlWrapperConfig jsonXmlWrapperConfig) {
+		this.jsonXmlWrapperConfig = jsonXmlWrapperConfig;
 	}
 
 	@Override
