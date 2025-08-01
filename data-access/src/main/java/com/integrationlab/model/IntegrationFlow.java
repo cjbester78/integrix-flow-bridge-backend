@@ -1,304 +1,273 @@
 package com.integrationlab.model;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.*;
+import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.GenericGenerator;
+import org.hibernate.annotations.UpdateTimestamp;
+
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
-@Entity
-@Table(name = "integration_flows")
 /**
- * Entity representing IntegrationFlow.
- * This maps to the corresponding table in the database.
+ * Entity representing an integration flow.
+ * 
+ * <p>An integration flow defines how data moves from a source adapter
+ * to a target adapter, including all transformations and mappings.
+ * 
+ * @author Integration Team
+ * @since 1.0.0
  */
+@Entity
+@Table(name = "integration_flows", indexes = {
+    @Index(name = "idx_flow_name", columnList = "name"),
+    @Index(name = "idx_flow_status", columnList = "status"),
+    @Index(name = "idx_flow_active", columnList = "is_active"),
+    @Index(name = "idx_flow_source", columnList = "source_adapter_id"),
+    @Index(name = "idx_flow_target", columnList = "target_adapter_id")
+})
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
+@ToString(exclude = {"transformations", "configuration", "deploymentMetadata"})
 public class IntegrationFlow {
 
-	@Id
-	@GeneratedValue(generator = "uuid2")
-	@GenericGenerator(name = "uuid2", strategy = "org.hibernate.id.UUIDGenerator")
-	@Column(columnDefinition = "char(36)")
-    /** Unique identifier (UUID) for the entity */
-	private String id;
-
-	@Column(nullable = false)
-    /** Name of the component */
-	private String name;
-
-	@Column(columnDefinition = "TEXT")
-    /** Detailed description of the component */
-	private String description;
-
-	@Column(name = "source_adapter_id", columnDefinition = "char(36)", nullable = false)
-	private String sourceAdapterId;
-
-	@Column(name = "target_adapter_id", columnDefinition = "char(36)", nullable = false)
-	private String targetAdapterId;
-
-	@Column(name = "source_structure_id", columnDefinition = "char(36)")
-	private String sourceStructureId;
-
-	@Column(name = "target_structure_id", columnDefinition = "char(36)")
-	private String targetStructureId;
-
-	@Enumerated(EnumType.STRING)
-	@Column(nullable = false, length = 20)
-	private FlowStatus status = FlowStatus.DRAFT;
-
-	@Column(columnDefinition = "json")
-	private String configuration;
-
-	@Column(name = "is_active")
-	private boolean isActive = true;
-
-	@Enumerated(EnumType.STRING)
-	@Column(name = "mapping_mode", length = 50, nullable = false)
-	private MappingMode mappingMode = MappingMode.WITH_MAPPING;
-
-	// Deployment information
-	@Column(name = "deployed_at")
-	private LocalDateTime deployedAt;
-
-	@Column(name = "deployed_by", columnDefinition = "char(36)")
-	private String deployedBy;
-
-	@Column(name = "deployment_endpoint", length = 500)
-	private String deploymentEndpoint;
-
-	@Column(name = "deployment_metadata", columnDefinition = "json")
-	private String deploymentMetadata;
-
-	@Column(name = "created_at")
-    /** Timestamp of entity creation */
-	private LocalDateTime createdAt;
-
-	@Column(name = "updated_at")
-    /** Timestamp of last entity update */
-	private LocalDateTime updatedAt;
-
-	@Column(name = "created_by", columnDefinition = "char(36)")
-	private String createdBy;
-
-	@Column(name = "last_execution_at")
-	private LocalDateTime lastExecutionAt;
-
-	@Column(name = "execution_count")
-	private int executionCount = 0;
-
-	@Column(name = "success_count")
-	private int successCount = 0;
-
-	@Column(name = "error_count")
-	private int errorCount = 0;
-
-	@OneToMany(mappedBy = "flow", cascade = CascadeType.ALL, orphanRemoval = true)
-	private List<FlowTransformation> transformations;
+    /**
+     * Unique identifier (UUID) for the entity
+     */
+    @Id
+    @GeneratedValue(generator = "uuid2")
+    @GenericGenerator(name = "uuid2", strategy = "org.hibernate.id.UUIDGenerator")
+    @Column(columnDefinition = "char(36)")
+    @EqualsAndHashCode.Include
+    private String id;
 
     /**
-     * Automatically sets creation and update timestamps before persisting.
+     * Name of the integration flow
      */
-	@PrePersist
-	protected void onCreate() {
-    /** Timestamp of entity creation */
-		createdAt = updatedAt = LocalDateTime.now();
-	}
+    @Column(nullable = false, length = 100)
+    @NotBlank(message = "Flow name is required")
+    @Size(min = 3, max = 100, message = "Name must be between 3 and 100 characters")
+    private String name;
 
     /**
-     * Automatically updates the timestamp before any update operation.
+     * Detailed description of the flow's purpose
      */
-	@PreUpdate
-	protected void onUpdate() {
-    /** Timestamp of last entity update */
-		updatedAt = LocalDateTime.now();
-	}
+    @Column(columnDefinition = "TEXT")
+    @Size(max = 500, message = "Description cannot exceed 500 characters")
+    private String description;
 
-	public String getId() {
-		return id;
-	}
+    /**
+     * Source adapter ID (sender - receives data FROM external systems)
+     */
+    @Column(name = "source_adapter_id", columnDefinition = "char(36)", nullable = false)
+    @NotBlank(message = "Source adapter is required")
+    private String sourceAdapterId;
 
-	public void setId(String id) {
-		this.id = id;
-	}
+    /**
+     * Target adapter ID (receiver - sends data TO external systems)
+     */
+    @Column(name = "target_adapter_id", columnDefinition = "char(36)", nullable = false)
+    @NotBlank(message = "Target adapter is required")
+    private String targetAdapterId;
 
-	public String getName() {
-		return name;
-	}
+    /**
+     * Source data structure ID
+     */
+    @Column(name = "source_structure_id", columnDefinition = "char(36)")
+    private String sourceStructureId;
 
-	public void setName(String name) {
-		this.name = name;
-	}
+    /**
+     * Target data structure ID
+     */
+    @Column(name = "target_structure_id", columnDefinition = "char(36)")
+    private String targetStructureId;
 
-	public String getDescription() {
-		return description;
-	}
+    /**
+     * Current flow status
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    @NotNull(message = "Status is required")
+    @Builder.Default
+    private FlowStatus status = FlowStatus.DRAFT;
 
-	public void setDescription(String description) {
-		this.description = description;
-	}
+    /**
+     * Flow configuration in JSON format
+     */
+    @Column(columnDefinition = "json")
+    @Size(max = 10000, message = "Configuration cannot exceed 10000 characters")
+    private String configuration;
 
-	public String getSourceAdapterId() {
-		return sourceAdapterId;
-	}
+    /**
+     * Whether the flow is currently active
+     */
+    @Column(name = "is_active")
+    @NotNull(message = "Active status is required")
+    @Builder.Default
+    private boolean isActive = true;
 
-	public void setSourceAdapterId(String sourceAdapterId) {
-		this.sourceAdapterId = sourceAdapterId;
-	}
+    /**
+     * Mapping mode for the flow
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "mapping_mode", length = 50, nullable = false)
+    @NotNull(message = "Mapping mode is required")
+    @Builder.Default
+    private MappingMode mappingMode = MappingMode.WITH_MAPPING;
 
-	public String getTargetAdapterId() {
-		return targetAdapterId;
-	}
+    /**
+     * Timestamp when flow was deployed
+     */
+    @Column(name = "deployed_at")
+    private LocalDateTime deployedAt;
 
-	public void setTargetAdapterId(String targetAdapterId) {
-		this.targetAdapterId = targetAdapterId;
-	}
+    /**
+     * User who deployed the flow
+     */
+    @Column(name = "deployed_by", columnDefinition = "char(36)")
+    private String deployedBy;
 
-	public String getSourceStructureId() {
-		return sourceStructureId;
-	}
+    /**
+     * Deployment endpoint URL
+     */
+    @Column(name = "deployment_endpoint", length = 500)
+    @Size(max = 500, message = "Deployment endpoint cannot exceed 500 characters")
+    private String deploymentEndpoint;
 
-	public void setSourceStructureId(String sourceStructureId) {
-		this.sourceStructureId = sourceStructureId;
-	}
+    /**
+     * Deployment metadata in JSON format
+     */
+    @Column(name = "deployment_metadata", columnDefinition = "json")
+    private String deploymentMetadata;
 
-	public String getTargetStructureId() {
-		return targetStructureId;
-	}
+    /**
+     * Timestamp of entity creation
+     */
+    @Column(name = "created_at", updatable = false)
+    @CreationTimestamp
+    private LocalDateTime createdAt;
 
-	public void setTargetStructureId(String targetStructureId) {
-		this.targetStructureId = targetStructureId;
-	}
+    /**
+     * Timestamp of last entity update
+     */
+    @Column(name = "updated_at")
+    @UpdateTimestamp
+    private LocalDateTime updatedAt;
 
-	public FlowStatus getStatus() {
-		return status;
-	}
+    /**
+     * User who created the flow
+     */
+    @Column(name = "created_by", columnDefinition = "char(36)")
+    @NotBlank(message = "Created by is required")
+    private String createdBy;
 
-	public void setStatus(FlowStatus status) {
-		this.status = status;
-	}
+    /**
+     * Timestamp of last execution
+     */
+    @Column(name = "last_execution_at")
+    private LocalDateTime lastExecutionAt;
 
-	public String getConfiguration() {
-		return configuration;
-	}
+    /**
+     * Total number of executions
+     */
+    @Column(name = "execution_count")
+    @Min(value = 0, message = "Execution count cannot be negative")
+    @Builder.Default
+    private int executionCount = 0;
 
-	public void setConfiguration(String configuration) {
-		this.configuration = configuration;
-	}
+    /**
+     * Number of successful executions
+     */
+    @Column(name = "success_count")
+    @Min(value = 0, message = "Success count cannot be negative")
+    @Builder.Default
+    private int successCount = 0;
 
-	public boolean isActive() {
-		return isActive;
-	}
+    /**
+     * Number of failed executions
+     */
+    @Column(name = "error_count")
+    @Min(value = 0, message = "Error count cannot be negative")
+    @Builder.Default
+    private int errorCount = 0;
 
-	public void setActive(boolean active) {
-		isActive = active;
-	}
+    /**
+     * Transformations associated with this flow
+     */
+    @OneToMany(mappedBy = "flow", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<FlowTransformation> transformations = new ArrayList<>();
 
-	public MappingMode getMappingMode() {
-		return mappingMode;
-	}
+    /**
+     * Business component that owns this flow
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "business_component_id")
+    private BusinessComponent businessComponent;
 
-	public void setMappingMode(MappingMode mappingMode) {
-		this.mappingMode = mappingMode;
-	}
+    /**
+     * Lifecycle callback to ensure timestamps are set
+     */
+    @PrePersist
+    protected void onCreate() {
+        if (createdAt == null) {
+            createdAt = LocalDateTime.now();
+        }
+        if (updatedAt == null) {
+            updatedAt = LocalDateTime.now();
+        }
+    }
 
-	public LocalDateTime getDeployedAt() {
-		return deployedAt;
-	}
+    /**
+     * Lifecycle callback to update timestamp
+     */
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = LocalDateTime.now();
+    }
 
-	public void setDeployedAt(LocalDateTime deployedAt) {
-		this.deployedAt = deployedAt;
-	}
+    /**
+     * Increments execution statistics
+     * 
+     * @param success whether the execution was successful
+     */
+    public void recordExecution(boolean success) {
+        this.executionCount++;
+        if (success) {
+            this.successCount++;
+        } else {
+            this.errorCount++;
+        }
+        this.lastExecutionAt = LocalDateTime.now();
+    }
 
-	public String getDeployedBy() {
-		return deployedBy;
-	}
+    /**
+     * Adds a transformation to this flow
+     * 
+     * @param transformation the transformation to add
+     */
+    public void addTransformation(FlowTransformation transformation) {
+        if (transformations == null) {
+            transformations = new ArrayList<>();
+        }
+        transformations.add(transformation);
+        transformation.setFlow(this);
+    }
 
-	public void setDeployedBy(String deployedBy) {
-		this.deployedBy = deployedBy;
-	}
-
-	public String getDeploymentEndpoint() {
-		return deploymentEndpoint;
-	}
-
-	public void setDeploymentEndpoint(String deploymentEndpoint) {
-		this.deploymentEndpoint = deploymentEndpoint;
-	}
-
-	public String getDeploymentMetadata() {
-		return deploymentMetadata;
-	}
-
-	public void setDeploymentMetadata(String deploymentMetadata) {
-		this.deploymentMetadata = deploymentMetadata;
-	}
-
-	public LocalDateTime getCreatedAt() {
-    /** Timestamp of entity creation */
-		return createdAt;
-	}
-
-    /** Timestamp of entity creation */
-	public void setCreatedAt(LocalDateTime createdAt) {
-    /** Timestamp of entity creation */
-		this.createdAt = createdAt;
-	}
-
-	public LocalDateTime getUpdatedAt() {
-    /** Timestamp of last entity update */
-		return updatedAt;
-	}
-
-    /** Timestamp of last entity update */
-	public void setUpdatedAt(LocalDateTime updatedAt) {
-    /** Timestamp of last entity update */
-		this.updatedAt = updatedAt;
-	}
-
-	public String getCreatedBy() {
-		return createdBy;
-	}
-
-	public void setCreatedBy(String createdBy) {
-		this.createdBy = createdBy;
-	}
-
-	public LocalDateTime getLastExecutionAt() {
-		return lastExecutionAt;
-	}
-
-	public void setLastExecutionAt(LocalDateTime lastExecutionAt) {
-		this.lastExecutionAt = lastExecutionAt;
-	}
-
-	public int getExecutionCount() {
-		return executionCount;
-	}
-
-	public void setExecutionCount(int executionCount) {
-		this.executionCount = executionCount;
-	}
-
-	public int getSuccessCount() {
-		return successCount;
-	}
-
-	public void setSuccessCount(int successCount) {
-		this.successCount = successCount;
-	}
-
-	public int getErrorCount() {
-		return errorCount;
-	}
-
-	public void setErrorCount(int errorCount) {
-		this.errorCount = errorCount;
-	}
-
-	public List<FlowTransformation> getTransformations() {
-		return transformations;
-	}
-
-	public void setTransformations(List<FlowTransformation> transformations) {
-		this.transformations = transformations;
-	}
-
+    /**
+     * Removes a transformation from this flow
+     * 
+     * @param transformation the transformation to remove
+     */
+    public void removeTransformation(FlowTransformation transformation) {
+        if (transformations != null) {
+            transformations.remove(transformation);
+            transformation.setFlow(null);
+        }
+    }
 }

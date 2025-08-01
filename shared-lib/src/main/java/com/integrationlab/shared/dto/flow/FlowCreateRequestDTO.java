@@ -1,5 +1,6 @@
 package com.integrationlab.shared.dto.flow;
 
+import com.integrationlab.shared.validation.ValidFlowConfiguration;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -24,6 +25,7 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@ValidFlowConfiguration
 public class FlowCreateRequestDTO {
     
     /**
