@@ -85,6 +85,31 @@
 			<scope>runtime</scope>
 		</dependency>
 
+		<!-- Caching -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-cache</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>com.github.ben-manes.caffeine</groupId>
+			<artifactId>caffeine</artifactId>
+			<version>3.1.8</version>
+		</dependency>
+
+		<!-- Rate Limiting -->
+		<dependency>
+			<groupId>com.github.vladimir-bukhtoyarov</groupId>
+			<artifactId>bucket4j-core</artifactId>
+			<version>8.7.0</version>
+		</dependency>
+
+		<!-- Input Sanitization -->
+		<dependency>
+			<groupId>com.googlecode.owasp-java-html-sanitizer</groupId>
+			<artifactId>owasp-java-html-sanitizer</artifactId>
+			<version>20240325.1</version>
+		</dependency>
+
 		<!-- Security Crypto -->
 		<dependency>
 			<groupId>org.springframework.security</groupId>
