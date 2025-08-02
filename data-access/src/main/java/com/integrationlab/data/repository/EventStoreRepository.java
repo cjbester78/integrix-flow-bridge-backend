@@ -1,6 +1,6 @@
-package com.integrationlab.repository;
+package com.integrationlab.data.repository;
 
-import com.integrationlab.model.EventStore;
+import com.integrationlab.data.model.EventStore;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;

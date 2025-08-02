@@ -1,7 +1,7 @@
-package com.integrationlab.repository;
+package com.integrationlab.data.repository;
 
-import com.integrationlab.model.IntegrationFlow;
-import com.integrationlab.model.FlowStatus;
+import com.integrationlab.data.model.IntegrationFlow;
+import com.integrationlab.data.model.FlowStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;

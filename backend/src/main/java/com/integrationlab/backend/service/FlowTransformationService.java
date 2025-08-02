@@ -3,10 +3,10 @@ package com.integrationlab.backend.service;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import com.integrationlab.model.FlowTransformation;
-import com.integrationlab.model.IntegrationFlow;
-import com.integrationlab.repository.FlowTransformationRepository;
-import com.integrationlab.repository.IntegrationFlowRepository;
+import com.integrationlab.data.model.FlowTransformation;
+import com.integrationlab.data.model.IntegrationFlow;
+import com.integrationlab.data.repository.FlowTransformationRepository;
+import com.integrationlab.data.repository.IntegrationFlowRepository;
 import com.integrationlab.shared.dto.flow.FlowTransformationDTO;
 
 import java.util.List;

@@ -1,10 +1,10 @@
 package com.integrationlab.backend.service;
 
 import com.integrationlab.shared.dto.DashboardStatsDTO;
-import com.integrationlab.repository.IntegrationFlowRepository;
-import com.integrationlab.repository.CommunicationAdapterRepository;
+import com.integrationlab.data.repository.IntegrationFlowRepository;
+import com.integrationlab.data.repository.CommunicationAdapterRepository;
 import com.integrationlab.data.repository.SystemLogRepository;
-import com.integrationlab.data.entity.SystemLog;
+import com.integrationlab.data.model.SystemLog;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

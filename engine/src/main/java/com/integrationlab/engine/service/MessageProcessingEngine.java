@@ -5,12 +5,12 @@ import com.integrationlab.adapters.core.ReceiverAdapter;
 import com.integrationlab.adapters.core.SenderAdapter;
 import com.integrationlab.adapters.factory.AdapterFactory;
 import com.integrationlab.engine.mapper.HierarchicalXmlFieldMapper;
-import com.integrationlab.model.FieldMapping;
-import com.integrationlab.model.IntegrationFlow;
-import com.integrationlab.model.MappingMode;
-import com.integrationlab.repository.CommunicationAdapterRepository;
-import com.integrationlab.repository.FieldMappingRepository;
-import com.integrationlab.repository.IntegrationFlowRepository;
+import com.integrationlab.data.model.FieldMapping;
+import com.integrationlab.data.model.IntegrationFlow;
+import com.integrationlab.data.model.MappingMode;
+import com.integrationlab.data.repository.CommunicationAdapterRepository;
+import com.integrationlab.data.repository.FieldMappingRepository;
+import com.integrationlab.data.repository.IntegrationFlowRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -123,7 +123,7 @@ public class MessageProcessingEngine {
     /**
      * Send processed message to target adapter
      */
-    private void sendToTargetAdapter(Object message, com.integrationlab.model.CommunicationAdapter targetAdapter, 
+    private void sendToTargetAdapter(Object message, com.integrationlab.data.model.CommunicationAdapter targetAdapter, 
                                     IntegrationFlow flow) throws Exception {
         logger.debug("Sending message to target adapter: {}", targetAdapter.getName());
         

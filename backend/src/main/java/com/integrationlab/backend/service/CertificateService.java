@@ -5,8 +5,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.integrationlab.model.Certificate;
-import com.integrationlab.repository.CertificateRepository;
+import com.integrationlab.data.model.Certificate;
+import com.integrationlab.data.repository.CertificateRepository;
 import com.integrationlab.shared.dto.certificate.CertificateDTO;
 import com.integrationlab.shared.dto.certificate.CertificateUploadRequestDTO;
 

@@ -1,6 +1,6 @@
-package com.integrationlab.repository;
+package com.integrationlab.data.repository;
 
-import com.integrationlab.model.BusinessComponent;
+import com.integrationlab.data.model.BusinessComponent;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

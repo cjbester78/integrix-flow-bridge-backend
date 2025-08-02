@@ -6,8 +6,8 @@ import org.slf4j.LoggerFactory;
 import com.integrationlab.adapters.core.*;
 import com.integrationlab.adapters.factory.AdapterFactoryManager;
 import com.integrationlab.engine.AdapterExecutor;
-import com.integrationlab.model.CommunicationAdapter;
-import com.integrationlab.repository.CommunicationAdapterRepository;
+import com.integrationlab.data.model.CommunicationAdapter;
+import com.integrationlab.data.repository.CommunicationAdapterRepository;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;

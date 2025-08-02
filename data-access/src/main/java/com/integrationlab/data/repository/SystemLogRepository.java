@@ -1,6 +1,6 @@
 package com.integrationlab.data.repository;
 
-import com.integrationlab.data.entity.SystemLog;
+import com.integrationlab.data.model.SystemLog;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;

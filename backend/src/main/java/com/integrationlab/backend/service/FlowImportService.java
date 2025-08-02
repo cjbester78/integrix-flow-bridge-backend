@@ -4,10 +4,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.integrationlab.backend.exception.BusinessException;
 import com.integrationlab.backend.exception.ConflictException;
 import com.integrationlab.backend.security.SecurityUtils;
-import com.integrationlab.data.entity.SystemLog;
+import com.integrationlab.data.model.SystemLog;
 import com.integrationlab.data.repository.SystemLogRepository;
-import com.integrationlab.model.*;
-import com.integrationlab.repository.*;
+import com.integrationlab.data.model.*;
+import com.integrationlab.data.repository.*;
 import com.integrationlab.shared.dto.*;
 import com.integrationlab.shared.dto.business.BusinessComponentDTO;
 import com.integrationlab.shared.dto.export.*;
@@ -363,7 +363,7 @@ public class FlowImportService {
                     .status(FlowStatus.DRAFT) // Always import as draft
                     .configuration(dto.getConfiguration())
                     .isActive(false) // Start inactive
-                    .mappingMode(com.integrationlab.model.MappingMode.valueOf(dto.getMappingMode()))
+                    .mappingMode(com.integrationlab.data.model.MappingMode.valueOf(dto.getMappingMode()))
                     .createdBy(SecurityUtils.getCurrentUserId())
                     .build();
             
@@ -402,7 +402,7 @@ public class FlowImportService {
                         .flow(importedFlow)
                         .name(transDto.getName())
                         .description(transDto.getDescription())
-                        .type(com.integrationlab.model.FlowTransformation.TransformationType.valueOf(transDto.getTransformationType().name()))
+                        .type(com.integrationlab.data.model.FlowTransformation.TransformationType.valueOf(transDto.getTransformationType().name()))
                         .configuration(transDto.getConfiguration())
                         .executionOrder(transDto.getSequence())
                         .isActive(transDto.isActive())

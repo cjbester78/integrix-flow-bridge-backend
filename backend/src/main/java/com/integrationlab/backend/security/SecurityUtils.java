@@ -1,6 +1,6 @@
 package com.integrationlab.backend.security;
 
-import com.integrationlab.model.User;
+import com.integrationlab.data.model.User;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;

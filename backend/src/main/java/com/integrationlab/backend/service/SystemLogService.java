@@ -1,11 +1,11 @@
 package com.integrationlab.backend.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.integrationlab.data.entity.SystemLog;
+import com.integrationlab.data.model.SystemLog;
 import com.integrationlab.data.specification.SystemLogSpecifications;
-import com.integrationlab.model.User;
+import com.integrationlab.data.model.User;
 import com.integrationlab.data.repository.SystemLogRepository;
-import com.integrationlab.repository.UserRepository;
+import com.integrationlab.data.repository.UserRepository;
 import com.integrationlab.shared.dto.log.FrontendLogBatchRequest;
 import com.integrationlab.shared.dto.log.FrontendLogEntry;
 import lombok.RequiredArgsConstructor;

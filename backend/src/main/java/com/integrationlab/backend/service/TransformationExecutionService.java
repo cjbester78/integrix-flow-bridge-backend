@@ -1,7 +1,7 @@
 package com.integrationlab.backend.service;
 
-import com.integrationlab.model.FieldMapping;
-import com.integrationlab.repository.FieldMappingRepository;
+import com.integrationlab.data.model.FieldMapping;
+import com.integrationlab.data.repository.FieldMappingRepository;
 import com.integrationlab.backend.service.transformation.EnrichmentTransformationService;
 import com.integrationlab.backend.service.transformation.FilterTransformationService;
 import com.integrationlab.backend.service.transformation.ValidationTransformationService;

@@ -1,6 +1,6 @@
 package com.integrationlab.data.specification;
 
-import com.integrationlab.data.entity.SystemLog;
+import com.integrationlab.data.model.SystemLog;
 import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.jpa.domain.Specification;
 

@@ -8,8 +8,8 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 
 @SpringBootApplication
 @ComponentScan(basePackages = "com.integrationlab")
-@EnableJpaRepositories(basePackages = "com.integrationlab.repository")
-@EntityScan(basePackages = "com.integrationlab.model")
+@EnableJpaRepositories(basePackages = {"com.integrationlab.data.repository", "com.integrationlab.monitoring.repository"})
+@EntityScan(basePackages = {"com.integrationlab.data.model", "com.integrationlab.monitoring.model"})
 public class BackendApplication {
 
     public static void main(String[] args) {

@@ -4,8 +4,8 @@ package com.integrationlab.backend.service;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import com.integrationlab.model.IntegrationFlow;
-import com.integrationlab.repository.IntegrationFlowRepository;
+import com.integrationlab.data.model.IntegrationFlow;
+import com.integrationlab.data.repository.IntegrationFlowRepository;
 
 import java.util.List;
 import java.util.Optional;

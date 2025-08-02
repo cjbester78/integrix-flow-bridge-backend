@@ -1,6 +1,6 @@
 package com.integrationlab.monitoring.service;
 
-import com.integrationlab.data.entity.SystemLog;
+import com.integrationlab.data.model.SystemLog;
 
 /**
  * Interface SystemLogService - auto-generated documentation.

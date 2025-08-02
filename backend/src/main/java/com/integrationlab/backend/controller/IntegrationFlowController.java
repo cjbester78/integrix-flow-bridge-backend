@@ -1,6 +1,6 @@
 package com.integrationlab.backend.controller;
 
-import com.integrationlab.model.IntegrationFlow;
+import com.integrationlab.data.model.IntegrationFlow;
 import com.integrationlab.backend.service.IntegrationFlowService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;

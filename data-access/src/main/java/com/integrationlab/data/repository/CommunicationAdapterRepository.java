@@ -1,6 +1,6 @@
-package com.integrationlab.repository;
+package com.integrationlab.data.repository;
 
-import com.integrationlab.model.CommunicationAdapter;
+import com.integrationlab.data.model.CommunicationAdapter;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

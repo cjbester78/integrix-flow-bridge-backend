@@ -1,4 +1,4 @@
-package com.integrationlab.model;
+package com.integrationlab.data.model;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;

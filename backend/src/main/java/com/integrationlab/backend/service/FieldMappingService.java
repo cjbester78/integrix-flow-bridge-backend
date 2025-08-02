@@ -3,10 +3,10 @@ package com.integrationlab.backend.service;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import com.integrationlab.model.FieldMapping;
-import com.integrationlab.model.FlowTransformation;
-import com.integrationlab.repository.FieldMappingRepository;
-import com.integrationlab.repository.FlowTransformationRepository;
+import com.integrationlab.data.model.FieldMapping;
+import com.integrationlab.data.model.FlowTransformation;
+import com.integrationlab.data.repository.FieldMappingRepository;
+import com.integrationlab.data.repository.FlowTransformationRepository;
 import com.integrationlab.shared.dto.mapping.FieldMappingDTO;
 
 import java.util.List;

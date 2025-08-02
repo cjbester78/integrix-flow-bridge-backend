@@ -9,7 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.integrationlab.data.entity.SystemLog;
+import com.integrationlab.data.model.SystemLog;
 import com.integrationlab.monitoring.model.UserManagementError;
 import com.integrationlab.monitoring.repository.UserManagementErrorRepository;
 import com.integrationlab.data.repository.SystemLogRepository;

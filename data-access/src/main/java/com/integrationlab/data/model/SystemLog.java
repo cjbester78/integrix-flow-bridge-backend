@@ -1,4 +1,4 @@
-package com.integrationlab.data.entity;
+package com.integrationlab.data.model;
 
 import jakarta.persistence.*;
 import lombok.*;

@@ -1,6 +1,6 @@
 package com.integrationlab.engine.service;
 
-import com.integrationlab.model.CommunicationAdapter;
+import com.integrationlab.data.model.CommunicationAdapter;
 
 /**
  * IdocAdapterService - generated JavaDoc.

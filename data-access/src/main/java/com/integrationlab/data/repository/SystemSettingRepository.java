@@ -1,6 +1,6 @@
-package com.integrationlab.repository;
+package com.integrationlab.data.repository;
 
-import com.integrationlab.model.SystemSetting;
+import com.integrationlab.data.model.SystemSetting;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;

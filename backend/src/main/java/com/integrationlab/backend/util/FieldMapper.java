@@ -2,8 +2,8 @@ package com.integrationlab.backend.util;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.integrationlab.model.FieldMapping;
-import com.integrationlab.model.ReusableFunction;
+import com.integrationlab.data.model.FieldMapping;
+import com.integrationlab.data.model.ReusableFunction;
 import com.integrationlab.backend.service.ReusableJavaFunctionService;
 
 import java.util.*;

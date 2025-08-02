@@ -1,4 +1,4 @@
-package com.integrationlab.model;
+package com.integrationlab.data.model;
 
 import com.integrationlab.shared.enums.TransformationType;
 import jakarta.persistence.*;

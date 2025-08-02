@@ -1,4 +1,4 @@
-package com.integrationlab.model;
+package com.integrationlab.data.model;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.integrationlab.shared.enums.AdapterType;

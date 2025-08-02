@@ -36,7 +36,10 @@ integrix-flow-bridge/
 ```
 
 ### Package Structure Convention
-**CRITICAL**: All backend classes must use the base package `com.integrationlab.backend`
+**CRITICAL**: Each module has its own base package structure:
+
+#### Backend Module
+All backend classes must use the base package `com.integrationlab.backend`:
 - Controllers: `com.integrationlab.backend.controller`
 - Services: `com.integrationlab.backend.service`
 - Security: `com.integrationlab.backend.security`
@@ -48,7 +51,19 @@ integrix-flow-bridge/
 - Events: `com.integrationlab.backend.events`
 - Saga: `com.integrationlab.backend.saga`
 
-**Never** create classes under `com.integrationlab` without the `backend` subpackage. This ensures clear module separation and prevents classpath conflicts.
+#### Data Access Module
+All data-access classes must use the base package `com.integrationlab.data`:
+- Entities/Models: `com.integrationlab.data.model`
+- Repositories: `com.integrationlab.data.repository`
+- Specifications: `com.integrationlab.data.specification`
+
+#### Other Modules
+- Monitoring: `com.integrationlab.monitoring`
+- Engine: `com.integrationlab.engine`
+- Adapters: `com.integrationlab.adapters`
+- Shared: `com.integrationlab.shared`
+
+**Never** create classes directly under `com.integrationlab` without the appropriate module subpackage. This ensures clear module separation and prevents classpath conflicts.
 
 ### Technology Stack
 - **Backend**: Spring Boot 3.5.3, Java 21, MySQL 8.x
@@ -614,6 +629,14 @@ To enable git commits, ensure:
 1. Git is configured with user name and email
 2. You have write access to both repositories
 3. The repositories are properly initialized
+
+### Git Update Strategy
+**CRITICAL**: Regular git commits and pushes must be made to both repositories:
+- **Backend Repository**: Commit and push changes after completing major backend fixes or features
+- **Frontend Repository**: Commit and push changes after completing major frontend fixes or features
+- **Frequency**: Make git updates regularly throughout development, not just at the end
+- **Best Practice**: Commit related changes together with clear, descriptive messages
+- **Important**: Always verify which repository you're in before committing (backend vs frontend)
 
 ## Important Reminders
 - Do what has been asked; nothing more, nothing less.

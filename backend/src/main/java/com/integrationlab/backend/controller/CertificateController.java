@@ -1,6 +1,6 @@
 package com.integrationlab.backend.controller;
 
-import com.integrationlab.model.Certificate;
+import com.integrationlab.data.model.Certificate;
 import com.integrationlab.backend.service.CertificateService;
 import com.integrationlab.shared.dto.certificate.CertificateDTO;
 import com.integrationlab.shared.dto.certificate.CertificateUploadRequestDTO;

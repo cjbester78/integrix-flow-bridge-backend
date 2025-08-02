@@ -2,8 +2,8 @@ package com.integrationlab.engine.service;
 
 import com.integrationlab.engine.xml.MessageToXmlConverter;
 import com.integrationlab.engine.xml.XmlConversionException;
-import com.integrationlab.model.IntegrationFlow;
-import com.integrationlab.model.MappingMode;
+import com.integrationlab.data.model.IntegrationFlow;
+import com.integrationlab.data.model.MappingMode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;

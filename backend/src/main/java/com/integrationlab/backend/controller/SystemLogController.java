@@ -1,6 +1,6 @@
 package com.integrationlab.backend.controller;
 
-import com.integrationlab.data.entity.SystemLog;
+import com.integrationlab.data.model.SystemLog;
 import com.integrationlab.data.repository.SystemLogRepository;
 import com.integrationlab.data.specification.SystemLogSpecifications;
 import com.integrationlab.shared.dto.system.SystemLogCreateRequestDTO;

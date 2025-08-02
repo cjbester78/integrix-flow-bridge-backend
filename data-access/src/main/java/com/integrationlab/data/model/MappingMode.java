@@ -1,4 +1,4 @@
-package com.integrationlab.model;
+package com.integrationlab.data.model;
 
 /**
  * Enum defining the mapping mode for integration flows

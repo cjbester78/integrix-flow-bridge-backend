@@ -1,7 +1,7 @@
 package com.integrationlab.backend.controller;
 
-import com.integrationlab.model.User;
-import com.integrationlab.repository.UserRepository;
+import com.integrationlab.data.model.User;
+import com.integrationlab.data.repository.UserRepository;
 import com.integrationlab.backend.service.UserService;
 import com.integrationlab.shared.dto.transformation.*;
 import com.integrationlab.shared.dto.user.PagedUserResponseDTO;

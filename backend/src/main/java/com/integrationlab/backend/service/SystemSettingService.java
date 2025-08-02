@@ -1,7 +1,7 @@
 package com.integrationlab.backend.service;
 
-import com.integrationlab.model.SystemSetting;
-import com.integrationlab.repository.SystemSettingRepository;
+import com.integrationlab.data.model.SystemSetting;
+import com.integrationlab.data.repository.SystemSettingRepository;
 import com.integrationlab.shared.dto.system.SystemSettingDTO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

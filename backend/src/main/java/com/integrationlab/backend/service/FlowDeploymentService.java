@@ -1,11 +1,11 @@
 package com.integrationlab.backend.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.integrationlab.model.CommunicationAdapter;
-import com.integrationlab.model.FlowStatus;
-import com.integrationlab.model.IntegrationFlow;
-import com.integrationlab.repository.CommunicationAdapterRepository;
-import com.integrationlab.repository.IntegrationFlowRepository;
+import com.integrationlab.data.model.CommunicationAdapter;
+import com.integrationlab.data.model.FlowStatus;
+import com.integrationlab.data.model.IntegrationFlow;
+import com.integrationlab.data.repository.CommunicationAdapterRepository;
+import com.integrationlab.data.repository.IntegrationFlowRepository;
 import com.integrationlab.shared.dto.DeploymentInfoDTO;
 import com.integrationlab.shared.dto.IntegrationFlowDTO;
 import org.slf4j.Logger;

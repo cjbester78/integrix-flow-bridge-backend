@@ -1,10 +1,10 @@
-package com.integrationlab.repository;
+package com.integrationlab.data.repository;
 
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import com.integrationlab.model.ReusableFunction;
+import com.integrationlab.data.model.ReusableFunction;
 
 import java.util.Optional;
 

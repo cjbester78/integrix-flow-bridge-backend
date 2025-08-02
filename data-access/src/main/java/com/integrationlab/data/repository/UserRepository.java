@@ -1,6 +1,6 @@
-package com.integrationlab.repository;
+package com.integrationlab.data.repository;
 
-import com.integrationlab.model.User;
+import com.integrationlab.data.model.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 /**

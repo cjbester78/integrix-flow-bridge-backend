@@ -1,6 +1,6 @@
 package com.integrationlab.backend.controller;
 
-import com.integrationlab.model.ReusableFunction;
+import com.integrationlab.data.model.ReusableFunction;
 import com.integrationlab.backend.service.ReusableJavaFunctionService;
 import com.integrationlab.shared.dto.transformation.ReusableJavaFunctionDTO;
 

@@ -1,8 +1,8 @@
 package com.integrationlab.backend.service;
 
 import com.integrationlab.shared.dto.ChannelStatusDTO;
-import com.integrationlab.model.CommunicationAdapter;
-import com.integrationlab.repository.CommunicationAdapterRepository;
+import com.integrationlab.data.model.CommunicationAdapter;
+import com.integrationlab.data.repository.CommunicationAdapterRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

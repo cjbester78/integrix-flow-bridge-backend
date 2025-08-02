@@ -2,7 +2,7 @@ package com.integrationlab.monitoring.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.integrationlab.data.entity.SystemLog;
+import com.integrationlab.data.model.SystemLog;
 import com.integrationlab.monitoring.model.LogLevel;
 import com.integrationlab.monitoring.model.LogSource;
 import com.integrationlab.data.repository.SystemLogRepository;

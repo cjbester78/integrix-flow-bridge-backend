@@ -1,7 +1,7 @@
 package com.integrationlab.engine.service.impl;
 
 import com.integrationlab.engine.service.SftpAdapterService;
-import com.integrationlab.model.CommunicationAdapter;
+import com.integrationlab.data.model.CommunicationAdapter;
 import org.springframework.stereotype.Service;
 
 @Service

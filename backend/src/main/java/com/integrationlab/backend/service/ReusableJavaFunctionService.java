@@ -1,7 +1,7 @@
 package com.integrationlab.backend.service;
 
-import com.integrationlab.model.ReusableFunction;
-import com.integrationlab.repository.ReusableFunctionRepository;
+import com.integrationlab.data.model.ReusableFunction;
+import com.integrationlab.data.repository.ReusableFunctionRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;

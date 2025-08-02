@@ -1,7 +1,7 @@
 package com.integrationlab.backend.service;
 
-import com.integrationlab.model.IntegrationFlow;
-import com.integrationlab.repository.IntegrationFlowRepository;
+import com.integrationlab.data.model.IntegrationFlow;
+import com.integrationlab.data.repository.IntegrationFlowRepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;

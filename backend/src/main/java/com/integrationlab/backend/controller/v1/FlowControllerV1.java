@@ -4,7 +4,7 @@ import com.integrationlab.backend.config.ApiVersioningConfig.ApiV1;
 import com.integrationlab.backend.domain.services.FlowDomainService;
 import com.integrationlab.backend.service.FlowCompositionService;
 import com.integrationlab.backend.service.IntegrationFlowService;
-import com.integrationlab.model.IntegrationFlow;
+import com.integrationlab.data.model.IntegrationFlow;
 import com.integrationlab.shared.dto.flow.FlowCreateRequestDTO;
 import com.integrationlab.shared.dto.flow.IntegrationFlowDTO;
 import io.micrometer.core.annotation.Timed;

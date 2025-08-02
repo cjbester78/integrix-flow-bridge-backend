@@ -1,8 +1,8 @@
 package com.integrationlab.backend.events;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.integrationlab.model.EventStore;
-import com.integrationlab.repository.EventStoreRepository;
+import com.integrationlab.data.model.EventStore;
+import com.integrationlab.data.repository.EventStoreRepository;
 import com.integrationlab.shared.events.DomainEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

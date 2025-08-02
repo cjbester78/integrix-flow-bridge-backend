@@ -2,9 +2,9 @@ package com.integrationlab.backend.domain.services;
 
 import com.integrationlab.backend.domain.valueobjects.FlowName;
 import com.integrationlab.backend.events.DomainEventPublisher;
-import com.integrationlab.model.FlowStatus;
-import com.integrationlab.model.IntegrationFlow;
-import com.integrationlab.repository.IntegrationFlowRepository;
+import com.integrationlab.data.model.FlowStatus;
+import com.integrationlab.data.model.IntegrationFlow;
+import com.integrationlab.data.repository.IntegrationFlowRepository;
 import com.integrationlab.shared.events.flow.FlowCreatedEvent;
 import com.integrationlab.shared.events.flow.FlowStatusChangedEvent;
 import com.integrationlab.shared.exceptions.BusinessException;
@@ -192,7 +192,7 @@ public class FlowDomainService {
         
         // Flow must have at least one transformation or be pass-through mapping
         if (flow.getTransformations().isEmpty() && 
-            flow.getMappingMode() != com.integrationlab.model.MappingMode.PASS_THROUGH) {
+            flow.getMappingMode() != com.integrationlab.data.model.MappingMode.PASS_THROUGH) {
             throw new BusinessException("Flow must have transformations or use pass-through mapping");
         }
         

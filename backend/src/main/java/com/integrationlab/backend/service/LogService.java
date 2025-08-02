@@ -2,8 +2,8 @@ package com.integrationlab.backend.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.integrationlab.model.IntegrationFlow;
-import com.integrationlab.data.entity.SystemLog;
+import com.integrationlab.data.model.IntegrationFlow;
+import com.integrationlab.data.model.SystemLog;
 import com.integrationlab.data.repository.SystemLogRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;

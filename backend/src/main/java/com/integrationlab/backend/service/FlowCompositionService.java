@@ -1,7 +1,7 @@
 package com.integrationlab.backend.service;
 
-import com.integrationlab.model.*;
-import com.integrationlab.repository.*;
+import com.integrationlab.data.model.*;
+import com.integrationlab.data.repository.*;
 import com.integrationlab.shared.dto.flow.FlowTransformationDTO;
 import com.integrationlab.shared.dto.mapping.FieldMappingDTO;
 import com.fasterxml.jackson.core.JsonProcessingException;

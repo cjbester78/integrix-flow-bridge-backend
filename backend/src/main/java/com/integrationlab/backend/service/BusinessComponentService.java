@@ -1,7 +1,7 @@
 package com.integrationlab.backend.service;
 
-import com.integrationlab.model.BusinessComponent;
-import com.integrationlab.repository.BusinessComponentRepository;
+import com.integrationlab.data.model.BusinessComponent;
+import com.integrationlab.data.repository.BusinessComponentRepository;
 import com.integrationlab.shared.dto.business.BusinessComponentDTO;
 import com.integrationlab.shared.dto.business.BusinessComponentCreateRequestDTO;
 import com.integrationlab.shared.dto.business.BusinessComponentUpdateRequestDTO;

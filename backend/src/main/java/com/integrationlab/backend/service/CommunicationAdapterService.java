@@ -1,7 +1,7 @@
 package com.integrationlab.backend.service;
 
-import com.integrationlab.model.CommunicationAdapter;
-import com.integrationlab.repository.CommunicationAdapterRepository;
+import com.integrationlab.data.model.CommunicationAdapter;
+import com.integrationlab.data.repository.CommunicationAdapterRepository;
 import com.integrationlab.shared.dto.adapter.AdapterConfigDTO;
 import com.integrationlab.shared.dto.adapter.AdapterTestResultDTO;
 import com.integrationlab.shared.enums.AdapterType;

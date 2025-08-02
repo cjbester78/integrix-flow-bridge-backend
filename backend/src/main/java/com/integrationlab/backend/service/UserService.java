@@ -2,10 +2,10 @@ package com.integrationlab.backend.service;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.integrationlab.model.User;
-import com.integrationlab.model.UserSession;
-import com.integrationlab.repository.UserRepository;
-import com.integrationlab.repository.UserSessionRepository;
+import com.integrationlab.data.model.User;
+import com.integrationlab.data.model.UserSession;
+import com.integrationlab.data.repository.UserRepository;
+import com.integrationlab.data.repository.UserSessionRepository;
 import com.integrationlab.shared.dto.user.UserRegisterResponseDTO;
 import com.integrationlab.shared.dto.user.UpdateUserRequestDTO;
 import com.integrationlab.shared.dto.user.UserDTO;

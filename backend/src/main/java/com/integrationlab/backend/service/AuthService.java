@@ -6,8 +6,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCrypt;
 import org.springframework.stereotype.Service;
 
-import com.integrationlab.model.User;
-import com.integrationlab.repository.UserRepository;
+import com.integrationlab.data.model.User;
+import com.integrationlab.data.repository.UserRepository;
 import com.integrationlab.backend.security.JwtUtil;
 
 import java.util.Optional;

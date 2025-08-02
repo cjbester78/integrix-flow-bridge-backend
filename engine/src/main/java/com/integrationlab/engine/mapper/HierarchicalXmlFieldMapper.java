@@ -1,6 +1,6 @@
 package com.integrationlab.engine.mapper;
 
-import com.integrationlab.model.FieldMapping;
+import com.integrationlab.data.model.FieldMapping;
 import org.springframework.stereotype.Service;
 import org.w3c.dom.*;
 import org.xml.sax.InputSource;
