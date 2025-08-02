@@ -1,5 +1,6 @@
 server:
   port: 8080
+  address: 0.0.0.0
 
 spring:
   application:
@@ -11,6 +12,16 @@ spring:
   mvc:
     pathmatch:
       matching-strategy: ant_path_matcher
+    static-path-pattern: /**
+  web:
+    resources:
+      cache:
+        cachecontrol:
+          no-cache: true
+          no-store: true
+          must-revalidate: true
+          max-age: 0
+      static-locations: classpath:/public/
   jackson:
     serialization:
       indent_output: true
@@ -34,10 +45,10 @@ spring:
           order_updates: true
         # Second-level cache configuration
         cache:
-          use_second_level_cache: true
-          use_query_cache: true
-          region:
-            factory_class: org.hibernate.cache.jcache.JCacheRegionFactory
+          use_second_level_cache: false
+          use_query_cache: false
+          # region:
+          #   factory_class: org.hibernate.cache.jcache.JCacheRegionFactory
         # Statistics (disable in production)
         generate_statistics: false
         # Connection handling
@@ -84,3 +95,10 @@ engine:
     thread-pool-size: 4
     retry-attempts: 3
     retry-delay-ms: 2000
+
+# ✅ System environment configuration
+system:
+  environment:
+    type: DEVELOPMENT  # Options: DEVELOPMENT, QUALITY_ASSURANCE, PRODUCTION
+    enforce-restrictions: true
+    restriction-message: "This action is not allowed in %s environment"

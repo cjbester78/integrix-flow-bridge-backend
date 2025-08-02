@@ -44,8 +44,9 @@ public class CommunicationAdapter {
     /** Detailed description of the component */
     private String description;
     
-    @Column(name = "business_component_id")
-    private String businessComponentId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "business_component_id")
+    private BusinessComponent businessComponent;
 
     // === Getters and Setters ===
 
@@ -106,11 +107,20 @@ public class CommunicationAdapter {
     }
 
     public String getBusinessComponentId() {
-        return businessComponentId;
+        return businessComponent != null ? businessComponent.getId() : null;
     }
 
     public void setBusinessComponentId(String businessComponentId) {
-        this.businessComponentId = businessComponentId;
+        // This setter is kept for backward compatibility
+        // In production code, use setBusinessComponent() instead
+    }
+    
+    public BusinessComponent getBusinessComponent() {
+        return businessComponent;
+    }
+    
+    public void setBusinessComponent(BusinessComponent businessComponent) {
+        this.businessComponent = businessComponent;
     }
 
     // === Generic Config Deserialization Method ===

@@ -44,13 +44,11 @@ public interface SystemSettingRepository extends JpaRepository<SystemSetting, St
 
     /**
      * Get setting value by key (returns null if not found)
+     * Note: This needs custom implementation in service layer to extract just the value
      */
-    @Query("SELECT s.settingValue FROM SystemSetting s WHERE s.settingKey = :settingKey")
-    String getSettingValueByKey(@Param("settingKey") String settingKey);
 
     /**
-     * Get all distinct categories
+     * Get all settings with non-null categories for distinct processing in service layer
      */
-    @Query("SELECT DISTINCT s.category FROM SystemSetting s WHERE s.category IS NOT NULL ORDER BY s.category")
-    List<String> findAllCategories();
+    List<SystemSetting> findByCategoryIsNotNullOrderByCategory();
 }

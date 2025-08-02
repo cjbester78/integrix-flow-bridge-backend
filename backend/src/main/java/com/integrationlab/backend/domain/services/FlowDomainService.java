@@ -190,10 +190,10 @@ public class FlowDomainService {
             throw new BusinessException("Cannot activate flow in ERROR state");
         }
         
-        // Flow must have at least one transformation or be direct mapping
+        // Flow must have at least one transformation or be pass-through mapping
         if (flow.getTransformations().isEmpty() && 
-            flow.getMappingMode() != com.integrationlab.model.MappingMode.DIRECT) {
-            throw new BusinessException("Flow must have transformations or use direct mapping");
+            flow.getMappingMode() != com.integrationlab.model.MappingMode.PASS_THROUGH) {
+            throw new BusinessException("Flow must have transformations or use pass-through mapping");
         }
         
         // Additional activation rules can be added here

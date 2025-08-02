@@ -2,9 +2,10 @@ package com.integrationlab.backend.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.integrationlab.data.entity.SystemLog;
-import com.integrationlab.data.entity.User;
+import com.integrationlab.data.specification.SystemLogSpecifications;
+import com.integrationlab.model.User;
 import com.integrationlab.data.repository.SystemLogRepository;
-import com.integrationlab.data.repository.UserRepository;
+import com.integrationlab.repository.UserRepository;
 import com.integrationlab.shared.dto.log.FrontendLogBatchRequest;
 import com.integrationlab.shared.dto.log.FrontendLogEntry;
 import lombok.RequiredArgsConstructor;
@@ -248,13 +249,15 @@ public class SystemLogService {
             category = "FRONTEND_" + category;
         }
         
-        return systemLogRepository.findByFilters(
-            "FRONTEND", 
-            category, 
-            level != null ? SystemLog.LogLevel.valueOf(level) : null,
-            userId,
-            startDate,
-            endDate
+        return systemLogRepository.findAll(
+            SystemLogSpecifications.withFilters(
+                "FRONTEND", 
+                category, 
+                level != null ? SystemLog.LogLevel.valueOf(level) : null,
+                userId,
+                startDate,
+                endDate
+            )
         );
     }
 

@@ -1,5 +1,6 @@
 package com.integrationlab.model;
 
+import com.integrationlab.shared.enums.TransformationType;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import lombok.*;

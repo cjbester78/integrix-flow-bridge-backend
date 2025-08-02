@@ -44,7 +44,12 @@ public class RateLimitingConfig implements WebMvcConfigurer {
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(rateLimitingInterceptor(rateLimiterService()))
                 .addPathPatterns("/api/**")
-                .excludePathPatterns("/api/auth/login", "/api/auth/register");
+                .excludePathPatterns(
+                    "/api/auth/login", 
+                    "/api/auth/register",
+                    "/api/system/logs/batch",  // Exclude batch logging endpoint
+                    "/api/auth/profile"        // Exclude profile endpoint for auth checks
+                );
     }
     
     /**

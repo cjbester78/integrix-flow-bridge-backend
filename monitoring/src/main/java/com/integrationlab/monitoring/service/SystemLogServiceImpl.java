@@ -3,15 +3,16 @@ package com.integrationlab.monitoring.service;
 
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.integrationlab.model.SystemLog;
+import com.integrationlab.data.entity.SystemLog;
 import com.integrationlab.monitoring.model.UserManagementError;
 import com.integrationlab.monitoring.repository.UserManagementErrorRepository;
-import com.integrationlab.repository.SystemLogRepository;
+import com.integrationlab.data.repository.SystemLogRepository;
 
 @Service
 /**
@@ -51,7 +52,7 @@ public class SystemLogServiceImpl implements SystemLogService {
     public void logUserManagementError(String action, String message, String detailsJson, String userId, String controller) {
         try {
             SystemLog log = new SystemLog();
-            log.setLevel("ERROR");
+            log.setLevel(SystemLog.LogLevel.ERROR);
             log.setMessage(message);
             log.setSource("api");
             log.setComponent(controller);
@@ -82,5 +83,51 @@ public class SystemLogServiceImpl implements SystemLogService {
             System.err.println("Failed to log user management error: " + e.getMessage());
             // DO NOT attempt recursive logging here!
         }
+    }
+    
+    @Override
+    public void logFlowActivity(String activity, String message, String flowId, String userId, String source) {
+        SystemLog log = new SystemLog();
+        log.setLevel(SystemLog.LogLevel.INFO);
+        log.setMessage(message);
+        log.setSource(source);
+        log.setComponent("FlowEngine");
+        log.setDomainType("FLOW");
+        log.setDomainReferenceId(flowId);
+        log.setUserId(userId);
+        log.setTimestamp(LocalDateTime.now());
+        log.setCreatedAt(LocalDateTime.now());
+        log.setDetails("{\"activity\": \"" + activity + "\"}");
+        
+        systemLogRepository.save(log);
+    }
+    
+    @Override
+    public void logFlowExecution(String flowId, String flowName, String status, Long flowVersion, 
+                                long executionDuration, String correlationId, String userId, String source) {
+        SystemLog log = new SystemLog();
+        log.setLevel(status.equals("SUCCESS") ? SystemLog.LogLevel.INFO : SystemLog.LogLevel.ERROR);
+        log.setMessage(String.format("Flow execution %s: %s", status.toLowerCase(), flowName));
+        log.setSource(source);
+        log.setComponent("FlowEngine");
+        log.setDomainType("FLOW");
+        log.setDomainReferenceId(flowId);
+        log.setUserId(userId);
+        log.setTimestamp(LocalDateTime.now());
+        log.setCreatedAt(LocalDateTime.now());
+        
+        try {
+            String details = objectMapper.writeValueAsString(new java.util.HashMap<String, Object>() {{
+                put("status", status);
+                put("duration_ms", executionDuration);
+                put("flow_version", flowVersion);
+                put("correlation_id", correlationId);
+            }});
+            log.setDetails(details);
+        } catch (Exception e) {
+            log.setDetails("{\"error\": \"Failed to serialize execution details\"}");
+        }
+        
+        systemLogRepository.save(log);
     }
 }

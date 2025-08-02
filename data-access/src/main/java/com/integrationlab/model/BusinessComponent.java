@@ -106,13 +106,6 @@ public class BusinessComponent {
     private String department;
 
     /**
-     * Cost center code for billing
-     */
-    @Column(name = "cost_center", length = 50)
-    @Size(max = 50, message = "Cost center cannot exceed 50 characters")
-    private String costCenter;
-
-    /**
      * Communication adapters owned by this component
      */
     @OneToMany(mappedBy = "businessComponent", cascade = CascadeType.ALL, fetch = FetchType.LAZY)

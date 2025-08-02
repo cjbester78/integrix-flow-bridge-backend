@@ -2,6 +2,7 @@ package com.integrationlab.backend.config;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.aop.interceptor.AsyncUncaughtExceptionHandler;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.event.ApplicationEventMulticaster;
@@ -53,7 +54,7 @@ public class EventDrivenConfig implements AsyncConfigurer {
      * @return configured event multicaster
      */
     @Bean(name = "applicationEventMulticaster")
-    public ApplicationEventMulticaster applicationEventMulticaster(TaskExecutor eventExecutor) {
+    public ApplicationEventMulticaster applicationEventMulticaster(@Qualifier("eventExecutor") TaskExecutor eventExecutor) {
         SimpleApplicationEventMulticaster eventMulticaster = new SimpleApplicationEventMulticaster();
         eventMulticaster.setTaskExecutor(eventExecutor);
         eventMulticaster.setErrorHandler(throwable -> 

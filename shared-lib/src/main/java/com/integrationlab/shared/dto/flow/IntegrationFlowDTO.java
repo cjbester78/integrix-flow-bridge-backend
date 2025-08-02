@@ -80,6 +80,11 @@ public class IntegrationFlowDTO {
     private String configuration;
     
     /**
+     * Mapping mode for the flow (WITH_MAPPING or PASS_THROUGH)
+     */
+    private String mappingMode;
+    
+    /**
      * Whether the flow is currently active
      */
     @NotNull(message = "Active status is required")

@@ -1,7 +1,7 @@
 package com.integrationlab.backend.service;
 
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -13,10 +13,10 @@ import org.springframework.stereotype.Service;
  */
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class NotificationService {
 
-    private final JavaMailSender mailSender;
+    @Autowired(required = false)
+    private JavaMailSender mailSender;
 
     @Value("${notifications.email.enabled:false}")
     private boolean emailEnabled;
@@ -36,8 +36,8 @@ public class NotificationService {
     @Async
     public void sendSystemAlert(String subject, String message) {
         try {
-            if (!emailEnabled) {
-                log.info("Email notifications disabled. Alert: {} - {}", subject, message);
+            if (!emailEnabled || mailSender == null) {
+                log.info("Email notifications disabled or mail sender not configured. Alert: {} - {}", subject, message);
                 return;
             }
 

@@ -35,6 +35,21 @@ integrix-flow-bridge/
 └── frontend-ui/        # React/TypeScript frontend
 ```
 
+### Package Structure Convention
+**CRITICAL**: All backend classes must use the base package `com.integrationlab.backend`
+- Controllers: `com.integrationlab.backend.controller`
+- Services: `com.integrationlab.backend.service`
+- Security: `com.integrationlab.backend.security`
+- Configuration: `com.integrationlab.backend.config`
+- Exceptions: `com.integrationlab.backend.exception`
+- Utilities: `com.integrationlab.backend.util`
+- WebSocket: `com.integrationlab.backend.websocket`
+- Domain: `com.integrationlab.backend.domain`
+- Events: `com.integrationlab.backend.events`
+- Saga: `com.integrationlab.backend.saga`
+
+**Never** create classes under `com.integrationlab` without the `backend` subpackage. This ensures clear module separation and prevents classpath conflicts.
+
 ### Technology Stack
 - **Backend**: Spring Boot 3.5.3, Java 21, MySQL 8.x
 - **Frontend**: React 18, TypeScript, Vite, shadcn/ui, Tailwind CSS
@@ -141,6 +156,63 @@ engine.worker.retry-attempts: 3
 # Certificate storage
 certificates.storage.path: /opt/integrixflowbridge/certs
 ```
+
+## JPA Specification Pattern
+
+### Dynamic Query Filtering
+For complex dynamic queries with optional parameters, use JPA Specifications instead of JPQL:
+
+```java
+// Repository extends JpaSpecificationExecutor
+public interface SystemLogRepository extends JpaRepository<SystemLog, String>, 
+                                            JpaSpecificationExecutor<SystemLog> {
+    // Simple queries can use method naming
+    List<SystemLog> findBySourceAndLevelAndTimestampAfter(String source, LogLevel level, LocalDateTime timestamp);
+}
+
+// Specification class for dynamic queries
+public class SystemLogSpecifications {
+    public static Specification<SystemLog> withFilters(String source, String category, 
+                                                       LogLevel level, String userId,
+                                                       LocalDateTime startDate, LocalDateTime endDate) {
+        return (root, query, cb) -> {
+            List<Predicate> predicates = new ArrayList<>();
+            
+            if (source != null) {
+                predicates.add(cb.equal(root.get("source"), source));
+            }
+            if (category != null) {
+                predicates.add(cb.equal(root.get("category"), category));
+            }
+            if (level != null) {
+                predicates.add(cb.equal(root.get("level"), level));
+            }
+            if (userId != null) {
+                predicates.add(cb.equal(root.get("userId"), userId));
+            }
+            if (startDate != null) {
+                predicates.add(cb.greaterThanOrEqualTo(root.get("timestamp"), startDate));
+            }
+            if (endDate != null) {
+                predicates.add(cb.lessThanOrEqualTo(root.get("timestamp"), endDate));
+            }
+            
+            return cb.and(predicates.toArray(new Predicate[0]));
+        };
+    }
+}
+
+// Service usage
+List<SystemLog> logs = systemLogRepository.findAll(
+    SystemLogSpecifications.withFilters(source, category, level, userId, startDate, endDate)
+);
+```
+
+### Best Practices
+- Use method naming for simple queries (findByFieldAndOtherField)
+- Use Specifications for complex dynamic queries with optional parameters
+- Avoid @Query with JPQL unless absolutely necessary
+- Let Spring Data JPA generate the queries when possible
 
 ## Adapter Framework
 
@@ -548,3 +620,4 @@ To enable git commits, ensure:
 - NEVER create files unless they're absolutely necessary for achieving your goal.
 - ALWAYS prefer editing an existing file to creating a new one.
 - NEVER proactively create documentation files (*.md) or README files. Only create documentation files if explicitly requested by the User.
+- NEVER create test files or suggest adding tests. This project does not use tests.

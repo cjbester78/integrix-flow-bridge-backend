@@ -2,10 +2,10 @@ package com.integrationlab.monitoring.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.integrationlab.model.SystemLog;
+import com.integrationlab.data.entity.SystemLog;
 import com.integrationlab.monitoring.model.LogLevel;
 import com.integrationlab.monitoring.model.LogSource;
-import com.integrationlab.repository.SystemLogRepository;
+import com.integrationlab.data.repository.SystemLogRepository;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -35,7 +35,7 @@ public class LogEventServiceImpl implements LogEventService {
     ) {
         SystemLog log = new SystemLog();
         log.setTimestamp(LocalDateTime.now());
-        log.setLevel(level.name());
+        log.setLevel(SystemLog.LogLevel.valueOf(level.name()));
         log.setSource(source.name());
         log.setMessage(message);
         log.setDomainType(domainType);

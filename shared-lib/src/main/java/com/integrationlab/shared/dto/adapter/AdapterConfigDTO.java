@@ -33,6 +33,11 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 public class AdapterConfigDTO {
     
     /**
+     * Unique identifier for the adapter.
+     */
+    private String id;
+    
+    /**
      * Name of the adapter configuration.
      * Should be unique within a business component.
      */

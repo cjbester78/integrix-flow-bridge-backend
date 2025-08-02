@@ -12,5 +12,6 @@ import java.util.List;
  * Provides CRUD operations and query methods for the corresponding entity.
  */
 public interface CommunicationAdapterRepository extends JpaRepository<CommunicationAdapter, String> {
-    List<CommunicationAdapter> findByBusinessComponentId(String businessComponentId);
+    List<CommunicationAdapter> findByBusinessComponent_Id(String businessComponentId);
+    boolean existsByName(String name);
 }

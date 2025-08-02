@@ -89,7 +89,6 @@ public class CacheConfig {
      */
     private Caffeine<Object, Object> defaultCaffeineConfig() {
         return Caffeine.newBuilder()
-                .maximumSize(10_000)
                 .maximumWeight(100_000_000) // 100MB max weight
                 .weigher((key, value) -> estimateSize(value))
                 .expireAfterWrite(30, TimeUnit.MINUTES)
@@ -97,8 +96,7 @@ public class CacheConfig {
                 .weakKeys() // Allow keys to be garbage collected
                 .softValues() // Allow values to be garbage collected under memory pressure
                 .recordStats()
-                .removalListener(new LoggingRemovalListener())
-                .build();
+                .removalListener(new LoggingRemovalListener());
     }
     
     /**
@@ -114,8 +112,7 @@ public class CacheConfig {
                     if (cause == RemovalCause.EXPIRED) {
                         log.debug("Session cache entry expired: {}", key);
                     }
-                })
-                .build();
+                });
     }
     
     /**
@@ -127,8 +124,7 @@ public class CacheConfig {
                 .expireAfterWrite(5, TimeUnit.MINUTES) // Short TTL for query results
                 .expireAfterAccess(2, TimeUnit.MINUTES)
                 .recordStats()
-                .removalListener(new LoggingRemovalListener())
-                .build();
+                .removalListener(new LoggingRemovalListener());
     }
     
     /**
@@ -139,8 +135,7 @@ public class CacheConfig {
                 .maximumSize(1_000)
                 .expireAfterWrite(10, TimeUnit.MINUTES)
                 .expireAfterAccess(5, TimeUnit.MINUTES)
-                .recordStats()
-                .build();
+                .recordStats();
     }
     
     /**
@@ -151,8 +146,7 @@ public class CacheConfig {
                 .maximumSize(500)
                 .expireAfterWrite(30, TimeUnit.MINUTES)
                 .expireAfterAccess(15, TimeUnit.MINUTES)
-                .recordStats()
-                .build();
+                .recordStats();
     }
     
     /**
@@ -163,8 +157,7 @@ public class CacheConfig {
                 .maximumSize(200)
                 .expireAfterWrite(15, TimeUnit.MINUTES)
                 .expireAfterAccess(5, TimeUnit.MINUTES)
-                .recordStats()
-                .build();
+                .recordStats();
     }
     
     /**
@@ -175,8 +168,7 @@ public class CacheConfig {
                 .maximumSize(100)
                 .expireAfterWrite(60, TimeUnit.MINUTES) // Longer TTL for rarely changing data
                 .expireAfterAccess(30, TimeUnit.MINUTES)
-                .recordStats()
-                .build();
+                .recordStats();
     }
     
     /**

@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.http.MediaType;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -52,7 +53,7 @@ public class GlobalExceptionHandler {
         ErrorResponse errorResponse = ErrorResponse.builder()
                 .timestamp(ex.getTimestamp())
                 .status(ex.getHttpStatusCode())
-                .error(ex.getCategory().name())
+                .error(ex.getCategory())
                 .errorCode(ex.getErrorCode())
                 .message(ex.getMessage())
                 .path(request.getRequestURI())

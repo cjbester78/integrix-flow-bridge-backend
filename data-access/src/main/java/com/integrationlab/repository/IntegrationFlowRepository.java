@@ -26,24 +26,21 @@ public interface IntegrationFlowRepository extends JpaRepository<IntegrationFlow
     @EntityGraph(attributePaths = {"transformations", "businessComponent"})
     Optional<IntegrationFlow> findWithTransformationsById(String id);
     
-    // Paginated query with index usage
-    @Query("SELECT f FROM IntegrationFlow f WHERE f.isActive = :active ORDER BY f.updatedAt DESC")
-    Page<IntegrationFlow> findByActiveWithPagination(@Param("active") boolean active, Pageable pageable);
+    // Using JPA method naming for pagination
+    Page<IntegrationFlow> findByIsActiveOrderByUpdatedAtDesc(boolean isActive, Pageable pageable);
     
-    // Count queries use indexes
-    @Query("SELECT COUNT(f) FROM IntegrationFlow f WHERE f.isActive = :active")
-    int countByActive(@Param("active") boolean active);
+    // Using JPA method naming for count
+    int countByIsActive(boolean isActive);
     
-    @Query("SELECT COUNT(f) FROM IntegrationFlow f WHERE f.status = :status")
-    int countByStatus(@Param("status") FlowStatus status);
+    // JPA handles this automatically
+    int countByStatus(FlowStatus status);
     
     // Batch query to load multiple flows efficiently
     @Query("SELECT DISTINCT f FROM IntegrationFlow f LEFT JOIN FETCH f.transformations WHERE f.id IN :ids")
     List<IntegrationFlow> findAllByIdWithTransformations(@Param("ids") List<String> ids);
     
-    // Query using indexes for performance
-    @Query("SELECT f FROM IntegrationFlow f WHERE f.status = :status AND f.isActive = true ORDER BY f.name")
-    List<IntegrationFlow> findActiveByStatus(@Param("status") FlowStatus status);
+    // Using JPA method naming
+    List<IntegrationFlow> findByStatusAndIsActiveTrueOrderByName(FlowStatus status);
     
     // Efficient update queries
     @Modifying
@@ -63,10 +60,9 @@ public interface IntegrationFlowRepository extends JpaRepository<IntegrationFlow
            "FROM IntegrationFlow f WHERE f.createdBy = :userId")
     List<Object> findFlowStatsByUser(@Param("userId") String userId);
     
-    @Query("SELECT COUNT(DISTINCT f) FROM IntegrationFlow f " +
-           "LEFT JOIN CommunicationAdapter sa ON f.sourceAdapterId = sa.id " +
-           "LEFT JOIN CommunicationAdapter ta ON f.targetAdapterId = ta.id " +
-           "WHERE (sa.businessComponentId = :businessComponentId OR ta.businessComponentId = :businessComponentId) " +
-           "AND f.isActive = :active")
-    int countByBusinessComponentIdAndActive(@Param("businessComponentId") String businessComponentId, @Param("active") boolean active);
+    // Remove this complex query and use a simpler approach through service layer
+    // Complex business component filtering should be done in the service layer
+    List<IntegrationFlow> findByIsActive(boolean active);
+    
+    boolean existsByName(String name);
 }
