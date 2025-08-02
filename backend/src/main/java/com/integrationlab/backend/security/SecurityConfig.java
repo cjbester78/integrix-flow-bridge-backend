@@ -105,7 +105,12 @@ public class SecurityConfig {
                                 "/**/*.png",
                                 "/**/*.jpg",
                                 "/**/*.woff2",
-                                "/**/*.ttf"
+                                "/**/*.ttf",
+                                "/ws/**",
+                                "/flow-execution",
+                                "/ws/messages",
+                                "/ws/flow-execution",
+                                "/ws/flow-execution-native"
                         ).permitAll()
                         .requestMatchers("/api/admin/**").hasRole("ADMINISTRATOR")
                         .requestMatchers("/api/flows/**").hasAnyRole("ADMINISTRATOR", "INTEGRATOR")

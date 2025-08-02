@@ -30,7 +30,7 @@ public class MessageService {
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm:ss");
 
     public List<RecentMessageDTO> getRecentMessages(String businessComponentId, int limit) {
-        PageRequest pageRequest = PageRequest.of(0, limit, Sort.by(Sort.Direction.DESC, "createdAt"));
+        PageRequest pageRequest = PageRequest.of(0, limit, Sort.by(Sort.Direction.DESC, "timestamp"));
         
         List<SystemLog> logs = businessComponentId != null
             ? logRepository.findByComponentId(businessComponentId, pageRequest)
@@ -45,7 +45,7 @@ public class MessageService {
      * Get messages with filtering and pagination
      */
     public Map<String, Object> getMessages(Map<String, Object> filters, int page, int size) {
-        PageRequest pageRequest = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
+        PageRequest pageRequest = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "timestamp"));
         Specification<SystemLog> spec = buildSpecification(filters);
         
         Page<SystemLog> logPage = logRepository.findAll(spec, pageRequest);
@@ -158,11 +158,11 @@ public class MessageService {
             }
             
             if (filters.containsKey("dateFrom")) {
-                predicates.add(cb.greaterThanOrEqualTo(root.get("createdAt"), (LocalDateTime) filters.get("dateFrom")));
+                predicates.add(cb.greaterThanOrEqualTo(root.get("timestamp"), (LocalDateTime) filters.get("dateFrom")));
             }
             
             if (filters.containsKey("dateTo")) {
-                predicates.add(cb.lessThanOrEqualTo(root.get("createdAt"), (LocalDateTime) filters.get("dateTo")));
+                predicates.add(cb.lessThanOrEqualTo(root.get("timestamp"), (LocalDateTime) filters.get("dateTo")));
             }
             
             if (filters.containsKey("search")) {
@@ -184,14 +184,14 @@ public class MessageService {
         // Create log entries
         List<MessageDTO.MessageLogDTO> logs = new ArrayList<>();
         logs.add(MessageDTO.MessageLogDTO.builder()
-                .timestamp(log.getCreatedAt())
+                .timestamp(log.getTimestamp())
                 .level(log.getLevel().name())
                 .message(log.getMessage())
                 .build());
         
         return MessageDTO.builder()
                 .id(log.getId())
-                .timestamp(log.getCreatedAt())
+                .timestamp(log.getTimestamp())
                 .source(log.getSource() != null ? log.getSource() : "System")
                 .target(log.getSourceName() != null ? log.getSourceName() : "Integration Flow")
                 .type(log.getCategory() != null ? log.getCategory() : "INTEGRATION")
@@ -211,7 +211,7 @@ public class MessageService {
                 .source(log.getSource() != null ? log.getSource() : "System")
                 .target(log.getSourceName() != null ? log.getSourceName() : "Integration Flow")
                 .status(status)
-                .time(log.getCreatedAt().format(TIME_FORMATTER))
+                .time(log.getTimestamp().format(TIME_FORMATTER))
                 .businessComponentId(log.getComponentId())
                 .build();
     }
