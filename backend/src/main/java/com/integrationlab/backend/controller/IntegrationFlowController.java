@@ -2,6 +2,7 @@ package com.integrationlab.backend.controller;
 
 import com.integrationlab.data.model.IntegrationFlow;
 import com.integrationlab.backend.service.IntegrationFlowService;
+import com.integrationlab.shared.dto.IntegrationFlowDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -16,13 +17,13 @@ public class IntegrationFlowController {
     private IntegrationFlowService integrationFlowService;
 
     @GetMapping
-    public ResponseEntity<List<IntegrationFlow>> getAllFlows() {
-        return ResponseEntity.ok(integrationFlowService.getAllFlows());
+    public ResponseEntity<List<IntegrationFlowDTO>> getAllFlows() {
+        return ResponseEntity.ok(integrationFlowService.getAllFlowsAsDTO());
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<IntegrationFlow> getFlowById(@PathVariable String id) {
-        return integrationFlowService.getFlowById(id)
+    public ResponseEntity<IntegrationFlowDTO> getFlowById(@PathVariable String id) {
+        return integrationFlowService.getFlowByIdAsDTO(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }

@@ -19,14 +19,15 @@ public class FlowCompositionController {
      * Create a complete direct mapping flow
      */
     @PostMapping("/direct-mapping")
-    public ResponseEntity<IntegrationFlow> createDirectMappingFlow(@RequestBody DirectMappingFlowRequest request) {
+    public ResponseEntity<?> createDirectMappingFlow(@RequestBody DirectMappingFlowRequest request) {
         try {
             IntegrationFlow flow = flowCompositionService.createDirectMappingFlow(request);
             return ResponseEntity.ok(flow);
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().build();
+            return ResponseEntity.badRequest().body(new ErrorResponse("Validation Error", e.getMessage()));
         } catch (Exception e) {
-            return ResponseEntity.internalServerError().build();
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().body(new ErrorResponse("Internal Server Error", e.getMessage()));
         }
     }
 
@@ -199,5 +200,21 @@ public class FlowCompositionController {
         public void addWarning(String warning) { 
             this.warnings.add(warning); 
         }
+    }
+    
+    // Error response DTO
+    public static class ErrorResponse {
+        private String error;
+        private String message;
+        
+        public ErrorResponse(String error, String message) {
+            this.error = error;
+            this.message = message;
+        }
+        
+        public String getError() { return error; }
+        public void setError(String error) { this.error = error; }
+        public String getMessage() { return message; }
+        public void setMessage(String message) { this.message = message; }
     }
 }

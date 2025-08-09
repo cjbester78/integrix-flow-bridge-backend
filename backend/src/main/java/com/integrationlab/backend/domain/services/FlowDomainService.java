@@ -48,7 +48,7 @@ public class FlowDomainService {
         validateFlowCreation(flow);
         
         // Set initial state
-        flow.setStatus(FlowStatus.DRAFT);
+        flow.setStatus(FlowStatus.DEVELOPED_INACTIVE);
         flow.setActive(false);
         flow.setCreatedBy(createdBy);
         flow.setCreatedAt(LocalDateTime.now());

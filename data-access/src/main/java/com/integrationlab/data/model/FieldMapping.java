@@ -164,6 +164,25 @@ public class FieldMapping {
     private boolean isActive = true;
 
     /**
+     * Visual flow data (nodes and edges) in JSON format
+     */
+    @Column(name = "visual_flow_data", columnDefinition = "json")
+    private String visualFlowData;
+
+    /**
+     * Function node configuration in JSON format
+     */
+    @Column(name = "function_node", columnDefinition = "json")
+    private String functionNode;
+
+    /**
+     * Order of this mapping within the transformation
+     */
+    @Column(name = "mapping_order")
+    @Builder.Default
+    private Integer mappingOrder = 0;
+
+    /**
      * Timestamp of entity creation
      */
     @Column(name = "created_at", updatable = false)
@@ -176,6 +195,20 @@ public class FieldMapping {
     @Column(name = "updated_at")
     @UpdateTimestamp
     private LocalDateTime updatedAt;
+
+    /**
+     * User who created this field mapping
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "created_by")
+    private User createdBy;
+
+    /**
+     * User who last updated this field mapping
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "updated_by")
+    private User updatedBy;
 
     /**
      * Transient field for parsed source fields list

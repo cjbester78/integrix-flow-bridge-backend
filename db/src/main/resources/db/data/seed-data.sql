@@ -140,15 +140,15 @@ INSERT INTO data_structures (id, name, type, description, `usage`, structure, ta
 
 -- Insert Communication Adapters (a few examples)
 INSERT INTO communication_adapters (id, name, type, mode, direction, description, configuration, status, is_active, created_by, business_component_id) VALUES
-('adapter-001', 'REST API Endpoint', 'REST', 'SENDER', 'INBOUND', 'REST API for receiving orders',
+('adapter-001', 'REST API Endpoint', 'REST', 'SENDER', 'OUTBOUND', 'REST API for receiving orders',
  '{"baseUrl":"https://api.acme.com/v1","authentication":{"type":"oauth2"},"timeout":30000}',
  'active', TRUE, 'user-integrator1', 'bc-001'),
 
-('adapter-002', 'Database Connection', 'JDBC', 'RECEIVER', 'OUTBOUND', 'MySQL database for storing processed data',
+('adapter-002', 'Database Connection', 'JDBC', 'RECEIVER', 'INBOUND', 'MySQL database for storing processed data',
  '{"connectionString":"jdbc:mysql://localhost:3306/acme_db","poolSize":10}',
  'active', TRUE, 'user-integrator1', 'bc-001'),
 
-('adapter-003', 'SFTP File Transfer', 'SFTP', 'BIDIRECTIONAL', 'BIDIRECTIONAL', 'Secure file transfer for batch processing',
+('adapter-003', 'SFTP File Transfer', 'SFTP', 'SENDER', 'OUTBOUND', 'Secure file transfer for batch processing',
  '{"host":"sftp.techstart.com","port":22,"directory":"/integrations"}',
  'active', TRUE, 'user-integrator2', 'bc-002');
 

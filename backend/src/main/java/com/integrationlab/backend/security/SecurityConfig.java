@@ -112,9 +112,11 @@ public class SecurityConfig {
                                 "/ws/flow-execution",
                                 "/ws/flow-execution-native"
                         ).permitAll()
-                        .requestMatchers("/api/admin/**").hasRole("ADMINISTRATOR")
-                        .requestMatchers("/api/flows/**").hasAnyRole("ADMINISTRATOR", "INTEGRATOR")
-                        .requestMatchers("/api/**").hasAnyRole("ADMINISTRATOR", "INTEGRATOR", "VIEWER")
+                        .requestMatchers("/api/system-settings/**").hasRole("ADMINISTRATOR")
+                        .requestMatchers("/api/admin/**").hasAnyRole("ADMINISTRATOR", "DEVELOPER")
+                        .requestMatchers("/api/flows/execute/**").hasAnyRole("ADMINISTRATOR", "DEVELOPER", "INTEGRATOR")
+                        .requestMatchers("/api/flows/**").hasAnyRole("ADMINISTRATOR", "DEVELOPER", "VIEWER")
+                        .requestMatchers("/api/**").hasAnyRole("ADMINISTRATOR", "DEVELOPER", "INTEGRATOR", "VIEWER")
                         .anyRequest().permitAll() // Change to permitAll for SPA routes
                 )
                 

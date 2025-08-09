@@ -6,6 +6,9 @@ import com.integrationlab.adapters.core.AdapterMode;
 
 import jakarta.persistence.*;
 import org.hibernate.annotations.GenericGenerator;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "communication_adapters")
@@ -33,6 +36,9 @@ public class CommunicationAdapter {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 10)
     private AdapterMode mode; // SENDER or RECEIVER
+    
+    @Column(length = 20)
+    private String direction; // INBOUND, OUTBOUND, BIDIRECTIONAL
 
     @Column(columnDefinition = "json")
     private String configuration;
@@ -47,6 +53,22 @@ public class CommunicationAdapter {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "business_component_id")
     private BusinessComponent businessComponent;
+
+    @Column(name = "created_at", updatable = false)
+    @CreationTimestamp
+    private LocalDateTime createdAt;
+
+    @Column(name = "updated_at")
+    @UpdateTimestamp
+    private LocalDateTime updatedAt;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "created_by")
+    private User createdBy;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "updated_by")
+    private User updatedBy;
 
     // === Getters and Setters ===
 
@@ -105,6 +127,14 @@ public class CommunicationAdapter {
     public void setMode(AdapterMode mode) {
         this.mode = mode;
     }
+    
+    public String getDirection() {
+        return direction;
+    }
+    
+    public void setDirection(String direction) {
+        this.direction = direction;
+    }
 
     public String getBusinessComponentId() {
         return businessComponent != null ? businessComponent.getId() : null;
@@ -121,6 +151,38 @@ public class CommunicationAdapter {
     
     public void setBusinessComponent(BusinessComponent businessComponent) {
         this.businessComponent = businessComponent;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
+    }
+
+    public User getCreatedBy() {
+        return createdBy;
+    }
+
+    public void setCreatedBy(User createdBy) {
+        this.createdBy = createdBy;
+    }
+
+    public User getUpdatedBy() {
+        return updatedBy;
+    }
+
+    public void setUpdatedBy(User updatedBy) {
+        this.updatedBy = updatedBy;
     }
 
     // === Generic Config Deserialization Method ===

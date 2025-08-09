@@ -18,10 +18,10 @@ public interface SystemLogRepository extends JpaRepository<SystemLog, String>, J
     // Complex filtering will be handled by JPA Specifications in the service layer
     
     // Methods for DashboardService
-    long countByComponentIdAndCreatedAtAfter(String componentId, LocalDateTime date);
-    long countByCreatedAtAfter(LocalDateTime date);
-    long countByComponentIdAndLevelAndCreatedAtAfter(String componentId, SystemLog.LogLevel level, LocalDateTime date);
-    long countByLevelAndCreatedAtAfter(SystemLog.LogLevel level, LocalDateTime date);
+    long countByComponentIdAndTimestampAfter(String componentId, LocalDateTime date);
+    long countByTimestampAfter(LocalDateTime date);
+    long countByComponentIdAndLevelAndTimestampAfter(String componentId, SystemLog.LogLevel level, LocalDateTime date);
+    long countByLevelAndTimestampAfter(SystemLog.LogLevel level, LocalDateTime date);
     
     // Methods for MessageService
     List<SystemLog> findByComponentId(String componentId, org.springframework.data.domain.Pageable pageable);

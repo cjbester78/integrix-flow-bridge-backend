@@ -1,6 +1,10 @@
 server:
   port: 8080
   address: 0.0.0.0
+  tomcat:
+    max-http-form-post-size: 10MB
+    max-swallow-size: 10MB
+    connection-timeout: 30000
 
 spring:
   application:
@@ -9,10 +13,17 @@ spring:
     active: dev
   main:
     allow-bean-definition-overriding: true
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
   mvc:
     pathmatch:
       matching-strategy: ant_path_matcher
     static-path-pattern: /**
+    # Large request body support
+    async:
+      request-timeout: 60000
   web:
     resources:
       cache:
@@ -27,6 +38,12 @@ spring:
       indent_output: true
       write-dates-as-timestamps: false
     default-property-inclusion: non_null
+    # Large JSON payload support
+    generator:
+      write-numbers-as-strings: false
+    parser:
+      allow-unquoted-control-chars: true
+      allow-backslash-escaping-any-character: true
 
 # ✅ JPA default settings
   jpa:
@@ -102,3 +119,7 @@ system:
     type: DEVELOPMENT  # Options: DEVELOPMENT, QUALITY_ASSURANCE, PRODUCTION
     enforce-restrictions: true
     restriction-message: "This action is not allowed in %s environment"
+
+# ✅ Audit configuration
+audit:
+  enabled: false  # Temporarily disable audit aspect to avoid circular dependency

@@ -65,4 +65,6 @@ public interface IntegrationFlowRepository extends JpaRepository<IntegrationFlow
     List<IntegrationFlow> findByIsActive(boolean active);
     
     boolean existsByName(String name);
+    
+    boolean existsByNameAndIdNot(String name, String id);
 }

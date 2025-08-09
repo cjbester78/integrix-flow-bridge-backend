@@ -23,9 +23,15 @@ public class FlowTransformationService {
     private IntegrationFlowRepository flowRepository;
 
     public List<FlowTransformationDTO> getByFlowId(String flowId) {
-        return transformationRepository.findByFlowId(flowId)
-                .stream()
-                .map(this::toDTO)
+        List<FlowTransformation> transformations = transformationRepository.findByFlowId(flowId);
+        System.out.println("Found " + transformations.size() + " transformations for flow " + flowId);
+        
+        return transformations.stream()
+                .map(transformation -> {
+                    FlowTransformationDTO dto = toDTO(transformation);
+                    System.out.println("Transformation: id=" + dto.getId() + ", name=" + dto.getName() + ", type=" + dto.getType());
+                    return dto;
+                })
                 .collect(Collectors.toList());
     }
 
@@ -47,6 +53,7 @@ public class FlowTransformationService {
         dto.setId(transformation.getId());
         dto.setFlowId(transformation.getFlow() != null ? transformation.getFlow().getId() : null);
         dto.setType(transformation.getType().toString());
+        dto.setName(transformation.getName()); // Include the name field
         dto.setConfiguration(transformation.getConfiguration());
         dto.setExecutionOrder(transformation.getExecutionOrder());
         dto.setActive(transformation.isActive());
@@ -61,15 +68,21 @@ public class FlowTransformationService {
         transformation.setId(dto.getId());
         
         // Set flow if flowId is provided
+        Optional<IntegrationFlow> flow = Optional.empty();
         if (dto.getFlowId() != null) {
-            Optional<IntegrationFlow> flow = flowRepository.findById(dto.getFlowId());
+            flow = flowRepository.findById(dto.getFlowId());
             flow.ifPresent(transformation::setFlow);
         }
         
         transformation.setType(FlowTransformation.TransformationType.valueOf(dto.getType()));
+        transformation.setName(dto.getName()); // Set the name field
         transformation.setConfiguration(dto.getConfiguration());
         transformation.setExecutionOrder(dto.getExecutionOrder());
         transformation.setActive(dto.isActive());
+        
+        // TODO: Set audit fields properly - need to resolve User vs String inconsistency
+        // For now, the AuditEntityListener will handle setting timestamps
+        
         return transformation;
     }
 }

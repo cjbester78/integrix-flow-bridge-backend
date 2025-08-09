@@ -27,7 +27,22 @@ public class CommunicationAdapterController {
 
     @PostMapping
     public ResponseEntity<AdapterConfigDTO> createAdapter(@RequestBody AdapterConfigDTO dto) {
-        return ResponseEntity.ok(adapterService.createAdapter(dto));
+        logger.info("Creating adapter - Received DTO: {}", dto);
+        logger.info("Business Component ID: {}", dto.getBusinessComponentId());
+        logger.info("Adapter Type: {}", dto.getType());
+        logger.info("Adapter Mode: {}", dto.getMode());
+        
+        try {
+            AdapterConfigDTO result = adapterService.createAdapter(dto);
+            logger.info("Successfully created adapter with ID: {}", result.getId());
+            return ResponseEntity.ok(result);
+        } catch (IllegalArgumentException e) {
+            logger.error("Validation error creating adapter: {}", e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            logger.error("Error creating adapter", e);
+            throw e;
+        }
     }
 
     @GetMapping

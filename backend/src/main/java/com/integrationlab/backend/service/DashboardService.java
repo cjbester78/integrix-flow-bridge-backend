@@ -48,13 +48,13 @@ public class DashboardService {
         // Calculate messages today
         LocalDateTime startOfDay = LocalDateTime.now().toLocalDate().atStartOfDay();
         long messagesToday = businessComponentId != null
-            ? logRepository.countByComponentIdAndCreatedAtAfter(businessComponentId, startOfDay)
-            : logRepository.countByCreatedAtAfter(startOfDay);
+            ? logRepository.countByComponentIdAndTimestampAfter(businessComponentId, startOfDay)
+            : logRepository.countByTimestampAfter(startOfDay);
 
         // Calculate success rate
         long successfulMessages = businessComponentId != null
-            ? logRepository.countByComponentIdAndLevelAndCreatedAtAfter(businessComponentId, SystemLog.LogLevel.INFO, startOfDay)
-            : logRepository.countByLevelAndCreatedAtAfter(SystemLog.LogLevel.INFO, startOfDay);
+            ? logRepository.countByComponentIdAndLevelAndTimestampAfter(businessComponentId, SystemLog.LogLevel.INFO, startOfDay)
+            : logRepository.countByLevelAndTimestampAfter(SystemLog.LogLevel.INFO, startOfDay);
         
         double successRate = messagesToday > 0 ? (successfulMessages * 100.0 / messagesToday) : 100.0;
 

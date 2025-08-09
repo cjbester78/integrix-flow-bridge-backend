@@ -56,7 +56,7 @@ public class SystemConfigController {
      * @return Updated environment info
      */
     @PutMapping("/environment")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMINISTRATOR')")
     @Operation(summary = "Update environment type")
     public ResponseEntity<Map<String, Object>> updateEnvironmentType(
             @RequestBody EnvironmentUpdateRequest request) {

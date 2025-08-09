@@ -25,6 +25,17 @@ public class FieldMappingService {
     public List<FieldMappingDTO> getByTransformationId(String transformationId) {
         return mappingRepository.findByTransformationId(transformationId)
                 .stream()
+                .sorted((a, b) -> {
+                    // Sort by mappingOrder, then by id as fallback
+                    int orderCompare = Integer.compare(
+                        a.getMappingOrder() != null ? a.getMappingOrder() : 0,
+                        b.getMappingOrder() != null ? b.getMappingOrder() : 0
+                    );
+                    if (orderCompare != 0) {
+                        return orderCompare;
+                    }
+                    return a.getId().compareTo(b.getId());
+                })
                 .map(this::toDTO)
                 .collect(Collectors.toList());
     }
@@ -56,6 +67,13 @@ public class FieldMappingService {
         dto.setVersion(mapping.getVersion());
         dto.setFunctionName(mapping.getFunctionName());
         dto.setActive(mapping.isActive());
+        dto.setArrayMapping(mapping.isArrayMapping());
+        dto.setArrayContextPath(mapping.getArrayContextPath());
+        dto.setSourceXPath(mapping.getSourceXPath());
+        dto.setTargetXPath(mapping.getTargetXPath());
+        dto.setVisualFlowData(mapping.getVisualFlowData());
+        dto.setFunctionNode(mapping.getFunctionNode());
+        dto.setMappingOrder(mapping.getMappingOrder());
         dto.setCreatedAt(mapping.getCreatedAt());
         dto.setUpdatedAt(mapping.getUpdatedAt());
         return dto;
@@ -81,6 +99,13 @@ public class FieldMappingService {
         mapping.setVersion(dto.getVersion());
         mapping.setFunctionName(dto.getFunctionName());
         mapping.setActive(dto.isActive());
+        mapping.setArrayMapping(dto.isArrayMapping());
+        mapping.setArrayContextPath(dto.getArrayContextPath());
+        mapping.setSourceXPath(dto.getSourceXPath());
+        mapping.setTargetXPath(dto.getTargetXPath());
+        mapping.setVisualFlowData(dto.getVisualFlowData());
+        mapping.setFunctionNode(dto.getFunctionNode());
+        mapping.setMappingOrder(dto.getMappingOrder());
         return mapping;
     }
 }

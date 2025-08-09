@@ -1,5 +1,6 @@
 package com.integrationlab.data.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.integrationlab.shared.enums.TransformationType;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
@@ -28,6 +29,7 @@ import java.util.List;
     @Index(name = "idx_transform_order", columnList = "flow_id, execution_order"),
     @Index(name = "idx_transform_active", columnList = "is_active")
 })
+@EntityListeners(com.integrationlab.data.listener.AuditEntityListener.class)
 @Data
 @Builder
 @NoArgsConstructor
@@ -113,6 +115,22 @@ public class FlowTransformation {
     @Column(name = "updated_at")
     @UpdateTimestamp
     private LocalDateTime updatedAt;
+
+    /**
+     * User who created this transformation
+     */
+    @JsonIgnore
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "created_by")
+    private User createdBy;
+
+    /**
+     * User who last updated this transformation
+     */
+    @JsonIgnore
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "updated_by")
+    private User updatedBy;
 
     /**
      * Field mappings for this transformation

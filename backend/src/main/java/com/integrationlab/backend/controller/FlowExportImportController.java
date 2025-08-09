@@ -46,7 +46,7 @@ public class FlowExportImportController {
      * @return JSON file download
      */
     @PostMapping("/export")
-    @PreAuthorize("hasAnyRole('ADMIN', 'INTEGRATOR')")
+    @PreAuthorize("hasAnyRole('ADMINISTRATOR', 'DEVELOPER')")
     @Operation(summary = "Export an integration flow")
     public ResponseEntity<Resource> exportFlow(@Valid @RequestBody FlowExportRequestDTO request) {
         log.info("Exporting flow: {}", request.getFlowId());
@@ -86,7 +86,7 @@ public class FlowExportImportController {
      * @return Export data
      */
     @GetMapping("/export/{flowId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'INTEGRATOR')")
+    @PreAuthorize("hasAnyRole('ADMINISTRATOR', 'DEVELOPER')")
     @Operation(summary = "Export flow as JSON response")
     public ResponseEntity<FlowExportDTO> exportFlowJson(@PathVariable String flowId) {
         log.info("Exporting flow as JSON: {}", flowId);
@@ -106,7 +106,7 @@ public class FlowExportImportController {
      * @return Validation result
      */
     @GetMapping("/export/{flowId}/validate")
-    @PreAuthorize("hasAnyRole('ADMIN', 'INTEGRATOR')")
+    @PreAuthorize("hasAnyRole('ADMINISTRATOR', 'DEVELOPER')")
     @Operation(summary = "Validate flow export")
     public ResponseEntity<Map<String, Object>> validateExport(@PathVariable String flowId) {
         log.info("Validating export for flow: {}", flowId);
@@ -123,7 +123,7 @@ public class FlowExportImportController {
      * @return Import result
      */
     @PostMapping("/import/file")
-    @PreAuthorize("hasAnyRole('ADMIN', 'INTEGRATOR')")
+    @PreAuthorize("hasAnyRole('ADMINISTRATOR', 'DEVELOPER')")
     @Operation(summary = "Import flow from file upload")
     public ResponseEntity<FlowImportResultDTO> importFlowFromFile(
             @RequestParam("file") MultipartFile file,
@@ -170,7 +170,7 @@ public class FlowExportImportController {
      * @return Import result
      */
     @PostMapping("/import")
-    @PreAuthorize("hasAnyRole('ADMIN', 'INTEGRATOR')")
+    @PreAuthorize("hasAnyRole('ADMINISTRATOR', 'DEVELOPER')")
     @Operation(summary = "Import flow from JSON")
     public ResponseEntity<FlowImportResultDTO> importFlow(@Valid @RequestBody FlowImportRequestDTO request) {
         log.info("Importing flow: {}", request.getFlowExport().getFlow().getName());
@@ -191,7 +191,7 @@ public class FlowExportImportController {
      * @return Validation result
      */
     @PostMapping("/import/validate")
-    @PreAuthorize("hasAnyRole('ADMIN', 'INTEGRATOR')")
+    @PreAuthorize("hasAnyRole('ADMINISTRATOR', 'DEVELOPER')")
     @Operation(summary = "Validate flow import")
     public ResponseEntity<FlowImportValidationDTO> validateImport(@Valid @RequestBody FlowImportRequestDTO request) {
         log.info("Validating import for flow: {}", request.getFlowExport().getFlow().getName());
@@ -207,7 +207,7 @@ public class FlowExportImportController {
      * @return Validation result
      */
     @PostMapping("/import/validate/file")
-    @PreAuthorize("hasAnyRole('ADMIN', 'INTEGRATOR')")
+    @PreAuthorize("hasAnyRole('ADMINISTRATOR', 'DEVELOPER')")
     @Operation(summary = "Validate import from file")
     public ResponseEntity<FlowImportValidationDTO> validateImportFromFile(
             @RequestParam("file") MultipartFile file) {

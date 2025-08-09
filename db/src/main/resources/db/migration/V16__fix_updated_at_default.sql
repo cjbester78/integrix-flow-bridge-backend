@@ -1,0 +1,108 @@
+-- Fix updated_at columns to not have default value on INSERT
+-- Only populate on actual UPDATE operations
+
+-- integration_flows
+ALTER TABLE integration_flows 
+    MODIFY COLUMN updated_at TIMESTAMP NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP;
+
+-- flow_transformations  
+ALTER TABLE flow_transformations
+    MODIFY COLUMN updated_at TIMESTAMP NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP;
+
+-- field_mappings
+ALTER TABLE field_mappings
+    MODIFY COLUMN updated_at TIMESTAMP NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP;
+
+-- communication_adapters
+ALTER TABLE communication_adapters
+    MODIFY COLUMN updated_at TIMESTAMP NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP;
+
+-- data_structures
+ALTER TABLE data_structures
+    MODIFY COLUMN updated_at TIMESTAMP NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP;
+
+-- business_components
+ALTER TABLE business_components
+    MODIFY COLUMN updated_at TIMESTAMP NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP;
+
+-- users
+ALTER TABLE users
+    MODIFY COLUMN updated_at TIMESTAMP NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP;
+
+-- system_settings
+ALTER TABLE system_settings
+    MODIFY COLUMN updated_at TIMESTAMP NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP;
+
+-- flow_statistics
+ALTER TABLE flow_statistics
+    MODIFY COLUMN updated_at TIMESTAMP NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP;
+
+-- transformation_custom_functions
+ALTER TABLE transformation_custom_functions
+    MODIFY COLUMN updated_at TIMESTAMP NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP;
+
+-- adapter_statistics
+ALTER TABLE adapter_statistics
+    MODIFY COLUMN updated_at TIMESTAMP NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP;
+
+-- api_keys
+ALTER TABLE api_keys
+    MODIFY COLUMN updated_at TIMESTAMP NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP;
+
+-- api_key_usage_logs
+ALTER TABLE api_key_usage_logs
+    MODIFY COLUMN updated_at TIMESTAMP NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP;
+
+-- audit_logs
+ALTER TABLE audit_logs
+    MODIFY COLUMN updated_at TIMESTAMP NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP;
+
+-- certificates
+ALTER TABLE certificates
+    MODIFY COLUMN updated_at TIMESTAMP NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP;
+
+-- dlq_statistics
+ALTER TABLE dlq_statistics
+    MODIFY COLUMN updated_at TIMESTAMP NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP;
+
+-- human_tasks
+ALTER TABLE human_tasks
+    MODIFY COLUMN updated_at TIMESTAMP NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP;
+
+-- jar_files
+ALTER TABLE jar_files
+    MODIFY COLUMN updated_at TIMESTAMP NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP;
+
+-- message_acknowledgments
+ALTER TABLE message_acknowledgments
+    MODIFY COLUMN updated_at TIMESTAMP NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP;
+
+-- retry_policies
+ALTER TABLE retry_policies
+    MODIFY COLUMN updated_at TIMESTAMP NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP;
+
+-- reusable_java_functions
+ALTER TABLE reusable_java_functions
+    MODIFY COLUMN updated_at TIMESTAMP NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP;
+
+-- roles
+ALTER TABLE roles
+    MODIFY COLUMN updated_at TIMESTAMP NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP;
+
+-- scheduled_jobs
+ALTER TABLE scheduled_jobs
+    MODIFY COLUMN updated_at TIMESTAMP NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP;
+
+-- system_configuration
+ALTER TABLE system_configuration
+    MODIFY COLUMN updated_at TIMESTAMP NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP;
+
+-- transformation_template_library
+ALTER TABLE transformation_template_library
+    MODIFY COLUMN updated_at TIMESTAMP NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP;
+
+-- webhook_configs
+ALTER TABLE webhook_configs
+    MODIFY COLUMN updated_at TIMESTAMP NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP;
+
+-- Note: created_at should keep DEFAULT CURRENT_TIMESTAMP

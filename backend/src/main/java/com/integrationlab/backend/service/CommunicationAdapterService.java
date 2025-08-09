@@ -1,7 +1,9 @@
 package com.integrationlab.backend.service;
 
 import com.integrationlab.data.model.CommunicationAdapter;
+import com.integrationlab.data.model.BusinessComponent;
 import com.integrationlab.data.repository.CommunicationAdapterRepository;
+import com.integrationlab.data.repository.BusinessComponentRepository;
 import com.integrationlab.shared.dto.adapter.AdapterConfigDTO;
 import com.integrationlab.shared.dto.adapter.AdapterTestResultDTO;
 import com.integrationlab.shared.enums.AdapterType;
@@ -29,11 +31,14 @@ public class CommunicationAdapterService {
     private static final Logger logger = LoggerFactory.getLogger(CommunicationAdapterService.class);
     
     private final CommunicationAdapterRepository repository;
+    private final BusinessComponentRepository businessComponentRepository;
     private final ObjectMapper objectMapper;
     private final AdapterFactoryManager factoryManager;
 
-    public CommunicationAdapterService(CommunicationAdapterRepository repository) {
+    public CommunicationAdapterService(CommunicationAdapterRepository repository,
+                                     BusinessComponentRepository businessComponentRepository) {
         this.repository = repository;
+        this.businessComponentRepository = businessComponentRepository;
         this.objectMapper = new ObjectMapper();
         this.factoryManager = AdapterFactoryManager.getInstance();
     }
@@ -55,7 +60,16 @@ public class CommunicationAdapterService {
         
         adapter.setConfiguration(dto.getConfigJson());
         adapter.setDescription(dto.getDescription());
-        adapter.setBusinessComponentId(dto.getBusinessComponentId());
+        
+        // Set direction based on mode (following reversed convention)
+        // SENDER = OUTBOUND (receives from external), RECEIVER = INBOUND (sends to external)
+        adapter.setDirection(adapterMode == AdapterMode.SENDER ? "OUTBOUND" : "INBOUND");
+        
+        // Properly set the business component entity, not just the ID
+        BusinessComponent businessComponent = businessComponentRepository.findById(dto.getBusinessComponentId())
+                .orElseThrow(() -> new IllegalArgumentException("Business component not found: " + dto.getBusinessComponentId()));
+        adapter.setBusinessComponent(businessComponent);
+        
         adapter.setActive(dto.isActive());
         
         CommunicationAdapter savedAdapter = repository.save(adapter);
@@ -66,12 +80,15 @@ public class CommunicationAdapterService {
     
     /**
      * Map DTO mode values to internal AdapterMode enum
+     * Following reversed middleware convention:
+     * SENDER = OUTBOUND (receives data FROM external systems)
+     * RECEIVER = INBOUND (sends data TO external systems)
      */
     private AdapterMode mapDtoModeToAdapterMode(String mode, String direction) {
         // Support both mode and direction fields for flexibility
-        if ("SENDER".equalsIgnoreCase(mode) || "INBOUND".equalsIgnoreCase(direction)) {
+        if ("SENDER".equalsIgnoreCase(mode) || "OUTBOUND".equalsIgnoreCase(direction)) {
             return AdapterMode.SENDER;
-        } else if ("RECEIVER".equalsIgnoreCase(mode) || "OUTBOUND".equalsIgnoreCase(direction)) {
+        } else if ("RECEIVER".equalsIgnoreCase(mode) || "INBOUND".equalsIgnoreCase(direction)) {
             return AdapterMode.RECEIVER;
         } else {
             throw new IllegalArgumentException("Invalid adapter mode: " + mode + " / direction: " + direction);
@@ -118,13 +135,14 @@ public class CommunicationAdapterService {
                         dto.setDescription(adapter.getDescription());
                         dto.setActive(adapter.isActive());
                         
-                        // Safely access the business component ID within transaction
+                        // Safely access the business component ID and name within transaction
                         if (adapter.getBusinessComponent() != null) {
                             dto.setBusinessComponentId(adapter.getBusinessComponent().getId());
+                            dto.setBusinessComponentName(adapter.getBusinessComponent().getName());
                         }
                         
-                        // Set direction for clarity
-                        dto.setDirection(adapter.getMode() == AdapterMode.SENDER ? "INBOUND" : "OUTBOUND");
+                        // Include stored direction
+                        dto.setDirection(adapter.getDirection());
                         
                         return dto;
                     })
@@ -143,10 +161,21 @@ public class CommunicationAdapterService {
         return repository.findById(id).map(adapter -> {
             adapter.setName(dto.getName());
             adapter.setType(AdapterType.valueOf(dto.getType().toUpperCase()));
-            adapter.setMode(AdapterMode.valueOf(dto.getMode().toUpperCase()));
+            
+            AdapterMode adapterMode = AdapterMode.valueOf(dto.getMode().toUpperCase());
+            adapter.setMode(adapterMode);
+            
+            // Set direction based on mode (following reversed convention)
+            adapter.setDirection(adapterMode == AdapterMode.SENDER ? "OUTBOUND" : "INBOUND");
+            
             adapter.setConfiguration(dto.getConfigJson());
             adapter.setDescription(dto.getDescription());
-            adapter.setBusinessComponentId(dto.getBusinessComponentId());
+            
+            // Properly set the business component entity, not just the ID
+            BusinessComponent businessComponent = businessComponentRepository.findById(dto.getBusinessComponentId())
+                    .orElseThrow(() -> new IllegalArgumentException("Business component not found: " + dto.getBusinessComponentId()));
+            adapter.setBusinessComponent(businessComponent);
+            
             adapter.setActive(dto.isActive());
             return toDTO(repository.save(adapter));
         });
@@ -249,6 +278,7 @@ public class CommunicationAdapterService {
         return result;
     }
 
+    @Transactional(readOnly = true)
     private AdapterConfigDTO toDTO(CommunicationAdapter adapter) {
         AdapterConfigDTO dto = new AdapterConfigDTO();
         dto.setId(adapter.getId());
@@ -259,14 +289,15 @@ public class CommunicationAdapterService {
         dto.setDescription(adapter.getDescription());
         dto.setActive(adapter.isActive());
         
-        // Safely access business component ID
+        // Safely access business component ID and name
         // This method might be called outside transaction, so use the safer approach
         if (adapter.getBusinessComponent() != null) {
             dto.setBusinessComponentId(adapter.getBusinessComponent().getId());
+            dto.setBusinessComponentName(adapter.getBusinessComponent().getName());
         }
         
-        // Set direction for clarity
-        dto.setDirection(adapter.getMode() == AdapterMode.SENDER ? "INBOUND" : "OUTBOUND");
+        // Include stored direction
+        dto.setDirection(adapter.getDirection());
         
         return dto;
     }

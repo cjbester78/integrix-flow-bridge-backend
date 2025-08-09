@@ -11,10 +11,10 @@ import com.fasterxml.jackson.annotation.JsonInclude;
  * Data Transfer Object for Adapter Configuration.
  * 
  * <p>This DTO represents the configuration for communication adapters in the integration platform.
- * It follows the reversed middleware convention where:</p>
+ * It follows the REVERSED middleware convention where:</p>
  * <ul>
- *   <li><b>SENDER</b> adapters receive data FROM external systems (inbound)</li>
- *   <li><b>RECEIVER</b> adapters send data TO external systems (outbound)</li>
+ *   <li><b>SENDER</b> adapters receive data FROM external systems (but are considered OUTBOUND)</li>
+ *   <li><b>RECEIVER</b> adapters send data TO external systems (but are considered INBOUND)</li>
  * </ul>
  * 
  * <p>The adapter configuration includes both the adapter metadata and its specific
@@ -50,9 +50,9 @@ public class AdapterConfigDTO {
     private String type;
     
     /**
-     * Adapter mode determining data flow direction.
-     * SENDER = receives FROM external systems (inbound)
-     * RECEIVER = sends TO external systems (outbound)
+     * Adapter mode determining data flow direction (reversed convention).
+     * SENDER = receives FROM external systems (but is OUTBOUND)
+     * RECEIVER = sends TO external systems (but is INBOUND)
      */
     private String mode;
     
@@ -75,8 +75,9 @@ public class AdapterConfigDTO {
     private boolean active = true;
     
     /**
-     * Alternative direction indicator for clarity.
-     * INBOUND = SENDER mode, OUTBOUND = RECEIVER mode
+     * Alternative direction indicator for clarity (reversed convention).
+     * OUTBOUND = SENDER mode (receives from external)
+     * INBOUND = RECEIVER mode (sends to external)
      * @deprecated Use {@link #mode} instead for consistency
      */
     private String direction;
@@ -85,24 +86,32 @@ public class AdapterConfigDTO {
      * ID of the business component this adapter belongs to.
      */
     private String businessComponentId;
+    
+    /**
+     * Name of the business component this adapter belongs to.
+     * Used for display purposes in the UI.
+     */
+    private String businessComponentName;
 
     /**
      * Determines if this adapter receives data FROM external systems.
+     * Due to reversed convention, SENDER mode = OUTBOUND direction.
      * 
-     * @return true if adapter is in SENDER mode or INBOUND direction
+     * @return true if adapter is in SENDER mode or OUTBOUND direction
      */
     @JsonIgnore
     public boolean isSender() {
-        return "SENDER".equalsIgnoreCase(mode) || "INBOUND".equalsIgnoreCase(direction);
+        return "SENDER".equalsIgnoreCase(mode) || "OUTBOUND".equalsIgnoreCase(direction);
     }
     
     /**
      * Determines if this adapter sends data TO external systems.
+     * Due to reversed convention, RECEIVER mode = INBOUND direction.
      * 
-     * @return true if adapter is in RECEIVER mode or OUTBOUND direction
+     * @return true if adapter is in RECEIVER mode or INBOUND direction
      */
     @JsonIgnore
     public boolean isReceiver() {
-        return "RECEIVER".equalsIgnoreCase(mode) || "OUTBOUND".equalsIgnoreCase(direction);
+        return "RECEIVER".equalsIgnoreCase(mode) || "INBOUND".equalsIgnoreCase(direction);
     }
 }

@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -27,6 +28,7 @@ public class MessageController {
     private MessageService messageService;
 
     @GetMapping("/recent")
+    @PreAuthorize("hasAnyRole('ADMINISTRATOR', 'DEVELOPER', 'VIEWER')")
     public ResponseEntity<List<RecentMessageDTO>> getRecentMessages(
             @RequestParam(required = false) String businessComponentId,
             @RequestParam(defaultValue = "10") int limit) {
@@ -38,6 +40,7 @@ public class MessageController {
      * Get messages with optional filtering
      */
     @GetMapping
+    @PreAuthorize("hasAnyRole('ADMINISTRATOR', 'DEVELOPER', 'VIEWER')")
     public ResponseEntity<Map<String, Object>> getMessages(
             @RequestParam(required = false) List<String> status,
             @RequestParam(required = false) String source,
@@ -68,6 +71,7 @@ public class MessageController {
      * Get a specific message by ID
      */
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMINISTRATOR', 'DEVELOPER', 'VIEWER')")
     public ResponseEntity<MessageDTO> getMessage(@PathVariable String id) {
         logger.debug("Getting message with id: {}", id);
         MessageDTO message = messageService.getMessageById(id);
@@ -78,6 +82,7 @@ public class MessageController {
      * Get message statistics
      */
     @GetMapping("/stats")
+    @PreAuthorize("hasAnyRole('ADMINISTRATOR', 'DEVELOPER', 'VIEWER')")
     public ResponseEntity<MessageStatsDTO> getMessageStats(
             @RequestParam(required = false) List<String> status,
             @RequestParam(required = false) String source,
@@ -104,6 +109,7 @@ public class MessageController {
      * Reprocess a failed message
      */
     @PostMapping("/{id}/reprocess")
+    @PreAuthorize("hasAnyRole('ADMINISTRATOR', 'DEVELOPER', 'INTEGRATOR')")
     public ResponseEntity<MessageDTO> reprocessMessage(@PathVariable String id) {
         logger.info("Reprocessing message with id: {}", id);
         MessageDTO message = messageService.reprocessMessage(id);

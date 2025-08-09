@@ -29,6 +29,40 @@ public class JsonToXmlConverter implements XmlConversionService {
     
     private final ObjectMapper objectMapper = new ObjectMapper();
     
+    private String ensureValidXmlElementName(String name) {
+        // Handle null or empty names
+        if (name == null || name.trim().isEmpty()) {
+            return "_element";
+        }
+        
+        String cleaned = name.trim();
+        
+        // XML element names cannot start with "xml" (case-insensitive)
+        if (cleaned.toLowerCase().startsWith("xml")) {
+            cleaned = "_" + cleaned;
+        }
+        
+        // XML element names cannot start with numbers, dots, hyphens, or other invalid chars
+        if (!cleaned.matches("^[a-zA-Z_].*")) {
+            cleaned = "_" + cleaned;
+        }
+        
+        // Replace invalid characters with underscores
+        // Valid chars are letters (including Unicode), digits, hyphens, underscores, and periods
+        // But hyphens and periods cannot be at the start
+        // First normalize any special characters
+        cleaned = cleaned.replaceAll("…", "_"); // Replace ellipsis
+        cleaned = cleaned.replaceAll("\\[\\]", ""); // Remove array notation
+        cleaned = cleaned.replaceAll("[^\\p{L}\\p{N}_.-]", "_"); // Use Unicode categories
+        
+        // Ensure not empty after cleaning
+        if (cleaned.isEmpty()) {
+            cleaned = "_element";
+        }
+        
+        return cleaned;
+    }
+    
     @Override
     public String convertToXml(Object data, Object config) throws XmlConversionException {
         if (!(config instanceof JsonXmlWrapperConfig)) {
@@ -45,7 +79,10 @@ public class JsonToXmlConverter implements XmlConversionService {
             } else if (data instanceof JsonNode) {
                 jsonNode = (JsonNode) data;
             } else {
-                jsonNode = objectMapper.valueToTree(data);
+                // Configure ObjectMapper to preserve order if data is LinkedHashMap
+                ObjectMapper orderPreservingMapper = new ObjectMapper();
+                orderPreservingMapper.configure(com.fasterxml.jackson.databind.MapperFeature.SORT_PROPERTIES_ALPHABETICALLY, false);
+                jsonNode = orderPreservingMapper.valueToTree(data);
             }
             
             // Create XML document
@@ -56,11 +93,13 @@ public class JsonToXmlConverter implements XmlConversionService {
             
             // Create root element with namespace
             Element rootElement;
+            String rootName = ensureValidXmlElementName(wrapperConfig.getRootElementName());
+            
             if (wrapperConfig.getNamespaceUri() != null && !wrapperConfig.getNamespaceUri().isEmpty()) {
                 rootElement = doc.createElementNS(wrapperConfig.getNamespaceUri(), 
                     wrapperConfig.getNamespacePrefix() != null 
-                        ? wrapperConfig.getNamespacePrefix() + ":" + wrapperConfig.getRootElementName()
-                        : wrapperConfig.getRootElementName());
+                        ? wrapperConfig.getNamespacePrefix() + ":" + rootName
+                        : rootName);
                 
                 // Add namespace declaration
                 if (wrapperConfig.getNamespacePrefix() != null) {
@@ -70,7 +109,7 @@ public class JsonToXmlConverter implements XmlConversionService {
                     rootElement.setAttribute("xmlns", wrapperConfig.getNamespaceUri());
                 }
             } else {
-                rootElement = doc.createElement(wrapperConfig.getRootElementName());
+                rootElement = doc.createElement(rootName);
             }
             
             // Add additional namespaces
@@ -115,6 +154,11 @@ public class JsonToXmlConverter implements XmlConversionService {
             String fieldName = field.getKey();
             JsonNode fieldValue = field.getValue();
             
+            // Log problematic field names for debugging
+            if (fieldName.contains("…") || fieldName.contains("Credit_Token")) {
+                System.out.println("DEBUG: Processing field name: " + fieldName);
+            }
+            
             // Convert property name if configured
             if (config.isConvertPropertyNames()) {
                 fieldName = convertPropertyName(fieldName);
@@ -135,11 +179,19 @@ public class JsonToXmlConverter implements XmlConversionService {
     private void processArrayNode(Document doc, Element parentElement, ArrayNode arrayNode,
                                  JsonXmlWrapperConfig config, String path) {
         // Get custom array element name if configured
-        String elementName = config.getArrayElementNames().get(path);
+        String elementName = null;
+        if (config.getArrayElementNames() != null) {
+            elementName = config.getArrayElementNames().get(path);
+        }
+        
         if (elementName == null) {
             // Use singular form of the array field name
-            elementName = singularize(path.substring(path.lastIndexOf('.') + 1));
+            String lastSegment = path.substring(path.lastIndexOf('.') + 1);
+            elementName = singularize(lastSegment);
         }
+        
+        // Ensure the element name is valid
+        elementName = ensureValidXmlElementName(elementName);
         
         for (JsonNode item : arrayNode) {
             Element element = createElement(doc, elementName, config);
@@ -149,22 +201,28 @@ public class JsonToXmlConverter implements XmlConversionService {
     }
     
     private Element createElement(Document doc, String name, JsonXmlWrapperConfig config) {
+        // Ensure the name is valid for XML
+        String validName = ensureValidXmlElementName(name);
+        
         if (config.getNamespaceUri() != null && !config.getNamespaceUri().isEmpty()) {
             return doc.createElementNS(config.getNamespaceUri(), 
                 config.getNamespacePrefix() != null 
-                    ? config.getNamespacePrefix() + ":" + name
-                    : name);
+                    ? config.getNamespacePrefix() + ":" + validName
+                    : validName);
         } else {
-            return doc.createElement(name);
+            return doc.createElement(validName);
         }
     }
     
     private String convertPropertyName(String name) {
-        // Convert snake_case or kebab-case to camelCase
+        // First ensure it's a valid XML element name
+        String cleaned = ensureValidXmlElementName(name);
+        
+        // Convert snake_case or kebab-case to camelCase if needed
         StringBuilder result = new StringBuilder();
         boolean nextUpperCase = false;
         
-        for (char c : name.toCharArray()) {
+        for (char c : cleaned.toCharArray()) {
             if (c == '_' || c == '-') {
                 nextUpperCase = true;
             } else if (nextUpperCase) {
@@ -175,7 +233,10 @@ public class JsonToXmlConverter implements XmlConversionService {
             }
         }
         
-        return result.toString();
+        String finalName = result.toString();
+        
+        // Ensure the result is still valid after conversion
+        return ensureValidXmlElementName(finalName);
     }
     
     private String singularize(String plural) {

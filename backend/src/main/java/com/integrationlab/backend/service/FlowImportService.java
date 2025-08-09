@@ -360,7 +360,7 @@ public class FlowImportService {
                     .targetAdapterId(targetAdapterId)
                     .sourceStructureId(dto.getSourceStructureId())
                     .targetStructureId(dto.getTargetStructureId())
-                    .status(FlowStatus.DRAFT) // Always import as draft
+                    .status(FlowStatus.DEVELOPED_INACTIVE) // Always import as undeployed
                     .configuration(dto.getConfiguration())
                     .isActive(false) // Start inactive
                     .mappingMode(com.integrationlab.data.model.MappingMode.valueOf(dto.getMappingMode()))

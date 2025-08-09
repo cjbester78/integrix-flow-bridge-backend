@@ -107,6 +107,46 @@ public class FieldMappingDTO {
     private boolean isActive = true;
     
     /**
+     * Whether this is an array/node mapping
+     */
+    @Builder.Default
+    private boolean isArrayMapping = false;
+    
+    /**
+     * Array context path for nested arrays
+     */
+    @Size(max = 500, message = "Array context path cannot exceed 500 characters")
+    private String arrayContextPath;
+    
+    /**
+     * Source XPath for XML mappings
+     */
+    @Size(max = 1000, message = "Source XPath cannot exceed 1000 characters")
+    private String sourceXPath;
+    
+    /**
+     * Target XPath for XML mappings
+     */
+    @Size(max = 1000, message = "Target XPath cannot exceed 1000 characters")
+    private String targetXPath;
+    
+    /**
+     * Visual flow data (nodes and edges) in JSON format
+     */
+    private String visualFlowData;
+    
+    /**
+     * Function node configuration in JSON format
+     */
+    private String functionNode;
+    
+    /**
+     * Order of this mapping within the transformation
+     */
+    @Builder.Default
+    private Integer mappingOrder = 0;
+    
+    /**
      * Timestamp when the mapping was created
      */
     private LocalDateTime createdAt;

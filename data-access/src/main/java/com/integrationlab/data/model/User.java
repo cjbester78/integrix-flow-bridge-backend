@@ -89,12 +89,12 @@ public class User {
     private String roleId;
 
     /**
-     * User role (administrator, integrator, viewer)
+     * User role (administrator, developer, integrator, viewer)
      */
     @Column(length = 50)
     @NotBlank(message = "Role is required")
-    @Pattern(regexp = "^(administrator|integrator|viewer)$", 
-             message = "Role must be administrator, integrator, or viewer")
+    @Pattern(regexp = "^(administrator|developer|integrator|viewer)$", 
+             message = "Role must be administrator, developer, integrator, or viewer")
     private String role;
 
     /**
