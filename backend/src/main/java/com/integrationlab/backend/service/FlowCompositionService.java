@@ -45,9 +45,18 @@ public class FlowCompositionService {
      * Create a complete direct mapping flow with business components, adapters, and field mappings
      */
     public IntegrationFlow createDirectMappingFlow(DirectMappingFlowRequest request) {
-        // Validate business components exist
-        validateBusinessComponent(request.getSourceBusinessComponentId());
-        validateBusinessComponent(request.getTargetBusinessComponentId());
+        // Check if flow name already exists
+        if (flowRepository.existsByName(request.getFlowName())) {
+            throw new IllegalArgumentException("A flow with the name '" + request.getFlowName() + "' already exists");
+        }
+        
+        // Validate business components exist (only if provided)
+        if (request.getSourceBusinessComponentId() != null) {
+            validateBusinessComponent(request.getSourceBusinessComponentId());
+        }
+        if (request.getTargetBusinessComponentId() != null) {
+            validateBusinessComponent(request.getTargetBusinessComponentId());
+        }
         
         // Validate adapters exist
         validateAdapter(request.getSourceAdapterId());
@@ -61,8 +70,18 @@ public class FlowCompositionService {
         flow.setTargetAdapterId(request.getTargetAdapterId());
         flow.setSourceStructureId(request.getSourceStructureId());
         flow.setTargetStructureId(request.getTargetStructureId());
-        flow.setStatus(FlowStatus.DRAFT);
+        flow.setStatus(FlowStatus.DEVELOPED_INACTIVE);
         flow.setCreatedBy(request.getCreatedBy());
+        flow.setMappingMode(MappingMode.WITH_MAPPING);
+        flow.setSkipXmlConversion(request.isSkipXmlConversion());
+        
+        // Set the source business component as the primary business component
+        if (request.getSourceBusinessComponentId() != null) {
+            BusinessComponent businessComponent = businessComponentRepository.findById(request.getSourceBusinessComponentId()).orElse(null);
+            if (businessComponent != null) {
+                flow.setBusinessComponent(businessComponent);
+            }
+        }
         
         // Save additional configuration as JSON
         try {
@@ -83,7 +102,8 @@ public class FlowCompositionService {
             FlowTransformationDTO transformation = new FlowTransformationDTO();
             transformation.setFlowId(savedFlow.getId());
             transformation.setType("FIELD_MAPPING");
-            transformation.setConfiguration("{}");
+            transformation.setName(request.getRequestMappingName() != null ? request.getRequestMappingName() : "Request Mapping");
+            transformation.setConfiguration("{\"mappingType\":\"request\"}");
             transformation.setExecutionOrder(1);
             transformation.setActive(true);
             
@@ -93,6 +113,51 @@ public class FlowCompositionService {
             for (FieldMappingDTO mapping : request.getFieldMappings()) {
                 mapping.setTransformationId(savedTransformation.getId());
                 fieldMappingService.save(mapping);
+            }
+        }
+        
+        // Handle additional mappings for synchronous flows (response, fault mappings)
+        if (request.getAdditionalMappings() != null && !request.getAdditionalMappings().isEmpty()) {
+            int order = 2;
+            for (AdditionalMapping additionalMapping : request.getAdditionalMappings()) {
+                if (additionalMapping.getFieldMappings() != null && !additionalMapping.getFieldMappings().isEmpty()) {
+                    FlowTransformationDTO transformation = new FlowTransformationDTO();
+                    transformation.setFlowId(savedFlow.getId());
+                    transformation.setType("FIELD_MAPPING");
+                    transformation.setName(additionalMapping.getName()); // Save the user-entered name
+                    
+                    // Determine message type based on order and flow mode
+                    String messageType;
+                    if (savedFlow.getMappingMode() == MappingMode.PASS_THROUGH) {
+                        // Async mode: second mapping is fault
+                        messageType = "fault";
+                    } else {
+                        // Sync mode: second is response, third is fault
+                        messageType = order == 2 ? "response" : "fault";
+                    }
+                    
+                    // Store mapping type in configuration
+                    try {
+                        ObjectMapper mapper = new ObjectMapper();
+                        String config = mapper.writeValueAsString(new java.util.HashMap<String, String>() {{
+                            put("mappingType", messageType);
+                        }});
+                        transformation.setConfiguration(config);
+                    } catch (Exception e) {
+                        transformation.setConfiguration("{\"mappingType\":\"" + messageType + "\"}");
+                    }
+                    
+                    transformation.setExecutionOrder(order++);
+                    transformation.setActive(true);
+                    
+                    FlowTransformationDTO savedTransformation = transformationService.save(transformation);
+                    
+                    // Save field mappings for this additional mapping
+                    for (FieldMappingDTO mapping : additionalMapping.getFieldMappings()) {
+                        mapping.setTransformationId(savedTransformation.getId());
+                        fieldMappingService.save(mapping);
+                    }
+                }
             }
         }
         
@@ -119,7 +184,7 @@ public class FlowCompositionService {
         flow.setDescription(request.getDescription());
         flow.setSourceAdapterId(request.getSourceAdapterId());
         flow.setTargetAdapterId(request.getTargetAdapterId());
-        flow.setStatus(FlowStatus.DRAFT);
+        flow.setStatus(FlowStatus.DEVELOPED_INACTIVE);
         flow.setCreatedBy(request.getCreatedBy());
         
         // Save orchestration configuration as JSON
@@ -265,7 +330,10 @@ public class FlowCompositionService {
         private String sourceStructureId;
         private String targetStructureId;
         private String createdBy;
+        private String requestMappingName;
         private List<FieldMappingDTO> fieldMappings;
+        private List<AdditionalMapping> additionalMappings;
+        private boolean skipXmlConversion;
 
         // Getters and setters
         public String getFlowName() { return flowName; }
@@ -286,8 +354,14 @@ public class FlowCompositionService {
         public void setTargetStructureId(String targetStructureId) { this.targetStructureId = targetStructureId; }
         public String getCreatedBy() { return createdBy; }
         public void setCreatedBy(String createdBy) { this.createdBy = createdBy; }
+        public String getRequestMappingName() { return requestMappingName; }
+        public void setRequestMappingName(String requestMappingName) { this.requestMappingName = requestMappingName; }
         public List<FieldMappingDTO> getFieldMappings() { return fieldMappings; }
         public void setFieldMappings(List<FieldMappingDTO> fieldMappings) { this.fieldMappings = fieldMappings; }
+        public List<AdditionalMapping> getAdditionalMappings() { return additionalMappings; }
+        public void setAdditionalMappings(List<AdditionalMapping> additionalMappings) { this.additionalMappings = additionalMappings; }
+        public boolean isSkipXmlConversion() { return skipXmlConversion; }
+        public void setSkipXmlConversion(boolean skipXmlConversion) { this.skipXmlConversion = skipXmlConversion; }
     }
 
     public static class OrchestrationFlowRequest {
@@ -406,5 +480,15 @@ public class FlowCompositionService {
         public void setConfiguration(Object configuration) { this.configuration = configuration; }
         public int getOrder() { return order; }
         public void setOrder(int order) { this.order = order; }
+    }
+    
+    public static class AdditionalMapping {
+        private String name;
+        private List<FieldMappingDTO> fieldMappings;
+        
+        public String getName() { return name; }
+        public void setName(String name) { this.name = name; }
+        public List<FieldMappingDTO> getFieldMappings() { return fieldMappings; }
+        public void setFieldMappings(List<FieldMappingDTO> fieldMappings) { this.fieldMappings = fieldMappings; }
     }
 }

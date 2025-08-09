@@ -6,6 +6,7 @@ import com.integrationlab.engine.AdapterExecutor;
 import com.integrationlab.data.model.FieldMapping;
 import com.integrationlab.data.model.FlowTransformation;
 import com.integrationlab.data.model.IntegrationFlow;
+import com.integrationlab.data.model.MappingMode;
 import com.integrationlab.data.model.ReusableFunction;
 import com.integrationlab.data.repository.FieldMappingRepository;
 import com.integrationlab.data.repository.FlowTransformationRepository;
@@ -19,46 +20,64 @@ import com.integrationlab.shared.dto.transformation.FilterTransformationConfigDT
 import com.integrationlab.shared.dto.transformation.ValidationTransformationConfigDTO;
 import com.integrationlab.backend.util.FieldMapper;
 import com.integrationlab.backend.util.JavaFunctionRunner;
+import com.integrationlab.data.model.CommunicationAdapter;
+import com.integrationlab.data.repository.CommunicationAdapterRepository;
+import com.integrationlab.engine.service.FormatConversionService;
+import com.integrationlab.engine.xml.XmlConversionException;
 import org.springframework.stereotype.Service;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
 @Service
 public class FlowExecutionService {
+    
+    private static final Logger logger = LoggerFactory.getLogger(FlowExecutionService.class);
 
     private final IntegrationFlowRepository flowRepository;
     private final FlowTransformationRepository transformationRepository;
     private final FieldMappingRepository fieldMappingRepository;
+    private final CommunicationAdapterRepository adapterRepository;
     private final AdapterExecutor adapterExecutor;
     private final LogService logService;
     private final FilterTransformationService filterTransformationService;
     private final EnrichmentTransformationService enrichmentTransformationService;
     private final ValidationTransformationService validationTransformationService;
     private final ReusableJavaFunctionService reusableFunctionService;
+    private final FormatConversionService formatConversionService;
+    private final DirectFileTransferService directFileTransferService;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     public FlowExecutionService(
             IntegrationFlowRepository flowRepository,
             FlowTransformationRepository transformationRepository,
             FieldMappingRepository fieldMappingRepository,
+            CommunicationAdapterRepository adapterRepository,
             AdapterExecutor adapterExecutor,
             LogService logService,
             FilterTransformationService filterTransformationService,
             EnrichmentTransformationService enrichmentTransformationService,
             ValidationTransformationService validationTransformationService,
-            ReusableJavaFunctionService reusableFunctionService
+            ReusableJavaFunctionService reusableFunctionService,
+            FormatConversionService formatConversionService,
+            DirectFileTransferService directFileTransferService
     ) {
         this.flowRepository = flowRepository;
         this.transformationRepository = transformationRepository;
         this.fieldMappingRepository = fieldMappingRepository;
+        this.adapterRepository = adapterRepository;
         this.adapterExecutor = adapterExecutor;
         this.logService = logService;
         this.filterTransformationService = filterTransformationService;
         this.enrichmentTransformationService = enrichmentTransformationService;
         this.validationTransformationService = validationTransformationService;
         this.reusableFunctionService = reusableFunctionService;
+        this.formatConversionService = formatConversionService;
+        this.directFileTransferService = directFileTransferService;
     }
 
     public void executeFlow(String flowId) {
@@ -66,21 +85,176 @@ public class FlowExecutionService {
                 .orElseThrow(() -> new RuntimeException("Flow not found"));
 
         try {
-            // Step 1: Fetch source data
-            String rawData = adapterExecutor.fetchData(flow.getSourceAdapterId());
+            // Get adapters
+            CommunicationAdapter sourceAdapter = adapterRepository.findById(flow.getSourceAdapterId())
+                    .orElseThrow(() -> new RuntimeException("Source adapter not found"));
+            CommunicationAdapter targetAdapter = adapterRepository.findById(flow.getTargetAdapterId())
+                    .orElseThrow(() -> new RuntimeException("Target adapter not found"));
 
-            // Step 2: Apply transformations
-            String transformedData = applyTransformations(flow, rawData);
+            // Check if we should skip XML conversion (direct passthrough)
+            if (flow.isSkipXmlConversion()) {
+                logger.info("Executing direct transfer (skip XML conversion) for flow: {}", flow.getName());
+                try {
+                    directFileTransferService.executeDirectTransfer(flow, sourceAdapter, targetAdapter);
+                    return;
+                } catch (Exception e) {
+                    throw new RuntimeException("Direct transfer failed: " + e.getMessage(), e);
+                }
+            }
+
+            // Step 1: Fetch source data
+            Object rawData = adapterExecutor.fetchDataAsObject(flow.getSourceAdapterId());
+            logger.info("Fetched data from source adapter: {}", sourceAdapter.getName());
+
+            // Check if the data is binary and should skip XML conversion
+            if (directFileTransferService.isBinaryFile(rawData)) {
+                logger.info("Binary file detected, using direct transfer for flow: {}", flow.getName());
+                try {
+                    directFileTransferService.executeDirectTransfer(flow, sourceAdapter, targetAdapter);
+                    return;
+                } catch (Exception e) {
+                    throw new RuntimeException("Direct transfer failed for binary file: " + e.getMessage(), e);
+                }
+            }
+
+            String processedData;
+            
+            // Check if mapping is required
+            boolean mappingRequired = flow.getMappingMode() == MappingMode.WITH_MAPPING;
+            
+            if (mappingRequired) {
+                logger.info("Mapping required for flow: {}", flow.getName());
+                
+                // Step 2a: Convert source data to XML
+                String xmlData = formatConversionService.convertToXml(rawData, sourceAdapter);
+                logger.debug("Converted source data to XML");
+                
+                // Step 2b: Apply transformations (including field mappings)
+                String transformedXml = applyTransformations(flow, xmlData);
+                logger.debug("Applied transformations to XML data");
+                
+                // Step 2c: Convert XML back to target format
+                Object targetData = formatConversionService.convertFromXml(
+                    transformedXml, 
+                    targetAdapter, 
+                    getConversionConfig(flow, targetAdapter)
+                );
+                processedData = targetData.toString();
+                logger.info("Converted XML to target format: {}", targetAdapter.getType());
+                
+            } else {
+                logger.info("Pass-through mode for flow: {}", flow.getName());
+                // Pass-through mode - no conversion needed
+                processedData = rawData.toString();
+            }
 
             // Step 3: Send to target adapter
-            adapterExecutor.sendData(flow.getTargetAdapterId(), transformedData);
+            adapterExecutor.sendData(flow.getTargetAdapterId(), processedData);
+            logger.info("Sent data to target adapter: {}", targetAdapter.getName());
 
             // Step 4: Log success
-            logService.logFlowExecutionSuccess(flow, rawData, transformedData);
+            String rawDataStr = rawData instanceof byte[] ? 
+                new String((byte[]) rawData) : rawData.toString();
+            logService.logFlowExecutionSuccess(flow, rawDataStr, processedData);
 
+        } catch (XmlConversionException e) {
+            logger.error("XML conversion error executing flow: {}", flow.getName(), e);
+            logService.logFlowExecutionError(flow, e);
+            throw new RuntimeException("XML conversion failed: " + e.getMessage(), e);
         } catch (Exception e) {
+            logger.error("Error executing flow: {}", flow.getName(), e);
             logService.logFlowExecutionError(flow, e);
             throw e;
+        }
+    }
+
+    private Map<String, Object> getConversionConfig(IntegrationFlow flow, CommunicationAdapter targetAdapter) {
+        Map<String, Object> config = new HashMap<>();
+        
+        // Get adapter configuration
+        Map<String, Object> adapterConfig = parseAdapterConfiguration(targetAdapter.getConfiguration());
+        if (adapterConfig == null) {
+            adapterConfig = new HashMap<>();
+        }
+        
+        String adapterType = targetAdapter.getType().name();
+        
+        // Configure based on adapter type
+        switch (adapterType) {
+            case "FILE":
+            case "FTP":
+            case "SFTP":
+                String fileFormat = (String) adapterConfig.getOrDefault("fileFormat", "CSV");
+                
+                if ("CSV".equalsIgnoreCase(fileFormat)) {
+                    // CSV configuration with file separators
+                    config.put("delimiter", adapterConfig.getOrDefault("delimiter", ","));
+                    config.put("includeHeaders", adapterConfig.getOrDefault("includeHeaders", true));
+                    config.put("quoteAllFields", adapterConfig.getOrDefault("quoteAllFields", false));
+                    config.put("lineTerminator", adapterConfig.getOrDefault("lineTerminator", "\n"));
+                    config.put("quoteCharacter", adapterConfig.getOrDefault("quoteCharacter", "\""));
+                } else if ("FIXED".equalsIgnoreCase(fileFormat)) {
+                    // Fixed-length configuration
+                    config.put("fixedLength", true);
+                    config.put("fieldLengths", adapterConfig.get("fieldLengths")); // Map of field->length
+                    config.put("padCharacter", adapterConfig.getOrDefault("padCharacter", " "));
+                    config.put("lineTerminator", adapterConfig.getOrDefault("lineTerminator", "\n"));
+                }
+                break;
+                
+            case "JDBC":
+                // SQL configuration
+                config.put("tableName", adapterConfig.getOrDefault("tableName", "data"));
+                config.put("operation", adapterConfig.getOrDefault("operation", "INSERT"));
+                config.put("whereClause", adapterConfig.get("whereClause"));
+                config.put("generateBatch", adapterConfig.getOrDefault("generateBatch", false));
+                break;
+                
+            default:
+                // Default configuration for other adapter types
+                break;
+        }
+        
+        // Add field mappings if available from transformations
+        List<FlowTransformation> transformations = transformationRepository.findByFlowId(flow.getId());
+        Map<String, String> fieldMappings = new HashMap<>();
+        
+        for (FlowTransformation transformation : transformations) {
+            if (transformation.getType() == FlowTransformation.TransformationType.FIELD_MAPPING) {
+                List<FieldMapping> mappings = fieldMappingRepository.findByTransformationId(transformation.getId());
+                for (FieldMapping mapping : mappings) {
+                    // Parse source fields JSON to get first field
+                    try {
+                        List<String> sourceFields = objectMapper.readValue(
+                            mapping.getSourceFields(), 
+                            new TypeReference<List<String>>() {}
+                        );
+                        if (!sourceFields.isEmpty()) {
+                            fieldMappings.put(sourceFields.get(0), mapping.getTargetField());
+                        }
+                    } catch (Exception e) {
+                        logger.warn("Failed to parse source fields for mapping: {}", mapping.getId());
+                    }
+                }
+            }
+        }
+        
+        if (!fieldMappings.isEmpty()) {
+            config.put("fieldMappings", fieldMappings);
+        }
+        
+        return config;
+    }
+    
+    private Map<String, Object> parseAdapterConfiguration(String configJson) {
+        if (configJson == null || configJson.isEmpty()) {
+            return new HashMap<>();
+        }
+        try {
+            return objectMapper.readValue(configJson, new TypeReference<Map<String, Object>>() {});
+        } catch (Exception e) {
+            logger.warn("Failed to parse adapter configuration: {}", e.getMessage());
+            return new HashMap<>();
         }
     }
 

@@ -12,6 +12,12 @@ import com.integrationlab.data.repository.CommunicationAdapterRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.channels.WritableByteChannel;
+import java.util.Map;
+
 @Component
 /**
  * AdapterExecutorImpl routes adapter executions using the new factory pattern.
@@ -140,6 +146,50 @@ public class AdapterExecutorImpl implements AdapterExecutor {
             case RFC -> com.integrationlab.adapters.core.AdapterType.RFC;
             case JDBC -> com.integrationlab.adapters.core.AdapterType.JDBC;
             case MAIL -> com.integrationlab.adapters.core.AdapterType.MAIL;
+        };
+    }
+
+    @Override
+    public Object fetchDataAsObject(String adapterId) {
+        // For now, return the string data wrapped in object
+        // In a real implementation, this would return the raw data (byte[], InputStream, etc.)
+        return fetchData(adapterId);
+    }
+
+    @Override
+    public void sendData(String adapterId, byte[] data) {
+        // Convert byte array to string for now
+        sendData(adapterId, new String(data));
+    }
+
+    @Override
+    public void sendData(String adapterId, Object data) {
+        // Convert object to string for now
+        if (data instanceof byte[]) {
+            sendData(adapterId, (byte[]) data);
+        } else if (data instanceof String) {
+            sendData(adapterId, (String) data);
+        } else {
+            sendData(adapterId, data.toString());
+        }
+    }
+
+    @Override
+    public WritableByteChannel getWritableChannel(String adapterId, Map<String, Object> config) {
+        // This would need to be implemented based on the adapter type
+        // For now, throw unsupported operation
+        throw new UnsupportedOperationException("WritableByteChannel not yet implemented for adapter: " + adapterId);
+    }
+
+    @Override
+    public OutputStream getOutputStream(String adapterId, Map<String, Object> config) {
+        // This would need to be implemented based on the adapter type
+        // For now, return a ByteArrayOutputStream that sends data on close
+        return new ByteArrayOutputStream() {
+            @Override
+            public void close() {
+                sendData(adapterId, this.toByteArray());
+            }
         };
     }
 }

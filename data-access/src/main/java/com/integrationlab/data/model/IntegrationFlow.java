@@ -1,5 +1,6 @@
 package com.integrationlab.data.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import lombok.*;
@@ -21,13 +22,18 @@ import java.util.List;
  * @since 1.0.0
  */
 @Entity
-@Table(name = "integration_flows", indexes = {
-    @Index(name = "idx_flow_name", columnList = "name"),
-    @Index(name = "idx_flow_status", columnList = "status"),
-    @Index(name = "idx_flow_active", columnList = "is_active"),
-    @Index(name = "idx_flow_source", columnList = "source_adapter_id"),
-    @Index(name = "idx_flow_target", columnList = "target_adapter_id")
-})
+@Table(name = "integration_flows", 
+    uniqueConstraints = {
+        @UniqueConstraint(name = "uk_flow_name", columnNames = "name")
+    },
+    indexes = {
+        @Index(name = "idx_flow_name", columnList = "name"),
+        @Index(name = "idx_flow_status", columnList = "status"),
+        @Index(name = "idx_flow_active", columnList = "is_active"),
+        @Index(name = "idx_flow_source", columnList = "source_adapter_id"),
+        @Index(name = "idx_flow_target", columnList = "target_adapter_id")
+    }
+)
 @Data
 @Builder
 @NoArgsConstructor
@@ -121,6 +127,14 @@ public class IntegrationFlow {
     private MappingMode mappingMode = MappingMode.WITH_MAPPING;
 
     /**
+     * Skip XML conversion for direct file passthrough
+     * When true, files are transferred directly without any format conversion
+     */
+    @Column(name = "skip_xml_conversion")
+    @Builder.Default
+    private boolean skipXmlConversion = false;
+
+    /**
      * Timestamp when flow was deployed
      */
     @Column(name = "deployed_at")
@@ -206,9 +220,18 @@ public class IntegrationFlow {
     /**
      * Business component that owns this flow
      */
+    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "business_component_id")
     private BusinessComponent businessComponent;
+
+    /**
+     * User who last updated this flow
+     */
+    @JsonIgnore
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "updated_by")
+    private User updatedBy;
 
     /**
      * Lifecycle callback to ensure timestamps are set

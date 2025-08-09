@@ -26,6 +26,7 @@ public class IntegrationFlowDTO {
     private String configuration;
     private boolean isActive;
     private String mappingMode; // WITH_MAPPING or PASS_THROUGH
+    private boolean skipXmlConversion; // Skip XML conversion for direct passthrough
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private String createdBy;
@@ -34,4 +35,10 @@ public class IntegrationFlowDTO {
     private Integer successCount;
     private Integer errorCount;
     private String businessComponentId;
+    
+    // Adapter details
+    private String sourceAdapterName;
+    private String sourceAdapterType;
+    private String targetAdapterName;
+    private String targetAdapterType;
 }
