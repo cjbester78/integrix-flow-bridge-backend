@@ -2,22 +2,24 @@ package com.integrationlab.backend.controller;
 
 import com.integrationlab.backend.service.AdapterMonitoringService;
 import com.integrationlab.shared.dto.AdapterStatusDTO;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@Slf4j
 @RestController
 @RequestMapping("/api/adapter-monitoring")
-@RequiredArgsConstructor
 @CrossOrigin(origins = "*")
 public class AdapterMonitoringController {
     
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(AdapterMonitoringController.class);
+    
     private final AdapterMonitoringService adapterMonitoringService;
+    
+    public AdapterMonitoringController(AdapterMonitoringService adapterMonitoringService) {
+        this.adapterMonitoringService = adapterMonitoringService;
+    }
     
     @GetMapping("/status")
     @PreAuthorize("hasAnyRole('ADMINISTRATOR', 'DEVELOPER', 'VIEWER')")
