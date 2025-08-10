@@ -21,7 +21,7 @@
     <module>webserver</module>
     <module>webclient</module>
     <module>soap-bindings</module>
-    <module>frontend-ui</module>
+    <module>frontend</module>
   </modules>
 
   <properties>

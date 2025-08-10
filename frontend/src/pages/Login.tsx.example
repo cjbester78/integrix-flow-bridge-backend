@@ -1,0 +1,74 @@
+// Example of how to integrate logging into the Login component
+
+import { useComponentLogger, useActionLogger, useFormLogger, useErrorLogger } from '@/hooks/use-logger';
+import { logger, LogCategory } from '@/lib/logger';
+
+export const Login = () => {
+  // Initialize component logger
+  useComponentLogger('Login');
+  
+  // Initialize action logger
+  const { logAction, logFormSubmit, logValidationError } = useActionLogger('Login');
+  
+  // Initialize form logger
+  const { logFieldChange, logFormComplete } = useFormLogger('LoginForm');
+  
+  // Initialize error logger
+  const { logError, logWarning } = useErrorLogger('Login');
+
+  const handleLogin = async (values: LoginFormValues) => {
+    try {
+      // Log form submission
+      logFormSubmit('LoginForm', { username: values.username });
+      
+      // Validate
+      const errors = validateLoginForm(values);
+      if (Object.keys(errors).length > 0) {
+        logValidationError('LoginForm', errors);
+        return;
+      }
+      
+      // Attempt login
+      await authStore.login(values.username, values.password);
+      
+      // Log successful form completion
+      logFormComplete(true, { username: values.username });
+      
+    } catch (error) {
+      // Log login error
+      logError('Login failed', error, { username: values.username });
+      logFormComplete(false, { username: values.username });
+    }
+  };
+
+  const handleFieldChange = (fieldName: string, value: any, previousValue?: any) => {
+    // Log field changes
+    logFieldChange(fieldName, value, previousValue);
+  };
+
+  const handleForgotPassword = () => {
+    // Log user action
+    logAction('Clicked forgot password link');
+    logger.logSecurityEvent('Password reset requested');
+  };
+
+  const handleSocialLogin = (provider: string) => {
+    // Log social login attempt
+    logAction(`Social login attempt: ${provider}`, { provider });
+  };
+
+  // Example of performance logging
+  useEffect(() => {
+    const startTime = performance.now();
+    
+    // Simulate loading
+    loadLoginPageData().then(() => {
+      const loadTime = performance.now() - startTime;
+      logger.logPerformance('Login page load', loadTime);
+    });
+  }, []);
+
+  return (
+    // Your component JSX
+  );
+};
