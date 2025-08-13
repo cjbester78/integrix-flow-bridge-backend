@@ -138,7 +138,7 @@ public class MessageService {
             // Filter to only show messages from integration flows (direct and orchestration)
             // Messages from flows will have a componentId that matches a flow ID
             predicates.add(cb.or(
-                cb.equal(root.get("domainType"), "INTEGRATION_FLOW"),
+                cb.equal(root.get("domainType"), "IntegrationFlow"),
                 cb.equal(root.get("category"), "FLOW_EXECUTION"),
                 cb.equal(root.get("category"), "DIRECT_FLOW"),
                 cb.equal(root.get("category"), "ORCHESTRATION_FLOW"),
