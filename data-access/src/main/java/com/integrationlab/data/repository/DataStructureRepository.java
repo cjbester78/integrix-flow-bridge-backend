@@ -3,6 +3,7 @@ package com.integrationlab.data.repository;
 import com.integrationlab.data.model.DataStructure;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -13,6 +14,10 @@ import java.util.Optional;
 
 @Repository
 public interface DataStructureRepository extends JpaRepository<DataStructure, String> {
+    
+    @Override
+    @EntityGraph(attributePaths = {"businessComponent"})
+    Optional<DataStructure> findById(String id);
     
     Optional<DataStructure> findByName(String name);
     
@@ -31,6 +36,7 @@ public interface DataStructureRepository extends JpaRepository<DataStructure, St
            "(:search IS NULL OR LOWER(d.name) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
            "LOWER(d.description) LIKE LOWER(CONCAT('%', :search, '%'))) AND " +
            "d.isActive = true")
+    @EntityGraph(attributePaths = {"businessComponent"})
     Page<DataStructure> findWithFilters(@Param("type") String type,
                                        @Param("usage") DataStructure.DataStructureUsage usage,
                                        @Param("businessComponentId") String businessComponentId,

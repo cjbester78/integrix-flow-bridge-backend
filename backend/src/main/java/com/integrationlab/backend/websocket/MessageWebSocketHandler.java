@@ -1,6 +1,7 @@
 package com.integrationlab.backend.websocket;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.integrationlab.backend.security.JwtUtil;
 import com.integrationlab.backend.service.MessageService;
 import com.integrationlab.shared.dto.MessageDTO;
 import com.integrationlab.shared.dto.MessageStatsDTO;
@@ -25,10 +26,14 @@ public class MessageWebSocketHandler extends TextWebSocketHandler {
     private static final Logger logger = LoggerFactory.getLogger(MessageWebSocketHandler.class);
     
     private final Map<String, WebSocketSession> sessions = new ConcurrentHashMap<>();
+    private final Map<String, String> sessionToUser = new ConcurrentHashMap<>();
     private final ObjectMapper objectMapper = new ObjectMapper();
     
     @Autowired
     private MessageService messageService;
+    
+    @Autowired
+    private JwtUtil jwtUtil;
     
     @Override
     public void afterConnectionEstablished(WebSocketSession session) throws Exception {

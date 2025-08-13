@@ -99,19 +99,27 @@ public class SecurityConfig {
                                 "/robots.txt",
                                 "/static/**",
                                 "/assets/**",
-                                "/**/*.js",
-                                "/**/*.css",
-                                "/**/*.svg",
-                                "/**/*.png",
-                                "/**/*.jpg",
-                                "/**/*.woff2",
-                                "/**/*.ttf",
+                                "/*.js",
+                                "/*.css",
+                                "/*.svg",
+                                "/*.png",
+                                "/*.jpg",
+                                "/*.woff2",
+                                "/*.ttf",
                                 "/ws/**",
                                 "/flow-execution",
                                 "/ws/messages",
                                 "/ws/flow-execution",
-                                "/ws/flow-execution-native"
+                                "/ws/flow-execution-native",
+                                "/echo",
+                                "/test-ws",
+                                "/wstest",
+                                "/direct-ws",
+                                "/minimal-echo",
+                                "/basic"
                         ).permitAll()
+                        .requestMatchers("/api/debug/**").permitAll()
+                        .requestMatchers("/api/websocket-test/**").permitAll()
                         .requestMatchers("/api/system-settings/**").hasRole("ADMINISTRATOR")
                         .requestMatchers("/api/admin/**").hasAnyRole("ADMINISTRATOR", "DEVELOPER")
                         .requestMatchers("/api/flows/execute/**").hasAnyRole("ADMINISTRATOR", "DEVELOPER", "INTEGRATOR")

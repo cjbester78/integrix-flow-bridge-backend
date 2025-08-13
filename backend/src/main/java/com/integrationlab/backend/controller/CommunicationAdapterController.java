@@ -1,10 +1,14 @@
 package com.integrationlab.backend.controller;
 
 import com.integrationlab.backend.service.CommunicationAdapterService;
+import com.integrationlab.backend.service.SystemLogService;
 import com.integrationlab.shared.dto.adapter.AdapterConfigDTO;
 import com.integrationlab.shared.dto.adapter.AdapterTestRequestDTO;
 import com.integrationlab.shared.dto.adapter.AdapterTestResultDTO;
+import com.integrationlab.shared.dto.system.SystemLogDTO;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.slf4j.Logger;
@@ -20,9 +24,11 @@ public class CommunicationAdapterController {
 
     private static final Logger logger = LoggerFactory.getLogger(CommunicationAdapterController.class);
     private final CommunicationAdapterService adapterService;
+    private final SystemLogService systemLogService;
 
-    public CommunicationAdapterController(CommunicationAdapterService adapterService) {
+    public CommunicationAdapterController(CommunicationAdapterService adapterService, SystemLogService systemLogService) {
         this.adapterService = adapterService;
+        this.systemLogService = systemLogService;
     }
 
     @PostMapping
@@ -118,5 +124,12 @@ public class CommunicationAdapterController {
         String testPayload = request.getPayload();
         AdapterTestResultDTO result = adapterService.testAdapterConfiguration(null, testPayload); // TODO: Fix config parameter
         return ResponseEntity.ok(result);
+    }
+    
+    @GetMapping("/{id}/logs")
+    public ResponseEntity<Page<SystemLogDTO>> getAdapterLogs(@PathVariable String id, Pageable pageable) {
+        logger.info("Getting logs for adapter: {}", id);
+        Page<SystemLogDTO> logs = systemLogService.getAdapterLogs(id, pageable);
+        return ResponseEntity.ok(logs);
     }
 }

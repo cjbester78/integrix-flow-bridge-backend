@@ -72,7 +72,17 @@ public class FlowCompositionService {
         flow.setTargetStructureId(request.getTargetStructureId());
         flow.setStatus(FlowStatus.DEVELOPED_INACTIVE);
         flow.setCreatedBy(request.getCreatedBy());
-        flow.setMappingMode(MappingMode.WITH_MAPPING);
+        
+        // Use mapping mode from request if provided, otherwise determine based on field mappings
+        if (request.getMappingMode() != null) {
+            flow.setMappingMode(MappingMode.valueOf(request.getMappingMode()));
+        } else {
+            // Fallback to determining based on field mappings
+            boolean hasMappings = (request.getFieldMappings() != null && !request.getFieldMappings().isEmpty()) ||
+                                 (request.getAdditionalMappings() != null && !request.getAdditionalMappings().isEmpty());
+            flow.setMappingMode(hasMappings ? MappingMode.WITH_MAPPING : MappingMode.PASS_THROUGH);
+        }
+        
         flow.setSkipXmlConversion(request.isSkipXmlConversion());
         
         // Set the source business component as the primary business component
@@ -334,6 +344,7 @@ public class FlowCompositionService {
         private List<FieldMappingDTO> fieldMappings;
         private List<AdditionalMapping> additionalMappings;
         private boolean skipXmlConversion;
+        private String mappingMode; // Add mappingMode field
 
         // Getters and setters
         public String getFlowName() { return flowName; }
@@ -362,6 +373,8 @@ public class FlowCompositionService {
         public void setAdditionalMappings(List<AdditionalMapping> additionalMappings) { this.additionalMappings = additionalMappings; }
         public boolean isSkipXmlConversion() { return skipXmlConversion; }
         public void setSkipXmlConversion(boolean skipXmlConversion) { this.skipXmlConversion = skipXmlConversion; }
+        public String getMappingMode() { return mappingMode; }
+        public void setMappingMode(String mappingMode) { this.mappingMode = mappingMode; }
     }
 
     public static class OrchestrationFlowRequest {

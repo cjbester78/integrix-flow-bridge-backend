@@ -67,4 +67,7 @@ public interface IntegrationFlowRepository extends JpaRepository<IntegrationFlow
     boolean existsByName(String name);
     
     boolean existsByNameAndIdNot(String name, String id);
+    
+    // Find flow by deployment endpoint
+    Optional<IntegrationFlow> findByDeploymentEndpointContaining(String path);
 }

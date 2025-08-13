@@ -80,6 +80,21 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String path = request.getServletPath();
-        return path.startsWith("/auth") || path.equals("/health");
+        // Skip JWT filter for WebSocket upgrade requests
+        String upgradeHeader = request.getHeader("Upgrade");
+        if ("websocket".equalsIgnoreCase(upgradeHeader)) {
+            return true;
+        }
+        
+        return path.startsWith("/auth") || 
+               path.equals("/health") ||
+               path.startsWith("/ws/") ||
+               path.equals("/flow-execution") ||
+               path.equals("/echo") ||
+               path.equals("/test-ws") ||
+               path.equals("/wstest") ||
+               path.equals("/direct-ws") ||
+               path.equals("/minimal-echo") ||
+               path.equals("/basic");
     }
 }

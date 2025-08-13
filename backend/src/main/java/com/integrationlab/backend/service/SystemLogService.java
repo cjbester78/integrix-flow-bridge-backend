@@ -8,9 +8,12 @@ import com.integrationlab.data.repository.SystemLogRepository;
 import com.integrationlab.data.repository.UserRepository;
 import com.integrationlab.shared.dto.log.FrontendLogBatchRequest;
 import com.integrationlab.shared.dto.log.FrontendLogEntry;
+import com.integrationlab.shared.dto.system.SystemLogDTO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -317,5 +320,65 @@ public class SystemLogService {
         }
         
         return hourlyCounts;
+    }
+    
+    /**
+     * Get logs for a specific adapter.
+     *
+     * @param adapterId The adapter ID
+     * @param pageable The pagination parameters
+     * @return Page of system logs
+     */
+    public Page<SystemLogDTO> getAdapterLogs(String adapterId, Pageable pageable) {
+        log.debug("Fetching logs for adapter: {}", adapterId);
+        
+        // Use JPA Specification to query logs where:
+        // 1. domainReferenceId matches the adapterId (for adapter activity logs)
+        // 2. OR it's part of a flow execution involving this adapter
+        Page<SystemLog> logs = systemLogRepository.findAll(
+            (root, query, cb) -> cb.or(
+                // Direct adapter activity logs
+                cb.and(
+                    cb.equal(root.get("domainType"), "CommunicationAdapter"),
+                    cb.equal(root.get("domainReferenceId"), adapterId)
+                ),
+                // Flow execution logs where this adapter is involved
+                cb.and(
+                    cb.equal(root.get("category"), "FLOW_EXECUTION"),
+                    root.get("details").isNotNull()
+                )
+            ),
+            pageable
+        );
+        
+        // Convert to DTOs
+        return logs.map(this::convertToDTO);
+    }
+    
+    /**
+     * Convert SystemLog entity to DTO.
+     *
+     * @param log The system log entity
+     * @return The system log DTO
+     */
+    private SystemLogDTO convertToDTO(SystemLog log) {
+        return SystemLogDTO.builder()
+                .id(log.getId())
+                .timestamp(log.getTimestamp())
+                .level(log.getLevel().toString())
+                .message(log.getMessage())
+                .details(log.getDetails())
+                .source(log.getSource())
+                .sourceId(log.getSourceId())
+                .sourceName(log.getSourceName())
+                .component(log.getComponent())
+                .componentId(log.getComponentId())
+                .domainType(log.getDomainType())
+                .domainReferenceId(log.getDomainReferenceId())
+                .correlationId(log.getCorrelationId())
+                .userId(log.getUserId())
+                .clientIp(log.getIpAddress())
+                .createdAt(log.getCreatedAt())
+                .build();
     }
 }

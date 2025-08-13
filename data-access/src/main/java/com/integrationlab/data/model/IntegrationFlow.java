@@ -133,6 +133,14 @@ public class IntegrationFlow {
     @Column(name = "skip_xml_conversion")
     @Builder.Default
     private boolean skipXmlConversion = false;
+    
+    /**
+     * Flow type - either DIRECT_MAPPING or ORCHESTRATION
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "flow_type", columnDefinition = "ENUM('DIRECT_MAPPING', 'ORCHESTRATION')")
+    @Builder.Default
+    private FlowType flowType = FlowType.DIRECT_MAPPING;
 
     /**
      * Timestamp when flow was deployed

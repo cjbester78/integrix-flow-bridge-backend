@@ -6,7 +6,14 @@ import com.integrationlab.shared.dto.MessageStatsDTO;
 import com.integrationlab.data.model.SystemLog;
 import com.integrationlab.data.repository.SystemLogRepository;
 import com.integrationlab.backend.exception.ResourceNotFoundException;
+import com.integrationlab.data.model.CommunicationAdapter;
+import com.integrationlab.data.model.IntegrationFlow;
+import com.integrationlab.data.model.SystemLog.LogLevel;
 import org.springframework.beans.factory.annotation.Autowired;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -21,14 +28,19 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
-@Transactional
 public class MessageService {
+    
+    private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(MessageService.class);
 
     @Autowired
     private SystemLogRepository logRepository;
+    
+    @Autowired
+    private ObjectMapper objectMapper;
 
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm:ss");
 
+    @Transactional(readOnly = true)
     public List<RecentMessageDTO> getRecentMessages(String businessComponentId, int limit) {
         PageRequest pageRequest = PageRequest.of(0, limit, Sort.by(Sort.Direction.DESC, "timestamp"));
         
@@ -44,6 +56,7 @@ public class MessageService {
     /**
      * Get messages with filtering and pagination
      */
+    @Transactional(readOnly = true)
     public Map<String, Object> getMessages(Map<String, Object> filters, int page, int size) {
         PageRequest pageRequest = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "timestamp"));
         Specification<SystemLog> spec = buildSpecification(filters);
@@ -64,6 +77,7 @@ public class MessageService {
     /**
      * Get a specific message by ID
      */
+    @Transactional(readOnly = true)
     public MessageDTO getMessageById(String id) {
         SystemLog log = logRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Message not found with id: " + id));
@@ -73,6 +87,7 @@ public class MessageService {
     /**
      * Get message statistics
      */
+    @Transactional(readOnly = true)
     public MessageStatsDTO getMessageStats(Map<String, Object> filters) {
         Specification<SystemLog> spec = buildSpecification(filters);
         List<SystemLog> logs = logRepository.findAll(spec);
@@ -104,6 +119,7 @@ public class MessageService {
     /**
      * Reprocess a failed message
      */
+    @Transactional
     public MessageDTO reprocessMessage(String id) {
         SystemLog log = logRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Message not found with id: " + id));
@@ -116,6 +132,16 @@ public class MessageService {
     private Specification<SystemLog> buildSpecification(Map<String, Object> filters) {
         return (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
+            
+            // Filter to only show messages from integration flows (direct and orchestration)
+            // Messages from flows will have a componentId that matches a flow ID
+            predicates.add(cb.or(
+                cb.equal(root.get("domainType"), "INTEGRATION_FLOW"),
+                cb.equal(root.get("category"), "FLOW_EXECUTION"),
+                cb.equal(root.get("category"), "DIRECT_FLOW"),
+                cb.equal(root.get("category"), "ORCHESTRATION_FLOW"),
+                cb.like(root.get("category"), "FLOW_%")
+            ));
             
             if (filters.containsKey("status")) {
                 List<String> statuses = (List<String>) filters.get("status");
@@ -183,11 +209,72 @@ public class MessageService {
         
         // Create log entries
         List<MessageDTO.MessageLogDTO> logs = new ArrayList<>();
+        
+        // Add main log entry
         logs.add(MessageDTO.MessageLogDTO.builder()
                 .timestamp(log.getTimestamp())
                 .level(log.getLevel().name())
                 .message(log.getMessage())
                 .build());
+        
+        // Extract processing steps from details JSON if available
+        if (log.getDetails() != null && !log.getDetails().isEmpty()) {
+            try {
+                JsonNode detailsNode = objectMapper.readTree(log.getDetails());
+                if (detailsNode.has("processingSteps") && detailsNode.get("processingSteps").isArray()) {
+                    ArrayNode steps = (ArrayNode) detailsNode.get("processingSteps");
+                    for (JsonNode step : steps) {
+                        String stepTimestamp = step.has("timestamp") ? step.get("timestamp").asText() : "";
+                        String stepLevel = step.has("level") ? step.get("level").asText() : "INFO";
+                        String stepMessage = step.has("step") ? step.get("step").asText() : "";
+                        String stepDetails = step.has("details") ? step.get("details").asText() : "";
+                        
+                        // Format the timestamp to match frontend expectations
+                        LocalDateTime parsedTime = LocalDateTime.parse(stepTimestamp);
+                        
+                        logs.add(MessageDTO.MessageLogDTO.builder()
+                                .timestamp(parsedTime)
+                                .level(stepLevel)
+                                .message(stepMessage + (stepDetails.isEmpty() ? "" : " - " + stepDetails))
+                                .build());
+                    }
+                }
+                
+                // Extract message size and processing time if available
+                String messageSize = detailsNode.has("messageSize") ? 
+                    detailsNode.get("messageSize").asInt() + " bytes" : "1024 bytes";
+                
+                // Calculate processing time from start/end time if available
+                String processingTime = "250ms"; // Default
+                if (detailsNode.has("startTime") && detailsNode.has("endTime")) {
+                    try {
+                        LocalDateTime startTime = LocalDateTime.parse(detailsNode.get("startTime").asText());
+                        LocalDateTime endTime = LocalDateTime.parse(detailsNode.get("endTime").asText());
+                        long millis = java.time.Duration.between(startTime, endTime).toMillis();
+                        processingTime = millis + "ms";
+                    } catch (Exception e) {
+                        // Keep default if parsing fails
+                    }
+                }
+                
+                return MessageDTO.builder()
+                        .id(log.getId())
+                        .timestamp(log.getTimestamp())
+                        .source(log.getSource() != null ? log.getSource() : "System")
+                        .target(log.getSourceName() != null ? log.getSourceName() : "Integration Flow")
+                        .type(log.getCategory() != null ? log.getCategory() : "INTEGRATION")
+                        .status(status)
+                        .processingTime(processingTime)
+                        .size(messageSize)
+                        .businessComponentId(log.getComponentId())
+                        .logs(logs)
+                        .build();
+                
+            } catch (Exception e) {
+                logger.error("Error parsing log details: {}", e.getMessage());
+                // Fall back to simple response if JSON parsing fails
+            }
+        }
         
         return MessageDTO.builder()
                 .id(log.getId())
@@ -196,8 +283,8 @@ public class MessageService {
                 .target(log.getSourceName() != null ? log.getSourceName() : "Integration Flow")
                 .type(log.getCategory() != null ? log.getCategory() : "INTEGRATION")
                 .status(status)
-                .processingTime("250ms") // Dummy value for now
-                .size("1024 bytes") // Dummy value for now
+                .processingTime("250ms")
+                .size("1024 bytes")
                 .businessComponentId(log.getComponentId())
                 .logs(logs)
                 .build();
@@ -228,6 +315,212 @@ public class MessageService {
                 return "success";
             default:
                 return "processing";
+        }
+    }
+    
+    /**
+     * Create a new message record for flow processing
+     */
+    public String createMessage(IntegrationFlow flow, String messageContent, String protocol) {
+        return createMessage(flow, messageContent, protocol, null);
+    }
+    
+    /**
+     * Create a new message record for flow processing with optional correlation ID
+     */
+    public String createMessage(IntegrationFlow flow, String messageContent, String protocol, String existingCorrelationId) {
+        String correlationId = existingCorrelationId != null ? existingCorrelationId : UUID.randomUUID().toString();
+        
+        try {
+            // Create initial message received entry with empty processing steps
+            SystemLog log = new SystemLog();
+            log.setTimestamp(LocalDateTime.now());
+            log.setCategory("FLOW_EXECUTION");
+            log.setLevel(LogLevel.INFO);
+            log.setMessage("Flow execution: " + flow.getName());
+            log.setDomainType("IntegrationFlow");
+            log.setDomainReferenceId(flow.getId());
+            log.setComponentId(flow.getBusinessComponent() != null ? flow.getBusinessComponent().getId() : null); // Set business component ID from flow
+            log.setSource(protocol);
+            log.setSourceId(flow.getId());
+            log.setSourceName(flow.getName());
+            log.setCorrelationId(correlationId);
+            
+            // Initialize details with processing steps array
+            ObjectNode details = objectMapper.createObjectNode();
+            details.put("protocol", protocol);
+            details.put("messageSize", messageContent.length());
+            details.put("startTime", LocalDateTime.now().toString());
+            details.set("processingSteps", objectMapper.createArrayNode());
+            
+            log.setDetails(details.toString());
+            
+            logRepository.save(log);
+            logRepository.flush();
+            logger.info("Successfully created message log with correlation ID: {} and ID: {}", correlationId, log.getId());
+        } catch (Exception e) {
+            logger.error("Error creating message log: {}", e.getMessage(), e);
+            // Don't throw - logging should not break flow processing
+        }
+        
+        return correlationId; // Return correlation ID regardless
+    }
+    
+    /**
+     * Log a processing step - adds to existing message log
+     */
+    @Transactional
+    public void logProcessingStep(String correlationId, IntegrationFlow flow, String step, String stepDetails, LogLevel level) {
+        try {
+            logger.debug("Adding processing step for correlation ID: {} - Step: {}", correlationId, step);
+            
+            // Find the main message log by correlation ID
+            List<SystemLog> logs = logRepository.findByCorrelationId(correlationId);
+            if (logs.isEmpty()) {
+                logger.warn("No message log found for correlation ID: {}", correlationId);
+                return;
+            }
+            
+            logger.debug("Found {} logs for correlation ID: {}", logs.size(), correlationId);
+            SystemLog mainLog = logs.get(0); // Get the main log entry
+            
+            // Parse existing details
+            ObjectNode details = (ObjectNode) objectMapper.readTree(
+                mainLog.getDetails() != null ? mainLog.getDetails() : "{}"
+            );
+            
+            // Get or create processing steps array
+            ArrayNode steps = (ArrayNode) details.get("processingSteps");
+            if (steps == null) {
+                steps = objectMapper.createArrayNode();
+                details.set("processingSteps", steps);
+            }
+            
+            // Add new step
+            ObjectNode newStep = objectMapper.createObjectNode();
+            newStep.put("timestamp", LocalDateTime.now().toString());
+            newStep.put("step", step);
+            newStep.put("details", stepDetails);
+            newStep.put("level", level.toString());
+            steps.add(newStep);
+            
+            // Update the main log entry
+            mainLog.setDetails(details.toString());
+            
+            // Update level if this step has error
+            if (level == LogLevel.ERROR || level == LogLevel.FATAL) {
+                mainLog.setLevel(level);
+            }
+            
+            logRepository.save(mainLog);
+            logRepository.flush();
+            
+            logger.debug("Successfully saved processing step. Total steps now: {}", steps.size());
+        } catch (Exception e) {
+            logger.error("Error logging processing step: {}", e.getMessage(), e);
+            e.printStackTrace();
+            // Don't throw - logging should not break flow processing
+        }
+    }
+    
+    /**
+     * Update message status after processing
+     */
+    public void updateMessageStatus(String correlationId, String status, String statusDetails) {
+        try {
+            // Find the main message log by correlation ID
+            List<SystemLog> logs = logRepository.findByCorrelationId(correlationId);
+            if (logs.isEmpty()) {
+                logger.warn("No message log found for correlation ID: {}", correlationId);
+                return;
+            }
+            
+            SystemLog mainLog = logs.get(0);
+            
+            // Parse existing details
+            ObjectNode details = (ObjectNode) objectMapper.readTree(
+                mainLog.getDetails() != null ? mainLog.getDetails() : "{}"
+            );
+            
+            // Update completion info
+            details.put("endTime", LocalDateTime.now().toString());
+            details.put("status", status);
+            details.put("statusDetails", statusDetails != null ? statusDetails : "");
+            
+            // Calculate duration if startTime exists
+            if (details.has("startTime")) {
+                try {
+                    LocalDateTime startTime = LocalDateTime.parse(details.get("startTime").asText());
+                    LocalDateTime endTime = LocalDateTime.now();
+                    long durationMs = java.time.Duration.between(startTime, endTime).toMillis();
+                    details.put("durationMs", durationMs);
+                } catch (Exception e) {
+                    logger.warn("Could not calculate duration: {}", e.getMessage());
+                }
+            }
+            
+            // Update the main log entry
+            mainLog.setDetails(details.toString());
+            
+            // Update message and level based on status
+            switch (status) {
+                case "COMPLETED":
+                    mainLog.setMessage("Flow completed: " + mainLog.getSourceName());
+                    if (mainLog.getLevel() != LogLevel.ERROR && mainLog.getLevel() != LogLevel.FATAL) {
+                        mainLog.setLevel(LogLevel.INFO);
+                    }
+                    break;
+                case "FAILED":
+                    mainLog.setMessage("Flow failed: " + mainLog.getSourceName());
+                    mainLog.setLevel(LogLevel.ERROR);
+                    break;
+                case "PROCESSING":
+                    mainLog.setMessage("Flow processing: " + mainLog.getSourceName());
+                    break;
+            }
+            
+            logRepository.save(mainLog);
+            logRepository.flush();
+        } catch (Exception e) {
+            logger.error("Error updating message status: {}", e.getMessage(), e);
+            e.printStackTrace();
+            // Don't throw - logging should not break flow processing
+        }
+    }
+    
+    /**
+     * Log adapter-specific activity
+     */
+    public void logAdapterActivity(CommunicationAdapter adapter, String message, String activityDetails, LogLevel level, String correlationId) {
+        try {
+            SystemLog log = new SystemLog();
+            log.setTimestamp(LocalDateTime.now());
+            log.setCategory("ADAPTER_ACTIVITY");
+            log.setLevel(level);
+            log.setMessage(message);
+            log.setDomainType("CommunicationAdapter");
+            log.setDomainReferenceId(adapter.getId());
+            log.setComponentId(adapter.getBusinessComponentId());
+            log.setSource("ADAPTER");
+            log.setSourceId(adapter.getId());
+            log.setSourceName(adapter.getName());
+            log.setCorrelationId(correlationId); // Link to flow execution
+            
+            // Create JSON details for adapter activity
+            ObjectNode details = objectMapper.createObjectNode();
+            details.put("timestamp", LocalDateTime.now().toString());
+            details.put("adapterType", adapter.getType().toString());
+            details.put("adapterMode", adapter.getMode().toString());
+            details.put("activityDetails", activityDetails);
+            
+            log.setDetails(details.toString());
+            
+            logRepository.save(log);
+            logRepository.flush();
+        } catch (Exception e) {
+            logger.error("Error logging adapter activity: {}", e.getMessage(), e);
+            e.printStackTrace();
+            // Don't throw - logging should not break flow processing
         }
     }
 }

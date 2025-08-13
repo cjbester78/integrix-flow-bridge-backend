@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import com.fasterxml.jackson.annotation.JsonFormat;
 
 @Data
 @Builder
@@ -14,6 +15,7 @@ import java.util.List;
 @AllArgsConstructor
 public class MessageDTO {
     private String id;
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime timestamp;
     private String source;
     private String target;
@@ -29,6 +31,7 @@ public class MessageDTO {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class MessageLogDTO {
+        @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
         private LocalDateTime timestamp;
         private String level;
         private String message;

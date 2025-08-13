@@ -25,4 +25,7 @@ public interface SystemLogRepository extends JpaRepository<SystemLog, String>, J
     
     // Methods for MessageService
     List<SystemLog> findByComponentId(String componentId, org.springframework.data.domain.Pageable pageable);
+    
+    // Find logs by correlation ID
+    List<SystemLog> findByCorrelationId(String correlationId);
 }

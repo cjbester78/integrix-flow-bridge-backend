@@ -130,6 +130,24 @@
 			<version>2.1.1</version>
 		</dependency>
 
+		<!-- Jakarta WebSocket -->
+		<dependency>
+			<groupId>jakarta.websocket</groupId>
+			<artifactId>jakarta.websocket-api</artifactId>
+			<version>2.1.1</version>
+		</dependency>
+		<dependency>
+			<groupId>jakarta.websocket</groupId>
+			<artifactId>jakarta.websocket-client-api</artifactId>
+			<version>2.1.1</version>
+		</dependency>
+		
+		<!-- Tomcat WebSocket -->
+		<dependency>
+			<groupId>org.apache.tomcat.embed</groupId>
+			<artifactId>tomcat-embed-websocket</artifactId>
+		</dependency>
+
 		<!-- Internal modules -->
 		<dependency>
 			<groupId>com.integrationlab</groupId>

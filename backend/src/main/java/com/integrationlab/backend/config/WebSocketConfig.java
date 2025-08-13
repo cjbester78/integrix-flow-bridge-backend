@@ -2,6 +2,8 @@ package com.integrationlab.backend.config;
 
 import com.integrationlab.backend.websocket.FlowExecutionWebSocketHandler;
 import com.integrationlab.backend.websocket.MessageWebSocketHandler;
+import com.integrationlab.backend.websocket.SimpleWebSocketHandler;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.EnableScheduling;
@@ -9,29 +11,44 @@ import org.springframework.web.socket.config.annotation.EnableWebSocket;
 import org.springframework.web.socket.config.annotation.WebSocketConfigurer;
 import org.springframework.web.socket.config.annotation.WebSocketHandlerRegistry;
 
+@Slf4j
 @Configuration
 @EnableWebSocket
 @EnableScheduling
 public class WebSocketConfig implements WebSocketConfigurer {
 
     @Autowired
+    private MessageWebSocketHandler messageWebSocketHandler;
+    
+    @Autowired(required = false)
     private FlowExecutionWebSocketHandler flowExecutionWebSocketHandler;
     
-    @Autowired
-    private MessageWebSocketHandler messageWebSocketHandler;
+    @Autowired(required = false)
+    private SimpleWebSocketHandler simpleWebSocketHandler;
 
     @Override
     public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
-        // Register WebSocket endpoint for flow execution monitoring  
-        registry.addHandler(flowExecutionWebSocketHandler, "/ws/flow-execution")
-                .setAllowedOrigins("*"); // In production, specify actual allowed origins
+        log.info("=== Registering WebSocket handlers ===");
         
-        // Also register without SockJS for native WebSocket clients
-        registry.addHandler(flowExecutionWebSocketHandler, "/ws/flow-execution-native")
-                .setAllowedOrigins("*");
-                
-        // Message monitoring WebSocket endpoint
+        // Message monitoring WebSocket endpoint - this is the critical one
         registry.addHandler(messageWebSocketHandler, "/ws/messages")
                 .setAllowedOrigins("*");
+        log.info("Registered /ws/messages WebSocket endpoint");
+        
+        // Flow execution monitoring
+        if (flowExecutionWebSocketHandler != null) {
+            registry.addHandler(flowExecutionWebSocketHandler, "/ws/flow-execution")
+                    .setAllowedOrigins("*");
+            log.info("Registered /ws/flow-execution WebSocket endpoint");
+        }
+        
+        // Test endpoint
+        if (simpleWebSocketHandler != null) {
+            registry.addHandler(simpleWebSocketHandler, "/ws/test")
+                    .setAllowedOrigins("*");
+            log.info("Registered /ws/test WebSocket endpoint");
+        }
+        
+        log.info("=== WebSocket handler registration complete ===");
     }
 }
