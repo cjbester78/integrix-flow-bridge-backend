@@ -462,6 +462,7 @@ public class MessageService {
                 .processingTime(processingTime)
                 .size(messageSize)
                 .businessComponentId(log.getComponentId())
+                .correlationId(log.getCorrelationId())
                 .logs(logs)
                 .build();
     }
@@ -529,6 +530,7 @@ public class MessageService {
                         .processingTime(processingTime)
                         .size(messageSize)
                         .businessComponentId(log.getComponentId())
+                        .correlationId(log.getCorrelationId())
                         .logs(logs)
                         .build();
                 
@@ -548,6 +550,7 @@ public class MessageService {
                 .processingTime("250ms")
                 .size("1024 bytes")
                 .businessComponentId(log.getComponentId())
+                .correlationId(log.getCorrelationId())
                 .logs(logs)
                 .build();
     }
