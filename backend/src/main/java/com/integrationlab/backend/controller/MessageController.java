@@ -91,7 +91,7 @@ public class MessageController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dateFrom,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dateTo) {
         
-        logger.debug("Getting message statistics");
+        logger.debug("Getting message statistics with dateFrom: {}, dateTo: {}", dateFrom, dateTo);
         
         Map<String, Object> filters = new HashMap<>();
         if (status != null && !status.isEmpty()) filters.put("status", status);

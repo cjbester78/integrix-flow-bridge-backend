@@ -89,8 +89,10 @@ public class MessageService {
      */
     @Transactional(readOnly = true)
     public MessageStatsDTO getMessageStats(Map<String, Object> filters) {
+        logger.debug("Getting message stats with filters: {}", filters);
         Specification<SystemLog> spec = buildSpecification(filters);
         List<SystemLog> logs = logRepository.findAll(spec);
+        logger.debug("Found {} logs after filtering", logs.size());
         
         long total = logs.size();
         long successful = logs.stream()
