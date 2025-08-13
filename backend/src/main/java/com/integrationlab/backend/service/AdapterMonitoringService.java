@@ -110,12 +110,13 @@ public class AdapterMonitoringService {
         status.setType(adapter.getType() != null ? adapter.getType().toString() : "UNKNOWN");
         status.setMode(adapter.getMode() != null ? adapter.getMode().toString() : "UNKNOWN");
         
-        // Set status based on adapter configuration
+        // Initially set status based on adapter configuration
+        String adapterStatus;
         if (adapter.isActive()) {
-            status.setStatus("active");
+            adapterStatus = "active";
             status.setLoad(25); // Default load for active adapters
         } else {
-            status.setStatus("inactive");
+            adapterStatus = "inactive";
             status.setLoad(0);
         }
         
@@ -146,18 +147,51 @@ public class AdapterMonitoringService {
             status.setMessagesProcessed(successCount);
             status.setErrorsCount(errorCount);
             
-            // Get last activity time
+            // Get last activity time and check for recent errors
+            LocalDateTime lastActivity = null;
+            boolean hasRecentError = false;
+            
             if (!adapterLogs.isEmpty()) {
                 SystemLog mostRecentLog = adapterLogs.get(0);
-                status.setLastActivity(mostRecentLog.getTimestamp());
+                lastActivity = mostRecentLog.getTimestamp();
+                status.setLastActivity(lastActivity);
+                
+                // Check if the most recent log is an error
+                if (mostRecentLog.getLevel() == SystemLog.LogLevel.ERROR) {
+                    hasRecentError = true;
+                }
             } else {
                 // Try to find any log mentioning this adapter
                 List<SystemLog> anyAdapterLogs = systemLogRepository.findByMessageContainingOrderByTimestampDesc(
                     adapter.getName()
                 );
                 if (!anyAdapterLogs.isEmpty()) {
-                    status.setLastActivity(anyAdapterLogs.get(0).getTimestamp());
+                    SystemLog mostRecentLog = anyAdapterLogs.get(0);
+                    lastActivity = mostRecentLog.getTimestamp();
+                    status.setLastActivity(lastActivity);
+                    
+                    // Check if the most recent log is an error
+                    if (mostRecentLog.getLevel() == SystemLog.LogLevel.ERROR) {
+                        hasRecentError = true;
+                    }
                 }
+            }
+            
+            // Check for recent errors (within last 5 minutes)
+            if (!hasRecentError && lastActivity != null) {
+                LocalDateTime fiveMinutesAgo = LocalDateTime.now().minusMinutes(5);
+                if (lastActivity.isAfter(fiveMinutesAgo)) {
+                    // Check if there are any errors in the last 5 minutes
+                    hasRecentError = adapterLogs.stream()
+                        .filter(log -> log.getTimestamp().isAfter(fiveMinutesAgo))
+                        .anyMatch(log -> log.getLevel() == SystemLog.LogLevel.ERROR);
+                }
+            }
+            
+            // Set status to error if adapter is active and has recent errors
+            if (adapter.isActive() && hasRecentError) {
+                adapterStatus = "error";
+                status.setLoad(0); // Set load to 0 for error state
             }
             
         } catch (Exception e) {
@@ -166,6 +200,9 @@ public class AdapterMonitoringService {
             status.setMessagesProcessed(0L);
             status.setErrorsCount(0L);
         }
+        
+        // Set the final calculated status
+        status.setStatus(adapterStatus);
         
         // Cache the calculated status
         adapterStatuses.put(adapter.getId(), status);
