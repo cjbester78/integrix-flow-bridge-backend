@@ -115,4 +115,14 @@ public class MessageController {
         MessageDTO message = messageService.reprocessMessage(id);
         return ResponseEntity.ok(message);
     }
+    
+    /**
+     * Get adapter payloads by correlation ID
+     */
+    @GetMapping("/payloads/{correlationId}")
+    @PreAuthorize("hasAnyRole('ADMINISTRATOR', 'DEVELOPER', 'VIEWER')")
+    public ResponseEntity<List<?>> getAdapterPayloads(@PathVariable String correlationId) {
+        logger.debug("Getting adapter payloads for correlation ID: {}", correlationId);
+        return ResponseEntity.ok(messageService.getAdapterPayloads(correlationId));
+    }
 }

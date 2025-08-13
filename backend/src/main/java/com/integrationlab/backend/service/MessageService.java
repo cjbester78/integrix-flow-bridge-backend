@@ -4,7 +4,9 @@ import com.integrationlab.shared.dto.RecentMessageDTO;
 import com.integrationlab.shared.dto.MessageDTO;
 import com.integrationlab.shared.dto.MessageStatsDTO;
 import com.integrationlab.data.model.SystemLog;
+import com.integrationlab.data.model.AdapterPayload;
 import com.integrationlab.data.repository.SystemLogRepository;
+import com.integrationlab.data.repository.AdapterPayloadRepository;
 import com.integrationlab.backend.exception.ResourceNotFoundException;
 import com.integrationlab.data.model.CommunicationAdapter;
 import com.integrationlab.data.model.IntegrationFlow;
@@ -38,6 +40,9 @@ public class MessageService {
 
     @Autowired
     private SystemLogRepository logRepository;
+    
+    @Autowired
+    private AdapterPayloadRepository payloadRepository;
     
     @Autowired
     private ObjectMapper objectMapper;
@@ -204,81 +209,63 @@ public class MessageService {
     }
     
     /**
-     * Log adapter payload (request or response)
+     * Log adapter payload (request or response) to dedicated payload table
      */
     public void logAdapterPayload(String correlationId, CommunicationAdapter adapter, 
                                   String payloadType, String payload, String direction) {
         logger.info("DEBUG: logAdapterPayload called - correlationId: {}, adapter: {}, direction: {}, payloadType: {}", 
             correlationId, adapter.getName(), direction, payloadType);
         try {
-            SystemLog log = new SystemLog();
-            // Let JPA handle ID generation since it's marked with @GeneratedValue
-            // log.setId(UUID.randomUUID().toString());
-            log.setTimestamp(LocalDateTime.now());
-            log.setCreatedAt(LocalDateTime.now());
-            log.setLevel(SystemLog.LogLevel.INFO);
-            log.setMessage(String.format("Adapter %s payload - %s", direction, payloadType));
-            log.setCategory("ADAPTER_PAYLOAD");
-            log.setDomainType("CommunicationAdapter");
-            log.setDomainReferenceId(adapter.getId());
-            log.setCorrelationId(correlationId);
-            log.setSourceName(adapter.getName());
-            log.setSource(adapter.getType().name());
+            // Use the new AdapterPayload entity
+            AdapterPayload adapterPayload = AdapterPayload.builder()
+                .correlationId(correlationId)
+                .adapterId(adapter.getId())
+                .adapterName(adapter.getName())
+                .adapterType(adapter.getType() != null ? adapter.getType().name() : "UNKNOWN")
+                .direction(direction)
+                .payloadType(payloadType)
+                .payload(payload)
+                .payloadSize(payload != null ? payload.length() : 0)
+                .build();
             
-            logger.info("DEBUG: Creating details map for payload");
-            Map<String, Object> details = new HashMap<>();
-            details.put("adapterId", adapter.getId());
-            details.put("adapterName", adapter.getName());
-            details.put("adapterType", adapter.getType().name());
-            details.put("direction", direction); // INBOUND or OUTBOUND
-            details.put("payloadType", payloadType); // REQUEST or RESPONSE
-            details.put("payload", payload);
-            details.put("payloadSize", payload != null ? payload.length() : 0);
-            
-            String detailsJson = objectMapper.writeValueAsString(details);
-            logger.info("DEBUG: Details JSON length: {}", detailsJson.length());
-            log.setDetails(detailsJson);
-            
-            logger.info("DEBUG: About to save SystemLog to database");
-            SystemLog savedLog = logRepository.save(log);
-            logger.info("DEBUG: Successfully saved payload log with ID: {}", savedLog.getId());
+            logger.info("DEBUG: About to save AdapterPayload to database");
+            AdapterPayload saved = payloadRepository.save(adapterPayload);
+            logger.info("DEBUG: Successfully saved adapter payload with ID: {}", saved.getId());
             
             // Force flush to ensure it's written
-            logRepository.flush();
+            payloadRepository.flush();
             logger.info("DEBUG: Flushed to database");
             
-            // Verify it was saved
-            Optional<SystemLog> verifyLog = logRepository.findById(savedLog.getId());
-            if (verifyLog.isPresent()) {
-                logger.info("DEBUG: Verified - payload log exists in database with ID: {}", savedLog.getId());
-            } else {
-                logger.error("DEBUG: ERROR - payload log NOT found in database after save!");
+            // Also log a simple entry to system_logs for tracking
+            try {
+                SystemLog log = new SystemLog();
+                log.setTimestamp(LocalDateTime.now());
+                log.setCreatedAt(LocalDateTime.now());
+                log.setLevel(SystemLog.LogLevel.INFO);
+                log.setMessage(String.format("Adapter %s payload logged - %s", direction, payloadType));
+                log.setCategory("ADAPTER_PAYLOAD");
+                log.setDomainType("CommunicationAdapter");
+                log.setDomainReferenceId(adapter.getId());
+                log.setCorrelationId(correlationId);
+                log.setSourceName(adapter.getName());
+                log.setSource(adapter.getType() != null ? adapter.getType().name() : "UNKNOWN");
+                log.setDetails(String.format("Payload stored in adapter_payloads table with ID: %s", saved.getId()));
+                logRepository.save(log);
+            } catch (Exception ex) {
+                logger.warn("Failed to create system log entry for payload: ", ex);
             }
             
         } catch (Exception e) {
             logger.error("Error logging adapter payload for adapter: {} - Error: {}", adapter.getName(), e.getMessage());
             logger.error("Full error details: ", e);
-            // Log basic info without payload if there's an issue
-            try {
-                SystemLog basicLog = new SystemLog();
-                // Let JPA handle ID generation
-                // basicLog.setId(UUID.randomUUID().toString());
-                basicLog.setTimestamp(LocalDateTime.now());
-                basicLog.setCreatedAt(LocalDateTime.now());
-                basicLog.setLevel(SystemLog.LogLevel.ERROR);
-                basicLog.setMessage(String.format("Failed to log adapter payload - %s %s", direction, payloadType));
-                basicLog.setCategory("ADAPTER_PAYLOAD_ERROR");
-                basicLog.setDomainType("CommunicationAdapter");
-                basicLog.setDomainReferenceId(adapter.getId());
-                basicLog.setCorrelationId(correlationId);
-                basicLog.setSourceName(adapter.getName());
-                basicLog.setSource(adapter.getType().name());
-                basicLog.setDetails("Error: " + e.getMessage());
-                logRepository.save(basicLog);
-            } catch (Exception ex) {
-                logger.error("Failed to save error log: ", ex);
-            }
         }
+    }
+    
+    /**
+     * Get adapter payloads by correlation ID
+     */
+    public List<AdapterPayload> getAdapterPayloads(String correlationId) {
+        return payloadRepository.findByCorrelationIdOrderByCreatedAtAsc(correlationId);
     }
     
     private Specification<SystemLog> buildSpecification(Map<String, Object> filters) {
