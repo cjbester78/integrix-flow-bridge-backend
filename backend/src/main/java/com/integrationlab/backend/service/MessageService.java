@@ -209,7 +209,8 @@ public class MessageService {
                                   String payloadType, String payload, String direction) {
         try {
             SystemLog log = new SystemLog();
-            log.setId(UUID.randomUUID().toString());
+            // Let JPA handle ID generation since it's marked with @GeneratedValue
+            // log.setId(UUID.randomUUID().toString());
             log.setTimestamp(LocalDateTime.now());
             log.setCreatedAt(LocalDateTime.now());
             log.setLevel(SystemLog.LogLevel.INFO);
@@ -234,7 +235,28 @@ public class MessageService {
             logRepository.save(log);
             
         } catch (Exception e) {
-            logger.error("Error logging adapter payload for adapter: {}", adapter.getName(), e);
+            logger.error("Error logging adapter payload for adapter: {} - Error: {}", adapter.getName(), e.getMessage());
+            logger.error("Full error details: ", e);
+            // Log basic info without payload if there's an issue
+            try {
+                SystemLog basicLog = new SystemLog();
+                // Let JPA handle ID generation
+                // basicLog.setId(UUID.randomUUID().toString());
+                basicLog.setTimestamp(LocalDateTime.now());
+                basicLog.setCreatedAt(LocalDateTime.now());
+                basicLog.setLevel(SystemLog.LogLevel.ERROR);
+                basicLog.setMessage(String.format("Failed to log adapter payload - %s %s", direction, payloadType));
+                basicLog.setCategory("ADAPTER_PAYLOAD_ERROR");
+                basicLog.setDomainType("CommunicationAdapter");
+                basicLog.setDomainReferenceId(adapter.getId());
+                basicLog.setCorrelationId(correlationId);
+                basicLog.setSourceName(adapter.getName());
+                basicLog.setSource(adapter.getType().name());
+                basicLog.setDetails("Error: " + e.getMessage());
+                logRepository.save(basicLog);
+            } catch (Exception ex) {
+                logger.error("Failed to save error log: ", ex);
+            }
         }
     }
     

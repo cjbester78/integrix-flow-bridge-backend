@@ -125,7 +125,6 @@ public class FlowExecutionSyncService {
             
             // Note: Source adapter payload logging is handled by IntegrationEndpointService for SOAP/REST flows
             // Only log here if not coming from IntegrationEndpointService (check protocol type)
-            String protocol = (String) context.get("protocol");
             if (!"SOAP".equals(protocol) && !"REST".equals(protocol)) {
                 // Log source payload for non-SOAP/REST flows (e.g., direct adapter tests)
                 messageService.logAdapterPayload(correlationId, sourceAdapter, "REQUEST", validatedMessage, "INBOUND");
