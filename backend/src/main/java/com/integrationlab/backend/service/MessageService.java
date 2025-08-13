@@ -28,6 +28,7 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.Comparator;
 
 @Service
 public class MessageService {
@@ -66,15 +67,38 @@ public class MessageService {
         PageRequest pageRequest = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "timestamp"));
         Specification<SystemLog> spec = buildSpecification(filters);
         
+        // Get all logs matching the filters
         Page<SystemLog> logPage = logRepository.findAll(spec, pageRequest);
         
-        List<MessageDTO> messages = logPage.getContent().stream()
-                .map(this::convertToMessageDTO)
+        // Group by correlation ID to find main flow messages and their adapter activities
+        Map<String, List<SystemLog>> logsByCorrelation = new HashMap<>();
+        List<SystemLog> mainFlowLogs = new ArrayList<>();
+        
+        for (SystemLog log : logPage.getContent()) {
+            if (log.getCorrelationId() != null) {
+                // Group by correlation ID
+                logsByCorrelation.computeIfAbsent(log.getCorrelationId(), k -> new ArrayList<>()).add(log);
+                
+                // Identify main flow execution logs
+                if ("FLOW_EXECUTION".equals(log.getCategory()) || 
+                    "IntegrationFlow".equals(log.getDomainType())) {
+                    mainFlowLogs.add(log);
+                }
+            } else if ("FLOW_EXECUTION".equals(log.getCategory()) || 
+                       "IntegrationFlow".equals(log.getDomainType())) {
+                // Flow logs without correlation ID
+                mainFlowLogs.add(log);
+            }
+        }
+        
+        // Convert main flow logs to DTOs and include related adapter logs
+        List<MessageDTO> messages = mainFlowLogs.stream()
+                .map(log -> convertToMessageDTOWithAdapterLogs(log, logsByCorrelation))
                 .collect(Collectors.toList());
         
         Map<String, Object> result = new HashMap<>();
         result.put("messages", messages);
-        result.put("total", logPage.getTotalElements());
+        result.put("total", mainFlowLogs.size());
         
         return result;
     }
@@ -97,21 +121,63 @@ public class MessageService {
         logger.debug("Getting message stats with filters: {}", filters);
         Specification<SystemLog> spec = buildSpecification(filters);
         List<SystemLog> logs = logRepository.findAll(spec);
-        logger.debug("Found {} logs after filtering", logs.size());
         
-        long total = logs.size();
-        long successful = logs.stream()
-                .filter(log -> "SUCCESS".equals(log.getLevel().name()) || "INFO".equals(log.getLevel().name()))
-                .count();
-        long failed = logs.stream()
-                .filter(log -> "ERROR".equals(log.getLevel().name()) || "FATAL".equals(log.getLevel().name()))
-                .count();
+        // Filter to only count unique flow executions (not adapter logs)
+        Set<String> countedFlows = new HashSet<>();
+        long total = 0;
+        long successful = 0;
+        long failed = 0;
+        
+        for (SystemLog log : logs) {
+            // Only count main flow execution logs for statistics
+            if ("FLOW_EXECUTION".equals(log.getCategory()) || 
+                "IntegrationFlow".equals(log.getDomainType())) {
+                
+                // Avoid counting the same flow multiple times
+                String flowKey = log.getCorrelationId() != null ? log.getCorrelationId() : log.getId();
+                if (!countedFlows.contains(flowKey)) {
+                    countedFlows.add(flowKey);
+                    total++;
+                    
+                    if ("SUCCESS".equals(log.getLevel().name()) || "INFO".equals(log.getLevel().name())) {
+                        successful++;
+                    } else if ("ERROR".equals(log.getLevel().name()) || "FATAL".equals(log.getLevel().name())) {
+                        failed++;
+                    }
+                }
+            }
+        }
+        
         long processing = total - successful - failed;
-        
         double successRate = total > 0 ? (double) successful / total * 100 : 0;
         
-        // Calculate average processing time (dummy implementation for now)
-        double avgProcessingTime = 250.0; // milliseconds
+        // Calculate average processing time from flow execution details
+        double avgProcessingTime = 250.0; // Default
+        List<Long> processingTimes = new ArrayList<>();
+        
+        for (SystemLog log : logs) {
+            if (("FLOW_EXECUTION".equals(log.getCategory()) || "IntegrationFlow".equals(log.getDomainType())) 
+                && log.getDetails() != null) {
+                try {
+                    JsonNode details = objectMapper.readTree(log.getDetails());
+                    if (details.has("durationMs")) {
+                        processingTimes.add(details.get("durationMs").asLong());
+                    }
+                } catch (Exception e) {
+                    // Ignore parsing errors
+                }
+            }
+        }
+        
+        if (!processingTimes.isEmpty()) {
+            avgProcessingTime = processingTimes.stream()
+                .mapToLong(Long::longValue)
+                .average()
+                .orElse(250.0);
+        }
+        
+        logger.debug("Message stats - total: {}, successful: {}, failed: {}, processing: {}", 
+                    total, successful, failed, processing);
         
         return MessageStatsDTO.builder()
                 .total(total)
@@ -140,14 +206,17 @@ public class MessageService {
         return (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
             
-            // Filter to only show messages from integration flows (direct and orchestration)
-            // Messages from flows will have a componentId that matches a flow ID
+            // Filter to show messages from integration flows AND adapter activity
+            // Include both flow execution logs and adapter activity logs (linked by correlation ID)
             predicates.add(cb.or(
                 cb.equal(root.get("domainType"), "IntegrationFlow"),
+                cb.equal(root.get("domainType"), "CommunicationAdapter"),
                 cb.equal(root.get("category"), "FLOW_EXECUTION"),
+                cb.equal(root.get("category"), "ADAPTER_ACTIVITY"),
                 cb.equal(root.get("category"), "DIRECT_FLOW"),
                 cb.equal(root.get("category"), "ORCHESTRATION_FLOW"),
-                cb.like(root.get("category"), "FLOW_%")
+                cb.like(root.get("category"), "FLOW_%"),
+                cb.isNotNull(root.get("correlationId")) // Include any log with a correlation ID
             ));
             
             if (filters.containsKey("status")) {
@@ -231,6 +300,134 @@ public class MessageService {
             
             return cb.and(predicates.toArray(new Predicate[0]));
         };
+    }
+    
+    private MessageDTO convertToMessageDTOWithAdapterLogs(SystemLog log, Map<String, List<SystemLog>> logsByCorrelation) {
+        String status = mapLogLevelToStatus(log.getLevel().name());
+        
+        // Create log entries
+        List<MessageDTO.MessageLogDTO> logs = new ArrayList<>();
+        
+        // Add main log entry
+        logs.add(MessageDTO.MessageLogDTO.builder()
+                .timestamp(log.getTimestamp())
+                .level(log.getLevel().name())
+                .message(log.getMessage())
+                .build());
+        
+        // Extract processing steps from details JSON if available
+        if (log.getDetails() != null && !log.getDetails().isEmpty()) {
+            try {
+                JsonNode detailsNode = objectMapper.readTree(log.getDetails());
+                if (detailsNode.has("processingSteps") && detailsNode.get("processingSteps").isArray()) {
+                    ArrayNode steps = (ArrayNode) detailsNode.get("processingSteps");
+                    for (JsonNode step : steps) {
+                        String stepTimestamp = step.has("timestamp") ? step.get("timestamp").asText() : "";
+                        String stepLevel = step.has("level") ? step.get("level").asText() : "INFO";
+                        String stepMessage = step.has("step") ? step.get("step").asText() : "";
+                        String stepDetails = step.has("details") ? step.get("details").asText() : "";
+                        
+                        // Format the timestamp to match frontend expectations
+                        LocalDateTime parsedTime = LocalDateTime.parse(stepTimestamp);
+                        
+                        logs.add(MessageDTO.MessageLogDTO.builder()
+                                .timestamp(parsedTime)
+                                .level(stepLevel)
+                                .message(stepMessage + (stepDetails.isEmpty() ? "" : " - " + stepDetails))
+                                .build());
+                    }
+                }
+            } catch (Exception e) {
+                logger.error("Error parsing log details: {}", e.getMessage());
+            }
+        }
+        
+        // Add adapter activity logs if available
+        if (log.getCorrelationId() != null && logsByCorrelation.containsKey(log.getCorrelationId())) {
+            List<SystemLog> relatedLogs = logsByCorrelation.get(log.getCorrelationId());
+            for (SystemLog relatedLog : relatedLogs) {
+                // Skip the main log itself
+                if (relatedLog.getId().equals(log.getId())) {
+                    continue;
+                }
+                
+                // Add adapter activity logs
+                if ("ADAPTER_ACTIVITY".equals(relatedLog.getCategory()) || 
+                    "CommunicationAdapter".equals(relatedLog.getDomainType())) {
+                    
+                    String adapterMessage = String.format("[%s] %s", 
+                        relatedLog.getSourceName() != null ? relatedLog.getSourceName() : "Adapter",
+                        relatedLog.getMessage());
+                    
+                    logs.add(MessageDTO.MessageLogDTO.builder()
+                            .timestamp(relatedLog.getTimestamp())
+                            .level(relatedLog.getLevel().name())
+                            .message(adapterMessage)
+                            .build());
+                    
+                    // Parse adapter activity details if available
+                    if (relatedLog.getDetails() != null && !relatedLog.getDetails().isEmpty()) {
+                        try {
+                            JsonNode adapterDetails = objectMapper.readTree(relatedLog.getDetails());
+                            if (adapterDetails.has("activityDetails")) {
+                                logs.add(MessageDTO.MessageLogDTO.builder()
+                                        .timestamp(relatedLog.getTimestamp())
+                                        .level(relatedLog.getLevel().name())
+                                        .message("  → " + adapterDetails.get("activityDetails").asText())
+                                        .build());
+                            }
+                        } catch (Exception e) {
+                            // Ignore parsing errors for adapter details
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Sort logs by timestamp
+        logs.sort(Comparator.comparing(MessageDTO.MessageLogDTO::getTimestamp));
+        
+        // Calculate processing time and message size
+        String processingTime = "250ms";
+        String messageSize = "1024 bytes";
+        
+        if (log.getDetails() != null && !log.getDetails().isEmpty()) {
+            try {
+                JsonNode detailsNode = objectMapper.readTree(log.getDetails());
+                
+                // Extract message size
+                if (detailsNode.has("messageSize")) {
+                    messageSize = detailsNode.get("messageSize").asInt() + " bytes";
+                }
+                
+                // Calculate processing time
+                if (detailsNode.has("startTime") && detailsNode.has("endTime")) {
+                    try {
+                        LocalDateTime startTime = LocalDateTime.parse(detailsNode.get("startTime").asText());
+                        LocalDateTime endTime = LocalDateTime.parse(detailsNode.get("endTime").asText());
+                        long millis = java.time.Duration.between(startTime, endTime).toMillis();
+                        processingTime = millis + "ms";
+                    } catch (Exception e) {
+                        // Keep default if parsing fails
+                    }
+                }
+            } catch (Exception e) {
+                logger.error("Error parsing log details for processing time: {}", e.getMessage());
+            }
+        }
+        
+        return MessageDTO.builder()
+                .id(log.getId())
+                .timestamp(log.getTimestamp())
+                .source(log.getSource() != null ? log.getSource() : "System")
+                .target(log.getSourceName() != null ? log.getSourceName() : "Integration Flow")
+                .type(log.getCategory() != null ? log.getCategory() : "INTEGRATION")
+                .status(status)
+                .processingTime(processingTime)
+                .size(messageSize)
+                .businessComponentId(log.getComponentId())
+                .logs(logs)
+                .build();
     }
     
     private MessageDTO convertToMessageDTO(SystemLog log) {
