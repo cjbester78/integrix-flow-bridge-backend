@@ -50,6 +50,7 @@ public class FlowExecutionService {
     private final DevelopmentFunctionService developmentFunctionService;
     private final FormatConversionService formatConversionService;
     private final DirectFileTransferService directFileTransferService;
+    private final MessageService messageService;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     public FlowExecutionService(
@@ -64,7 +65,8 @@ public class FlowExecutionService {
             ValidationTransformationService validationTransformationService,
             DevelopmentFunctionService developmentFunctionService,
             FormatConversionService formatConversionService,
-            DirectFileTransferService directFileTransferService
+            DirectFileTransferService directFileTransferService,
+            MessageService messageService
     ) {
         this.flowRepository = flowRepository;
         this.transformationRepository = transformationRepository;
@@ -78,11 +80,16 @@ public class FlowExecutionService {
         this.developmentFunctionService = developmentFunctionService;
         this.formatConversionService = formatConversionService;
         this.directFileTransferService = directFileTransferService;
+        this.messageService = messageService;
     }
 
     public void executeFlow(String flowId) {
         IntegrationFlow flow = flowRepository.findById(flowId)
                 .orElseThrow(() -> new RuntimeException("Flow not found"));
+
+        // Create correlation ID for this flow execution
+        String correlationId = messageService.createMessage(flow, "Flow execution started", "ASYNC_FLOW");
+        logger.info("Starting flow execution with correlation ID: {}", correlationId);
 
         try {
             // Get adapters
@@ -115,6 +122,11 @@ public class FlowExecutionService {
             // Step 1: Fetch source data
             Object rawData = adapterExecutor.fetchDataAsObject(flow.getSourceAdapterId());
             logger.info("Fetched data from source adapter: {}", sourceAdapter.getName());
+            
+            // Log source adapter payload (what the adapter received FROM external system)
+            String rawDataStr = rawData instanceof byte[] ? 
+                new String((byte[]) rawData) : rawData.toString();
+            messageService.logAdapterPayload(correlationId, sourceAdapter, "REQUEST", rawDataStr, "INBOUND");
 
             // Check if the data is binary and should skip XML conversion
             if (directFileTransferService.isBinaryFile(rawData)) {
@@ -159,12 +171,14 @@ public class FlowExecutionService {
             }
 
             // Step 3: Send to target adapter
-            adapterExecutor.sendData(flow.getTargetAdapterId(), processedData);
+            Map<String, Object> context = new HashMap<>();
+            context.put("correlationId", correlationId);
+            context.put("flowId", flow.getId());
+            
+            adapterExecutor.sendData(flow.getTargetAdapterId(), processedData, context);
             logger.info("Sent data to target adapter: {}", targetAdapter.getName());
 
             // Step 4: Log success
-            String rawDataStr = rawData instanceof byte[] ? 
-                new String((byte[]) rawData) : rawData.toString();
             logService.logFlowExecutionSuccess(flow, rawDataStr, processedData);
 
         } catch (XmlConversionException e) {

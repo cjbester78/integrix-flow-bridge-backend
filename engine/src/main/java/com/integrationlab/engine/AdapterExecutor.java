@@ -26,6 +26,11 @@ public interface AdapterExecutor {
     void sendData(String adapterId, String payload);
     
     /**
+     * Send string data to an adapter with context
+     */
+    void sendData(String adapterId, String payload, Map<String, Object> context);
+    
+    /**
      * Send byte array data to an adapter
      */
     void sendData(String adapterId, byte[] data);

@@ -82,6 +82,11 @@ public class AdapterExecutionService {
             flow = flowRepository.findById(flowId).orElse(null);
         }
         
+        // Log the incoming payload (what the adapter receives)
+        if (correlationId != null) {
+            messageService.logAdapterPayload(correlationId, adapter, "REQUEST", message, "OUTBOUND");
+        }
+        
         // Log adapter execution start
         if (flow != null && correlationId != null) {
             messageService.logProcessingStep(correlationId, flow,
@@ -197,6 +202,11 @@ public class AdapterExecutionService {
             logger.info("SOAP call successful. Response status: {}", response.getStatusCode());
             logger.debug("SOAP response body: {}", response.getBody());
             
+            // Log the response payload
+            if (correlationId != null) {
+                messageService.logAdapterPayload(correlationId, adapter, "RESPONSE", response.getBody(), "OUTBOUND");
+            }
+            
             // Log successful response
             if (flow != null && correlationId != null) {
                 messageService.logProcessingStep(correlationId, flow,
@@ -250,6 +260,14 @@ public class AdapterExecutionService {
             throw new IllegalArgumentException("HTTP endpoint not configured");
         }
         
+        // Get correlation ID from context
+        String correlationId = (String) context.get("correlationId");
+        
+        // Log the incoming payload (what the adapter receives)
+        if (correlationId != null) {
+            messageService.logAdapterPayload(correlationId, adapter, "REQUEST", message, "OUTBOUND");
+        }
+        
         HttpHeaders headers = new HttpHeaders();
         
         // Set content type based on configuration
@@ -271,6 +289,11 @@ public class AdapterExecutionService {
                 request,
                 String.class
             );
+            
+            // Log the response payload
+            if (correlationId != null) {
+                messageService.logAdapterPayload(correlationId, adapter, "RESPONSE", response.getBody(), "OUTBOUND");
+            }
             
             return response.getBody();
             

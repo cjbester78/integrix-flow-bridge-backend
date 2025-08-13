@@ -202,6 +202,41 @@ public class MessageService {
         return convertToMessageDTO(log);
     }
     
+    /**
+     * Log adapter payload (request or response)
+     */
+    public void logAdapterPayload(String correlationId, CommunicationAdapter adapter, 
+                                  String payloadType, String payload, String direction) {
+        try {
+            SystemLog log = new SystemLog();
+            log.setId(UUID.randomUUID().toString());
+            log.setCreatedAt(LocalDateTime.now());
+            log.setLevel(SystemLog.LogLevel.INFO);
+            log.setMessage(String.format("Adapter %s payload - %s", direction, payloadType));
+            log.setCategory("ADAPTER_PAYLOAD");
+            log.setDomainType("CommunicationAdapter");
+            log.setDomainReferenceId(adapter.getId());
+            log.setCorrelationId(correlationId);
+            log.setSourceName(adapter.getName());
+            log.setSource(adapter.getType().name());
+            
+            Map<String, Object> details = new HashMap<>();
+            details.put("adapterId", adapter.getId());
+            details.put("adapterName", adapter.getName());
+            details.put("adapterType", adapter.getType().name());
+            details.put("direction", direction); // INBOUND or OUTBOUND
+            details.put("payloadType", payloadType); // REQUEST or RESPONSE
+            details.put("payload", payload);
+            details.put("payloadSize", payload != null ? payload.length() : 0);
+            
+            log.setDetails(objectMapper.writeValueAsString(details));
+            logRepository.save(log);
+            
+        } catch (Exception e) {
+            logger.error("Error logging adapter payload for adapter: {}", adapter.getName(), e);
+        }
+    }
+    
     private Specification<SystemLog> buildSpecification(Map<String, Object> filters) {
         return (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
@@ -213,6 +248,7 @@ public class MessageService {
                 cb.equal(root.get("domainType"), "CommunicationAdapter"),
                 cb.equal(root.get("category"), "FLOW_EXECUTION"),
                 cb.equal(root.get("category"), "ADAPTER_ACTIVITY"),
+                cb.equal(root.get("category"), "ADAPTER_PAYLOAD"),
                 cb.equal(root.get("category"), "DIRECT_FLOW"),
                 cb.equal(root.get("category"), "ORCHESTRATION_FLOW"),
                 cb.like(root.get("category"), "FLOW_%"),
