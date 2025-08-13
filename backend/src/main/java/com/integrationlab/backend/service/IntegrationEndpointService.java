@@ -80,7 +80,24 @@ public class IntegrationEndpointService {
             correlationId);
             
         // Log the incoming SOAP request payload
-        messageService.logAdapterPayload(correlationId, sourceAdapter, "REQUEST", soapRequest, "INBOUND");
+        logger.info("DEBUG: About to log source adapter payload - correlationId: {}, adapter: {}, payloadSize: {}", 
+            correlationId, sourceAdapter.getName(), soapRequest.length());
+        try {
+            logger.info("DEBUG: Source adapter details - ID: {}, Type: {}, Mode: {}", 
+                sourceAdapter.getId(), sourceAdapter.getType(), sourceAdapter.getMode());
+            
+            // Clone adapter to avoid lazy loading issues
+            CommunicationAdapter clonedAdapter = new CommunicationAdapter();
+            clonedAdapter.setId(sourceAdapter.getId());
+            clonedAdapter.setName(sourceAdapter.getName());
+            clonedAdapter.setType(sourceAdapter.getType());
+            clonedAdapter.setMode(sourceAdapter.getMode());
+            
+            messageService.logAdapterPayload(correlationId, clonedAdapter, "REQUEST", soapRequest, "INBOUND");
+            logger.info("DEBUG: Finished logging source adapter payload");
+        } catch (Exception e) {
+            logger.error("DEBUG: Exception caught when logging source adapter payload: ", e);
+        }
         
         // Check if target adapter is also SOAP
         CommunicationAdapter targetAdapter = adapterRepository.findById(flow.getTargetAdapterId())
@@ -116,7 +133,18 @@ public class IntegrationEndpointService {
         logger.debug("Final SOAP response prepared");
         
         // Log the outgoing SOAP response payload
-        messageService.logAdapterPayload(correlationId, targetAdapter, "RESPONSE", soapResponse, "OUTBOUND");
+        logger.info("DEBUG: About to log target adapter payload - correlationId: {}, adapter: {}, payloadSize: {}", 
+            correlationId, targetAdapter.getName(), soapResponse.length());
+        
+        // Clone adapter to avoid lazy loading issues
+        CommunicationAdapter clonedTargetAdapter = new CommunicationAdapter();
+        clonedTargetAdapter.setId(targetAdapter.getId());
+        clonedTargetAdapter.setName(targetAdapter.getName());
+        clonedTargetAdapter.setType(targetAdapter.getType());
+        clonedTargetAdapter.setMode(targetAdapter.getMode());
+        
+        messageService.logAdapterPayload(correlationId, clonedTargetAdapter, "RESPONSE", soapResponse, "OUTBOUND");
+        logger.info("DEBUG: Finished logging target adapter payload");
         
         return soapResponse;
     }

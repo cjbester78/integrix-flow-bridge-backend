@@ -1,6 +1,10 @@
 package com.integrationlab.backend.controller;
 
 import com.integrationlab.backend.service.IntegrationEndpointService;
+import com.integrationlab.backend.service.MessageService;
+import com.integrationlab.data.repository.CommunicationAdapterRepository;
+import com.integrationlab.data.repository.SystemLogRepository;
+import com.integrationlab.data.model.SystemLog;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,6 +25,15 @@ public class IntegrationEndpointController {
     
     @Autowired
     private IntegrationEndpointService endpointService;
+    
+    @Autowired
+    private SystemLogRepository systemLogRepository;
+    
+    @Autowired
+    private MessageService messageService;
+    
+    @Autowired
+    private CommunicationAdapterRepository adapterRepository;
     
     /**
      * Handle SOAP requests
@@ -134,5 +147,57 @@ public class IntegrationEndpointController {
                "    </soap:Fault>\n" +
                "  </soap:Body>\n" +
                "</soap:Envelope>";
+    }
+    
+    /**
+     * Test endpoint to verify payload storage
+     */
+    @GetMapping("/api/test-payload-storage")
+    public ResponseEntity<Map<String, Object>> testPayloadStorage() {
+        logger.info("Testing payload storage directly");
+        
+        try {
+            // Query current count
+            long countBefore = systemLogRepository.count();
+            long payloadCountBefore = systemLogRepository.findByCategoryOrderByTimestampDesc("ADAPTER_PAYLOAD").size();
+            
+            logger.info("Count before: total={}, payloads={}", countBefore, payloadCountBefore);
+            
+            // Try to save directly
+            SystemLog testLog = new SystemLog();
+            testLog.setTimestamp(java.time.LocalDateTime.now());
+            testLog.setCreatedAt(java.time.LocalDateTime.now());
+            testLog.setLevel(SystemLog.LogLevel.INFO);
+            testLog.setMessage("TEST PAYLOAD");
+            testLog.setCategory("ADAPTER_PAYLOAD");
+            testLog.setCorrelationId("TEST-" + java.util.UUID.randomUUID().toString());
+            testLog.setSource("TEST");
+            testLog.setDetails("Test payload content");
+            
+            SystemLog saved = systemLogRepository.save(testLog);
+            systemLogRepository.flush();
+            
+            // Query after
+            long countAfter = systemLogRepository.count();
+            long payloadCountAfter = systemLogRepository.findByCategoryOrderByTimestampDesc("ADAPTER_PAYLOAD").size();
+            
+            logger.info("Count after: total={}, payloads={}", countAfter, payloadCountAfter);
+            
+            return ResponseEntity.ok(Map.of(
+                "saved", true,
+                "id", saved.getId(),
+                "countBefore", countBefore,
+                "countAfter", countAfter,
+                "payloadCountBefore", payloadCountBefore,
+                "payloadCountAfter", payloadCountAfter
+            ));
+            
+        } catch (Exception e) {
+            logger.error("Test storage failed", e);
+            return ResponseEntity.ok(Map.of(
+                "saved", false,
+                "error", e.getMessage()
+            ));
+        }
     }
 }

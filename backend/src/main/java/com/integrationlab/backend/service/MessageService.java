@@ -20,6 +20,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.annotation.Propagation;
 
 import jakarta.persistence.criteria.Predicate;
 import java.time.LocalDateTime;
@@ -207,6 +208,8 @@ public class MessageService {
      */
     public void logAdapterPayload(String correlationId, CommunicationAdapter adapter, 
                                   String payloadType, String payload, String direction) {
+        logger.info("DEBUG: logAdapterPayload called - correlationId: {}, adapter: {}, direction: {}, payloadType: {}", 
+            correlationId, adapter.getName(), direction, payloadType);
         try {
             SystemLog log = new SystemLog();
             // Let JPA handle ID generation since it's marked with @GeneratedValue
@@ -222,6 +225,7 @@ public class MessageService {
             log.setSourceName(adapter.getName());
             log.setSource(adapter.getType().name());
             
+            logger.info("DEBUG: Creating details map for payload");
             Map<String, Object> details = new HashMap<>();
             details.put("adapterId", adapter.getId());
             details.put("adapterName", adapter.getName());
@@ -231,8 +235,25 @@ public class MessageService {
             details.put("payload", payload);
             details.put("payloadSize", payload != null ? payload.length() : 0);
             
-            log.setDetails(objectMapper.writeValueAsString(details));
-            logRepository.save(log);
+            String detailsJson = objectMapper.writeValueAsString(details);
+            logger.info("DEBUG: Details JSON length: {}", detailsJson.length());
+            log.setDetails(detailsJson);
+            
+            logger.info("DEBUG: About to save SystemLog to database");
+            SystemLog savedLog = logRepository.save(log);
+            logger.info("DEBUG: Successfully saved payload log with ID: {}", savedLog.getId());
+            
+            // Force flush to ensure it's written
+            logRepository.flush();
+            logger.info("DEBUG: Flushed to database");
+            
+            // Verify it was saved
+            Optional<SystemLog> verifyLog = logRepository.findById(savedLog.getId());
+            if (verifyLog.isPresent()) {
+                logger.info("DEBUG: Verified - payload log exists in database with ID: {}", savedLog.getId());
+            } else {
+                logger.error("DEBUG: ERROR - payload log NOT found in database after save!");
+            }
             
         } catch (Exception e) {
             logger.error("Error logging adapter payload for adapter: {} - Error: {}", adapter.getName(), e.getMessage());
