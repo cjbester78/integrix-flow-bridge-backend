@@ -28,4 +28,9 @@ public interface SystemLogRepository extends JpaRepository<SystemLog, String>, J
     
     // Find logs by correlation ID
     List<SystemLog> findByCorrelationId(String correlationId);
+    
+    // Methods for adapter monitoring
+    List<SystemLog> findByMessageContainingAndSourceOrderByTimestampDesc(String message, String source);
+    
+    List<SystemLog> findByMessageContainingOrderByTimestampDesc(String message);
 }

@@ -2,13 +2,16 @@ package com.integrationlab.backend.service;
 
 import com.integrationlab.backend.exception.BusinessException;
 import com.integrationlab.data.model.CommunicationAdapter;
+import com.integrationlab.data.model.SystemLog;
 import com.integrationlab.data.repository.CommunicationAdapterRepository;
+import com.integrationlab.data.repository.SystemLogRepository;
 import com.integrationlab.shared.dto.AdapterStatusDTO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
@@ -20,6 +23,7 @@ import java.util.stream.Collectors;
 public class AdapterMonitoringService {
     
     private final CommunicationAdapterRepository adapterRepository;
+    private final SystemLogRepository systemLogRepository;
     
     // In-memory status tracking (in production, this would be in a cache or database)
     private final ConcurrentHashMap<String, AdapterStatusDTO> adapterStatuses = new ConcurrentHashMap<>();
@@ -99,38 +103,73 @@ public class AdapterMonitoringService {
     }
     
     private AdapterStatusDTO getOrCreateAdapterStatus(CommunicationAdapter adapter) {
-        return adapterStatuses.computeIfAbsent(adapter.getId(), id -> {
-            AdapterStatusDTO status = new AdapterStatusDTO();
-            status.setId(adapter.getId());
-            status.setName(adapter.getName());
-            status.setType(adapter.getType() != null ? adapter.getType().toString() : "UNKNOWN");
-            status.setMode(adapter.getMode() != null ? adapter.getMode().toString() : "UNKNOWN");
+        // Always recalculate statistics to get fresh data
+        AdapterStatusDTO status = new AdapterStatusDTO();
+        status.setId(adapter.getId());
+        status.setName(adapter.getName());
+        status.setType(adapter.getType() != null ? adapter.getType().toString() : "UNKNOWN");
+        status.setMode(adapter.getMode() != null ? adapter.getMode().toString() : "UNKNOWN");
+        
+        // Set status based on adapter configuration
+        if (adapter.isActive()) {
+            status.setStatus("active");
+            status.setLoad(25); // Default load for active adapters
+        } else {
+            status.setStatus("inactive");
+            status.setLoad(0);
+        }
+        
+        status.setBusinessComponentId(adapter.getBusinessComponentId());
+        // Get business component name from the relation if available
+        if (adapter.getBusinessComponent() != null) {
+            status.setBusinessComponentName(adapter.getBusinessComponent().getName());
+        }
+        
+        // Calculate real metrics from system logs
+        try {
+            // Count flow executions for this adapter
+            String searchPattern = String.format("adapter: %s", adapter.getName());
+            List<SystemLog> adapterLogs = systemLogRepository.findByMessageContainingAndSourceOrderByTimestampDesc(
+                searchPattern, "FlowExecutionService"
+            );
             
-            // Default status based on adapter configuration
-            if (adapter.isActive()) {
-                status.setStatus("running");
-                status.setLoad(Math.random() > 0.5 ? 25 : 50); // Simulate some load
+            // Count successful messages
+            long successCount = adapterLogs.stream()
+                .filter(log -> log.getMessage().contains("SUCCESS") || log.getMessage().contains("success"))
+                .count();
+            
+            // Count errors
+            long errorCount = adapterLogs.stream()
+                .filter(log -> log.getLevel() == SystemLog.LogLevel.ERROR)
+                .count();
+            
+            status.setMessagesProcessed(successCount);
+            status.setErrorsCount(errorCount);
+            
+            // Get last activity time
+            if (!adapterLogs.isEmpty()) {
+                SystemLog mostRecentLog = adapterLogs.get(0);
+                status.setLastActivity(mostRecentLog.getTimestamp());
             } else {
-                status.setStatus("stopped");
-                status.setLoad(0);
+                // Try to find any log mentioning this adapter
+                List<SystemLog> anyAdapterLogs = systemLogRepository.findByMessageContainingOrderByTimestampDesc(
+                    adapter.getName()
+                );
+                if (!anyAdapterLogs.isEmpty()) {
+                    status.setLastActivity(anyAdapterLogs.get(0).getTimestamp());
+                }
             }
             
-            status.setBusinessComponentId(adapter.getBusinessComponentId());
-            // Get business component name from the relation if available
-            if (adapter.getBusinessComponent() != null) {
-                status.setBusinessComponentName(adapter.getBusinessComponent().getName());
-            }
-            
-            // Simulate some metrics
-            if ("running".equals(status.getStatus())) {
-                status.setMessagesProcessed((long) (Math.random() * 1000));
-                status.setErrorsCount((long) (Math.random() * 10));
-            } else {
-                status.setMessagesProcessed(0L);
-                status.setErrorsCount(0L);
-            }
-            
-            return status;
-        });
+        } catch (Exception e) {
+            log.error("Error calculating adapter statistics for {}: {}", adapter.getName(), e.getMessage());
+            // Set default values on error
+            status.setMessagesProcessed(0L);
+            status.setErrorsCount(0L);
+        }
+        
+        // Cache the calculated status
+        adapterStatuses.put(adapter.getId(), status);
+        
+        return status;
     }
 }
