@@ -2,6 +2,7 @@ package com.integrationlab.backend.controller;
 
 import com.integrationlab.backend.service.SystemSettingService;
 import com.integrationlab.shared.dto.system.SystemSettingDTO;
+import com.integrationlab.shared.dto.GlobalRetrySettingsDTO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -138,5 +139,30 @@ public class SystemSettingController {
         logger.debug("REST request to get base domain");
         String baseDomain = systemSettingService.getSettingValue("base_domain", "http://localhost:8080");
         return ResponseEntity.ok(baseDomain);
+    }
+
+    /**
+     * Get global retry settings
+     */
+    @GetMapping("/global-retry")
+    public ResponseEntity<GlobalRetrySettingsDTO> getGlobalRetrySettings() {
+        logger.debug("REST request to get global retry settings");
+        GlobalRetrySettingsDTO settings = systemSettingService.getGlobalRetrySettings();
+        return ResponseEntity.ok(settings);
+    }
+
+    /**
+     * Update global retry settings
+     */
+    @PutMapping("/global-retry")
+    public ResponseEntity<GlobalRetrySettingsDTO> updateGlobalRetrySettings(@RequestBody GlobalRetrySettingsDTO dto) {
+        logger.info("REST request to update global retry settings");
+        try {
+            GlobalRetrySettingsDTO updated = systemSettingService.updateGlobalRetrySettings(dto);
+            return ResponseEntity.ok(updated);
+        } catch (Exception e) {
+            logger.error("Error updating global retry settings: {}", e.getMessage());
+            return ResponseEntity.badRequest().build();
+        }
     }
 }
