@@ -7,7 +7,7 @@ import com.integrationlab.data.model.FieldMapping;
 import com.integrationlab.data.model.FlowTransformation;
 import com.integrationlab.data.model.IntegrationFlow;
 import com.integrationlab.data.model.MappingMode;
-import com.integrationlab.data.model.ReusableFunction;
+import com.integrationlab.data.model.TransformationCustomFunction;
 import com.integrationlab.data.repository.FieldMappingRepository;
 import com.integrationlab.data.repository.FlowTransformationRepository;
 import com.integrationlab.data.repository.IntegrationFlowRepository;
@@ -47,7 +47,7 @@ public class FlowExecutionService {
     private final FilterTransformationService filterTransformationService;
     private final EnrichmentTransformationService enrichmentTransformationService;
     private final ValidationTransformationService validationTransformationService;
-    private final ReusableJavaFunctionService reusableFunctionService;
+    private final DevelopmentFunctionService developmentFunctionService;
     private final FormatConversionService formatConversionService;
     private final DirectFileTransferService directFileTransferService;
     private final ObjectMapper objectMapper = new ObjectMapper();
@@ -62,7 +62,7 @@ public class FlowExecutionService {
             FilterTransformationService filterTransformationService,
             EnrichmentTransformationService enrichmentTransformationService,
             ValidationTransformationService validationTransformationService,
-            ReusableJavaFunctionService reusableFunctionService,
+            DevelopmentFunctionService developmentFunctionService,
             FormatConversionService formatConversionService,
             DirectFileTransferService directFileTransferService
     ) {
@@ -75,7 +75,7 @@ public class FlowExecutionService {
         this.filterTransformationService = filterTransformationService;
         this.enrichmentTransformationService = enrichmentTransformationService;
         this.validationTransformationService = validationTransformationService;
-        this.reusableFunctionService = reusableFunctionService;
+        this.developmentFunctionService = developmentFunctionService;
         this.formatConversionService = formatConversionService;
         this.directFileTransferService = directFileTransferService;
     }
@@ -278,7 +278,7 @@ public class FlowExecutionService {
             switch (t.getType()) {
                 case FIELD_MAPPING -> {
                     List<FieldMapping> mappings = fieldMappingRepository.findByTransformationId(t.getId());
-                    currentData = FieldMapper.apply(currentData, mappings, reusableFunctionService);
+                    currentData = FieldMapper.apply(currentData, mappings, developmentFunctionService);
                 }
                 case CUSTOM_FUNCTION -> {
                     currentData = applyCustomFunctionTransformation(t, currentData);
@@ -311,12 +311,13 @@ public class FlowExecutionService {
                 throw new RuntimeException("Custom function name/body is missing");
             }
 
-            Optional<ReusableFunction> reusableFuncOpt = reusableFunctionService.findByName(functionBody);
-            if (reusableFuncOpt.isEmpty()) {
-                reusableFuncOpt = reusableFunctionService.findById(functionBody);
-            }
-            if (reusableFuncOpt.isPresent()) {
-                functionBody = reusableFuncOpt.get().getFunctionBody();
+            // Try to find the function in transformation_custom_functions table
+            try {
+                TransformationCustomFunction customFunction = developmentFunctionService.getBuiltInFunctionByName(functionBody);
+                functionBody = customFunction.getFunctionBody();
+            } catch (Exception e) {
+                // Function not found in database, assume functionBody contains the actual code
+                logger.debug("Function '{}' not found in transformation_custom_functions, using as direct code", functionBody);
             }
 
             Object result = JavaFunctionRunner.run(functionBody, config.getSourceFields(), inputMap);
