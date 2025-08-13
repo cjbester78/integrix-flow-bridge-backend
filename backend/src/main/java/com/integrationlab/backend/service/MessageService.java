@@ -23,6 +23,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import jakarta.persistence.criteria.Predicate;
 import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -37,6 +39,9 @@ public class MessageService {
     
     @Autowired
     private ObjectMapper objectMapper;
+    
+    @Autowired
+    private SystemConfigurationService systemConfigurationService;
 
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm:ss");
 
@@ -186,11 +191,33 @@ public class MessageService {
             }
             
             if (filters.containsKey("dateFrom")) {
-                predicates.add(cb.greaterThanOrEqualTo(root.get("timestamp"), (LocalDateTime) filters.get("dateFrom")));
+                LocalDateTime dateFrom = (LocalDateTime) filters.get("dateFrom");
+                // Convert from UTC to system timezone
+                String systemTimezone = systemConfigurationService.getSystemTimezone();
+                ZoneId systemZone = ZoneId.of(systemTimezone);
+                ZoneId utcZone = ZoneId.of("UTC");
+                
+                // Assume incoming dateFrom is in UTC, convert to system timezone
+                ZonedDateTime utcDateTime = dateFrom.atZone(utcZone);
+                LocalDateTime localDateTime = utcDateTime.withZoneSameInstant(systemZone).toLocalDateTime();
+                
+                logger.debug("Filtering from date - UTC: {}, Local ({}): {}", dateFrom, systemTimezone, localDateTime);
+                predicates.add(cb.greaterThanOrEqualTo(root.get("timestamp"), localDateTime));
             }
             
             if (filters.containsKey("dateTo")) {
-                predicates.add(cb.lessThanOrEqualTo(root.get("timestamp"), (LocalDateTime) filters.get("dateTo")));
+                LocalDateTime dateTo = (LocalDateTime) filters.get("dateTo");
+                // Convert from UTC to system timezone
+                String systemTimezone = systemConfigurationService.getSystemTimezone();
+                ZoneId systemZone = ZoneId.of(systemTimezone);
+                ZoneId utcZone = ZoneId.of("UTC");
+                
+                // Assume incoming dateTo is in UTC, convert to system timezone
+                ZonedDateTime utcDateTime = dateTo.atZone(utcZone);
+                LocalDateTime localDateTime = utcDateTime.withZoneSameInstant(systemZone).toLocalDateTime();
+                
+                logger.debug("Filtering to date - UTC: {}, Local ({}): {}", dateTo, systemTimezone, localDateTime);
+                predicates.add(cb.lessThanOrEqualTo(root.get("timestamp"), localDateTime));
             }
             
             if (filters.containsKey("search")) {
