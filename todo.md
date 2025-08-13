@@ -804,3 +804,38 @@ Implemented comprehensive UI/UX consistency improvements across the entire appli
 
 ## Result
 The application now has a cohesive, professional appearance with consistent patterns throughout. All UI elements follow the same design system, making the application more intuitive and easier to maintain.
+
+# TODO: Implement Domain Type Filtering for System Logs
+
+## Overview
+Add support for domainType filtering in system logs to allow different monitors (Message Monitor, Adapter Monitor, etc.) to filter logs relevant to their domain.
+
+## Domain Types to Support
+- UserManagement - Login, authentication, user CRUD operations
+- FlowEngine - Flow execution, deployment, validation
+- AdapterManagement - Adapter configuration, connection, execution
+- DataStructures - Schema validation, structure parsing
+- MessageProcessing - Message routing, transformation, delivery
+- OrchestrationEngine - Orchestration flow execution
+- FieldMapping - Mapping validation, transformation functions
+- SystemConfiguration - Environment settings, system config
+
+## Tasks
+
+### Backend Changes
+- [ ] Update SystemLogController to accept domainType as query parameter
+- [ ] Update SystemLogSpecifications to include domainType filtering
+- [ ] Verify SystemLog entity has domainType field properly mapped
+- [ ] Test filtering by domainType works correctly
+
+### Frontend Integration
+- [ ] Verify frontend monitors can filter by domainType
+- [ ] Ensure error logging includes appropriate domainType
+
+### Testing
+- [ ] Test each domain type filter returns appropriate logs
+- [ ] Test combination of domainType with other filters (level, date range)
+- [ ] Verify monitors show only relevant domain logs
+
+## Review
+_To be completed after implementation_

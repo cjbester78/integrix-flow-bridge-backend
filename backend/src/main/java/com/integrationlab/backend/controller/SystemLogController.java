@@ -51,12 +51,16 @@ public class SystemLogController {
             @RequestParam(required = false) String level,
             @RequestParam(required = false) String source,
             @RequestParam(required = false) String userId,
+            @RequestParam(required = false) String domainType,
+            @RequestParam(required = false) String domainReferenceId,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime from,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime to
     ) {
     	SystemLog.LogLevel logLevel = level != null ? SystemLog.LogLevel.valueOf(level) : null;
     	List<SystemLog> logs = systemLogRepository.findAll(
             SystemLogSpecifications.withFilters(source, null, logLevel, userId, from, to)
+                .and(SystemLogSpecifications.withDomainType(domainType))
+                .and(SystemLogSpecifications.withDomainReferenceId(domainReferenceId))
         );
 
         List<SystemLogDTO> dtos = logs.stream().map(log -> {
