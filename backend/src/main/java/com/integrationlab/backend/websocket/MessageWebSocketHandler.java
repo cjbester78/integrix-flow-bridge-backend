@@ -40,8 +40,8 @@ public class MessageWebSocketHandler extends TextWebSocketHandler {
         logger.info("WebSocket connection established: {}", session.getId());
         sessions.put(session.getId(), session);
         
-        // Send initial stats
-        sendMessageStats(session);
+        // Don't send initial stats - let the client request with filters
+        // sendMessageStats(session);
     }
     
     @Override
