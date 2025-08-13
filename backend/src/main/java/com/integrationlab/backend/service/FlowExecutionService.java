@@ -91,6 +91,16 @@ public class FlowExecutionService {
             CommunicationAdapter targetAdapter = adapterRepository.findById(flow.getTargetAdapterId())
                     .orElseThrow(() -> new RuntimeException("Target adapter not found"));
 
+            // Validate adapters are active
+            if (!sourceAdapter.isActive()) {
+                throw new RuntimeException("Cannot execute flow: Source adapter '" + sourceAdapter.getName() + 
+                    "' is in a stopped status. Please activate the adapter before using it in a flow.");
+            }
+            if (!targetAdapter.isActive()) {
+                throw new RuntimeException("Cannot execute flow: Target adapter '" + targetAdapter.getName() + 
+                    "' is in a stopped status. Please activate the adapter before using it in a flow.");
+            }
+
             // Check if we should skip XML conversion (direct passthrough)
             if (flow.isSkipXmlConversion()) {
                 logger.info("Executing direct transfer (skip XML conversion) for flow: {}", flow.getName());

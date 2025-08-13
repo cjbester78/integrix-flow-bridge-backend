@@ -163,6 +163,21 @@ public class FlowDeploymentService {
         if (flow.getSourceAdapterId() == null || flow.getTargetAdapterId() == null) {
             throw new IllegalStateException("Flow must have source and target adapters configured");
         }
+
+        // Validate adapters are active
+        CommunicationAdapter sourceAdapter = adapterRepository.findById(flow.getSourceAdapterId())
+            .orElseThrow(() -> new IllegalArgumentException("Source adapter not found"));
+        CommunicationAdapter targetAdapter = adapterRepository.findById(flow.getTargetAdapterId())
+            .orElseThrow(() -> new IllegalArgumentException("Target adapter not found"));
+            
+        if (!sourceAdapter.isActive()) {
+            throw new IllegalStateException("Cannot deploy flow: Source adapter '" + sourceAdapter.getName() + 
+                "' is in a stopped status. Please activate the adapter before deploying the flow.");
+        }
+        if (!targetAdapter.isActive()) {
+            throw new IllegalStateException("Cannot deploy flow: Target adapter '" + targetAdapter.getName() + 
+                "' is in a stopped status. Please activate the adapter before deploying the flow.");
+        }
     }
     
     private String generateEndpoint(IntegrationFlow flow, CommunicationAdapter sourceAdapter) {

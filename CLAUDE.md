@@ -7,7 +7,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 Integrix Flow Bridge is a comprehensive integration middleware platform built with Spring Boot backend and React/TypeScript frontend. It provides visual flow composition, adapter management, field mapping, and orchestration capabilities for enterprise integration scenarios.
 
 ## CRITICAL: Instruction Verification Process
-
+```bash
+# Full deployment (frontend + backend)
+./deploy.sh
+```
 **IMPORTANT**: Before implementing any user request, follow this process:
 
 1. **Read** the user's instruction carefully
@@ -45,6 +48,10 @@ This prevents misunderstandings, wasted work, and ensures alignment between user
 5. Please every step of the way just give me a high level explanation of what changes you made
 6. Make every task and code change you do as simple as possible. We want to avoid making any massive or complex changes. Every change should impact as little code as possible. Everything is about simplicity.
 7. Finally, add a review section to the todo.md file with a summary of the changes you made and any other relevant information.
+
+**CRITICAL**: After every fix do a git commit.
+**CRITICAL**: Frontend has it's own repository.
+**CRITICAL**: Backend has it's own repository.
 
 **CRITICAL**: Do what has been asked; nothing more, nothing less.
 **CRITICAL**: NEVER create files unless they're absolutely necessary for achieving your goal.
@@ -193,12 +200,6 @@ cd frontend-ui && npm install
 
 # Lint code
 npm run lint
-
-# Build for production
-npm run build
-
-# Build and copy to backend
-npm run build-and-copy
 ```
 
 ## API Structure
@@ -288,3 +289,4 @@ See `PRODUCTION_DEPLOYMENT.md` for detailed production deployment instructions i
 - Docker deployment options
 - Monitoring and health checks
 - Performance tuning recommendations
+
