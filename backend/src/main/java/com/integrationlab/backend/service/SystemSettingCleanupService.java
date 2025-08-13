@@ -16,7 +16,7 @@ public class SystemSettingCleanupService {
     
     @PostConstruct
     @Transactional
-    public void cleanupDuplicateRetrySettings() {
+    public void cleanupDuplicateSettings() {
         try {
             // Remove the old max_retry_attempts setting if it exists
             systemSettingRepository.findBySettingKey("max_retry_attempts").ifPresent(setting -> {
@@ -29,8 +29,20 @@ public class SystemSettingCleanupService {
                 log.info("Removing deprecated retry_delay setting");
                 systemSettingRepository.delete(setting);
             });
+            
+            // Remove the old max_retries setting if it exists (duplicate of max_retry_attempts)
+            systemSettingRepository.findBySettingKey("max_retries").ifPresent(setting -> {
+                log.info("Removing deprecated max_retries setting");
+                systemSettingRepository.delete(setting);
+            });
+            
+            // Remove the old connection_pool_size setting (replaced by performance.connection.pool.size)
+            systemSettingRepository.findBySettingKey("connection_pool_size").ifPresent(setting -> {
+                log.info("Removing deprecated connection_pool_size setting");
+                systemSettingRepository.delete(setting);
+            });
         } catch (Exception e) {
-            log.error("Error cleaning up duplicate retry settings", e);
+            log.error("Error cleaning up duplicate settings", e);
         }
     }
 }
