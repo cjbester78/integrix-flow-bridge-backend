@@ -33,4 +33,10 @@ public interface SystemLogRepository extends JpaRepository<SystemLog, String>, J
     List<SystemLog> findByMessageContainingAndSourceOrderByTimestampDesc(String message, String source);
     
     List<SystemLog> findByMessageContainingOrderByTimestampDesc(String message);
+    
+    // Methods for payload viewer
+    List<SystemLog> findByCorrelationIdAndCategoryOrderByTimestampDesc(String correlationId, String category);
+    List<SystemLog> findByCorrelationIdOrderByTimestampDesc(String correlationId);
+    List<SystemLog> findByCategoryOrderByTimestampDesc(String category);
+    List<SystemLog> findAllByOrderByTimestampDesc(org.springframework.data.domain.Pageable pageable);
 }

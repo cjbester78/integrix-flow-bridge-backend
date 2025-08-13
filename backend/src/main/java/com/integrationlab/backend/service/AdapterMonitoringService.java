@@ -131,7 +131,7 @@ public class AdapterMonitoringService {
             // Count flow executions for this adapter
             String searchPattern = String.format("adapter: %s", adapter.getName());
             List<SystemLog> adapterLogs = systemLogRepository.findByMessageContainingAndSourceOrderByTimestampDesc(
-                searchPattern, "FlowExecutionService"
+                searchPattern, "FlowExecutionAsyncService"
             );
             
             // Count successful messages

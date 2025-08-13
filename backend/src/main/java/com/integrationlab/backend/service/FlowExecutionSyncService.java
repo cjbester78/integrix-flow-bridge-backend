@@ -15,12 +15,13 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Service that processes messages through integration flows
+ * Service that handles synchronous flow execution for real-time request/response processing.
+ * Used for API integrations where an immediate response is required (SOAP, REST endpoints).
  */
 @Service
-public class FlowProcessingService {
+public class FlowExecutionSyncService {
     
-    private static final Logger logger = LoggerFactory.getLogger(FlowProcessingService.class);
+    private static final Logger logger = LoggerFactory.getLogger(FlowExecutionSyncService.class);
     
     @Autowired
     private CommunicationAdapterRepository adapterRepository;
@@ -121,8 +122,16 @@ public class FlowProcessingService {
                 "Executing target adapter: " + targetAdapter.getName(),
                 "Adapter type: " + targetAdapter.getType() + ", Mode: " + targetAdapter.getMode(),
                 com.integrationlab.data.model.SystemLog.LogLevel.INFO);
+            
+            // Log the incoming message payload for the source adapter
+            messageService.logAdapterPayload(correlationId, sourceAdapter, "REQUEST", validatedMessage, "INBOUND");
                 
             String response = adapterExecutionService.executeAdapter(targetAdapter, transformedMessage, context);
+            
+            // Log the response payload from the target adapter
+            if (response != null) {
+                messageService.logAdapterPayload(correlationId, targetAdapter, "RESPONSE", response, "OUTBOUND");
+            }
             
             messageService.logProcessingStep(correlationId, flow,
                 "Target adapter execution completed",

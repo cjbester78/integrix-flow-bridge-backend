@@ -33,10 +33,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+/**
+ * Service that handles asynchronous flow execution for scheduled jobs and batch processing.
+ * Used for ETL operations, file transfers, and data synchronization where source adapters 
+ * pull data and target adapters push data without requiring immediate response.
+ */
 @Service
-public class FlowExecutionService {
+public class FlowExecutionAsyncService {
     
-    private static final Logger logger = LoggerFactory.getLogger(FlowExecutionService.class);
+    private static final Logger logger = LoggerFactory.getLogger(FlowExecutionAsyncService.class);
 
     private final IntegrationFlowRepository flowRepository;
     private final FlowTransformationRepository transformationRepository;
@@ -53,7 +58,7 @@ public class FlowExecutionService {
     private final MessageService messageService;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    public FlowExecutionService(
+    public FlowExecutionAsyncService(
             IntegrationFlowRepository flowRepository,
             FlowTransformationRepository transformationRepository,
             FieldMappingRepository fieldMappingRepository,

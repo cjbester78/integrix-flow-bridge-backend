@@ -47,7 +47,7 @@ public class IntegrationEndpointService {
     private DataStructureRepository dataStructureRepository;
     
     @Autowired
-    private FlowProcessingService flowProcessingService;
+    private FlowExecutionSyncService flowExecutionSyncService;
     
     @Autowired
     private ObjectMapper objectMapper;
@@ -98,7 +98,7 @@ public class IntegrationEndpointService {
         // Process through the flow with correlation ID
         logger.info("Processing message through flow: {} with correlation ID: {}", flow.getName(), correlationId);
         headers.put("correlationId", correlationId);
-        String responseBody = flowProcessingService.processMessage(flow, messageToProcess, headers, "SOAP");
+        String responseBody = flowExecutionSyncService.processMessage(flow, messageToProcess, headers, "SOAP");
         logger.debug("Received response body: {}", responseBody);
         
         // Check if response is already a SOAP envelope
@@ -162,7 +162,7 @@ public class IntegrationEndpointService {
         IntegrationFlow flow = findDeployedFlow(flowPath);
         
         // Process through the flow
-        String response = flowProcessingService.processMessage(flow, requestBody, headers, "REST");
+        String response = flowExecutionSyncService.processMessage(flow, requestBody, headers, "REST");
         
         // Parse response as JSON if possible
         try {
