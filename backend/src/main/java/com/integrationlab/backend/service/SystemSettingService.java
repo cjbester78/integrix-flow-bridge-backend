@@ -140,9 +140,6 @@ public class SystemSettingService {
         createSettingIfNotExists("default_timeout", "30", 
                 "Default timeout in seconds for adapter connections", "integration");
         
-        createSettingIfNotExists("max_retry_attempts", "3", 
-                "Maximum number of retry attempts for failed operations", "integration");
-        
         createSettingIfNotExists("log_level", "INFO", 
                 "Application log level (DEBUG, INFO, WARN, ERROR)", "system");
         
