@@ -78,6 +78,9 @@ public class IntegrationEndpointService {
             "Endpoint: /" + flowPath + "\nRequest size: " + soapRequest.length() + " bytes",
             com.integrationlab.data.model.SystemLog.LogLevel.INFO,
             correlationId);
+            
+        // Log the incoming SOAP request payload
+        messageService.logAdapterPayload(correlationId, sourceAdapter, "REQUEST", soapRequest, "INBOUND");
         
         // Check if target adapter is also SOAP
         CommunicationAdapter targetAdapter = adapterRepository.findById(flow.getTargetAdapterId())
@@ -111,6 +114,9 @@ public class IntegrationEndpointService {
             soapResponse = wrapInSoapEnvelope(responseBody);
         }
         logger.debug("Final SOAP response prepared");
+        
+        // Log the outgoing SOAP response payload
+        messageService.logAdapterPayload(correlationId, targetAdapter, "RESPONSE", soapResponse, "OUTBOUND");
         
         return soapResponse;
     }

@@ -182,6 +182,9 @@ public class FlowExecutionAsyncService {
             
             adapterExecutor.sendData(flow.getTargetAdapterId(), processedData, context);
             logger.info("Sent data to target adapter: {}", targetAdapter.getName());
+            
+            // Log target adapter payload (what the adapter will send TO external system)
+            messageService.logAdapterPayload(correlationId, targetAdapter, "REQUEST", processedData, "OUTBOUND");
 
             // Step 4: Log success
             logService.logFlowExecutionSuccess(flow, rawDataStr, processedData);

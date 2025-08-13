@@ -123,13 +123,19 @@ public class FlowExecutionSyncService {
                 "Adapter type: " + targetAdapter.getType() + ", Mode: " + targetAdapter.getMode(),
                 com.integrationlab.data.model.SystemLog.LogLevel.INFO);
             
-            // Log the incoming message payload for the source adapter
-            messageService.logAdapterPayload(correlationId, sourceAdapter, "REQUEST", validatedMessage, "INBOUND");
+            // Note: Source adapter payload logging is handled by IntegrationEndpointService for SOAP/REST flows
+            // Only log here if not coming from IntegrationEndpointService (check protocol type)
+            String protocol = (String) context.get("protocol");
+            if (!"SOAP".equals(protocol) && !"REST".equals(protocol)) {
+                // Log source payload for non-SOAP/REST flows (e.g., direct adapter tests)
+                messageService.logAdapterPayload(correlationId, sourceAdapter, "REQUEST", validatedMessage, "INBOUND");
+            }
                 
             String response = adapterExecutionService.executeAdapter(targetAdapter, transformedMessage, context);
             
-            // Log the response payload from the target adapter
-            if (response != null) {
+            // Note: Target adapter response logging is handled by IntegrationEndpointService for SOAP/REST flows
+            if (response != null && !"SOAP".equals(protocol) && !"REST".equals(protocol)) {
+                // Log target response for non-SOAP/REST flows (e.g., direct adapter tests)
                 messageService.logAdapterPayload(correlationId, targetAdapter, "RESPONSE", response, "OUTBOUND");
             }
             

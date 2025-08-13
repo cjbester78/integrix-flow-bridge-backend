@@ -210,6 +210,7 @@ public class MessageService {
         try {
             SystemLog log = new SystemLog();
             log.setId(UUID.randomUUID().toString());
+            log.setTimestamp(LocalDateTime.now());
             log.setCreatedAt(LocalDateTime.now());
             log.setLevel(SystemLog.LogLevel.INFO);
             log.setMessage(String.format("Adapter %s payload - %s", direction, payloadType));
