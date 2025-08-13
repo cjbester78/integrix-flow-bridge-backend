@@ -73,43 +73,6 @@ public class InboundSoapEndpoint {
         }
     }
 
-    /**
-     * Handle reusable function SOAP requests (example)
-     */
-    @PayloadRoot(namespace = NAMESPACE_URI, localPart = "GetReusableFunctionRequest")
-    @ResponsePayload
-    public Source handleReusableFunctionRequest(@RequestPayload Source request) {
-        
-        logger.info("Received reusable function SOAP request");
-        
-        try {
-            // Create SOAP receiver adapter configuration
-            SoapReceiverAdapterConfig config = createSoapConfig();
-            
-            // Create and initialize adapter
-            ReceiverAdapter adapter = adapterFactory.createReceiver(AdapterType.SOAP, config);
-            adapter.initialize();
-            
-            try {
-                // Process the function request
-                AdapterResult result = adapter.receive(request);
-                
-                if (result.isSuccess()) {
-                    logger.info("Successfully processed function request");
-                    return createFunctionResponse(result.getData());
-                } else {
-                    logger.error("Failed to process function request: {}", result.getMessage());
-                    return createErrorResponse("Failed to process function request: " + result.getMessage());
-                }
-            } finally {
-                adapter.destroy();
-            }
-            
-        } catch (Exception e) {
-            logger.error("Error processing function SOAP request", e);
-            return createErrorResponse("Internal server error: " + e.getMessage());
-        }
-    }
 
     /**
      * Create SOAP receiver adapter configuration
@@ -179,27 +142,4 @@ public class InboundSoapEndpoint {
         }
     }
 
-    /**
-     * Create function response
-     */
-    private Source createFunctionResponse(Object functionData) {
-        try {
-            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-            factory.setNamespaceAware(true);
-            DocumentBuilder builder = factory.newDocumentBuilder();
-            Document document = builder.newDocument();
-            
-            Element responseElement = document.createElementNS(NAMESPACE_URI, "GetReusableFunctionResponse");
-            Element functionElement = document.createElement("function");
-            functionElement.setTextContent(functionData != null ? functionData.toString() : "No data");
-            
-            responseElement.appendChild(functionElement);
-            document.appendChild(responseElement);
-            
-            return new DOMSource(document);
-        } catch (Exception e) {
-            logger.error("Error creating function response", e);
-            return createErrorResponse("Error creating function response");
-        }
-    }
 }

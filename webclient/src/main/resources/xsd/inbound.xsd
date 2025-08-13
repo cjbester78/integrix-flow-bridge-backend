@@ -26,24 +26,6 @@
         </xs:complexType>
     </xs:element>
 
-    <!-- Reusable Function Request -->
-    <xs:element name="GetReusableFunctionRequest">
-        <xs:complexType>
-            <xs:sequence>
-                <xs:element name="functionId" type="xs:string"/>
-                <xs:element name="parameters" type="xs:string" minOccurs="0"/>
-            </xs:sequence>
-        </xs:complexType>
-    </xs:element>
-
-    <!-- Reusable Function Response -->
-    <xs:element name="GetReusableFunctionResponse">
-        <xs:complexType>
-            <xs:sequence>
-                <xs:element name="function" type="tns:FunctionType"/>
-            </xs:sequence>
-        </xs:complexType>
-    </xs:element>
 
     <!-- Complex Types -->
     <xs:complexType name="MetadataType">
@@ -59,16 +41,5 @@
         </xs:sequence>
     </xs:complexType>
 
-    <xs:complexType name="FunctionType">
-        <xs:sequence>
-            <xs:element name="id" type="xs:string"/>
-            <xs:element name="name" type="xs:string"/>
-            <xs:element name="version" type="xs:string"/>
-            <xs:element name="functionBody" type="xs:string"/>
-            <xs:element name="inputTypes" type="xs:string"/>
-            <xs:element name="outputType" type="xs:string"/>
-            <xs:element name="description" type="xs:string" minOccurs="0"/>
-        </xs:sequence>
-    </xs:complexType>
 
 </xs:schema>
