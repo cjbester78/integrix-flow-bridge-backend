@@ -197,6 +197,67 @@ public class DataStructureService {
                 metadata.put("dependencies", dependencyMetadata);
             }
             
+            // Process resolved dependency files from frontend
+            List<Map<String, Object>> resolvedFiles = null;
+            if (metadata.containsKey("resolvedFiles")) {
+                resolvedFiles = (List<Map<String, Object>>) metadata.get("resolvedFiles");
+                
+                // Save each dependency file as a separate data structure
+                List<String> savedDependencyIds = new ArrayList<>();
+                for (Map<String, Object> depFile : resolvedFiles) {
+                    String depName = (String) depFile.get("name");
+                    String depType = (String) depFile.get("type");
+                    String depContent = (String) depFile.get("content");
+                    
+                    // Skip if this is the primary file
+                    if (depName.equals(name) || (depContent != null && depContent.equals(originalContent))) {
+                        continue;
+                    }
+                    
+                    // Check if a structure with this name already exists
+                    Optional<DataStructure> existing = dataStructureRepository.findByName(depName);
+                    if (!existing.isPresent()) {
+                        // Create a new data structure for the dependency
+                        Map<String, Object> depStructureData = new HashMap<>();
+                        depStructureData.put("name", depName);
+                        depStructureData.put("type", depType);
+                        depStructureData.put("description", "Dependency of " + name);
+                        depStructureData.put("usage", structureData.get("usage"));
+                        depStructureData.put("originalContent", depContent);
+                        depStructureData.put("originalFormat", "xml");
+                        depStructureData.put("businessComponentId", structureData.get("businessComponentId"));
+                        
+                        // Parse structure from content
+                        Object depStructureObj = null;
+                        if ("xsd".equalsIgnoreCase(depType)) {
+                            depStructureObj = Map.of("message", "XSD dependency");
+                        } else if ("wsdl".equalsIgnoreCase(depType)) {
+                            depStructureObj = Map.of("message", "WSDL dependency");
+                        }
+                        depStructureData.put("structure", depStructureObj);
+                        
+                        try {
+                            DataStructure depStructure = createDataStructure(depStructureData, userId);
+                            savedDependencyIds.add(depStructure.getId());
+                            log.info("Saved dependency structure: {} with ID: {}", depName, depStructure.getId());
+                        } catch (Exception e) {
+                            log.warn("Failed to save dependency structure {}: {}", depName, e.getMessage());
+                        }
+                    } else {
+                        savedDependencyIds.add(existing.get().getId());
+                        log.info("Dependency structure already exists: {} with ID: {}", depName, existing.get().getId());
+                    }
+                }
+                
+                // Update metadata with saved dependency IDs
+                metadata.put("savedDependencyIds", savedDependencyIds);
+                
+                // Update dependency metadata with resolved structure IDs
+                if (dependencyMetadata != null) {
+                    xsdDependencyResolver.resolveDependencies(dependencyMetadata, null);
+                }
+            }
+            
             // Build the data structure
             DataStructure dataStructure = DataStructure.builder()
                 .id(UUID.randomUUID().toString())
