@@ -56,6 +56,9 @@ public class IntegrationFlowService {
                 existing.setDescription(updatedFlow.getDescription());
                 existing.setSourceAdapterId(updatedFlow.getSourceAdapterId());
                 existing.setTargetAdapterId(updatedFlow.getTargetAdapterId());
+                existing.setSourceFlowStructureId(updatedFlow.getSourceFlowStructureId());
+                existing.setTargetFlowStructureId(updatedFlow.getTargetFlowStructureId());
+                // Keep legacy fields for backward compatibility
                 existing.setSourceStructureId(updatedFlow.getSourceStructureId());
                 existing.setTargetStructureId(updatedFlow.getTargetStructureId());
                 existing.setStatus(updatedFlow.getStatus());
@@ -96,6 +99,8 @@ public class IntegrationFlowService {
                 .description(flow.getDescription())
                 .sourceAdapterId(flow.getSourceAdapterId())
                 .targetAdapterId(flow.getTargetAdapterId())
+                .sourceFlowStructureId(flow.getSourceFlowStructureId())
+                .targetFlowStructureId(flow.getTargetFlowStructureId())
                 .sourceStructureId(flow.getSourceStructureId())
                 .targetStructureId(flow.getTargetStructureId())
                 .status(flow.getStatus() != null ? flow.getStatus().toString() : null)

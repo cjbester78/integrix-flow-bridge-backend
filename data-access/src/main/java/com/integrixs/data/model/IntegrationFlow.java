@@ -82,15 +82,31 @@ public class IntegrationFlow {
     private String targetAdapterId;
 
     /**
-     * Source data structure ID
+     * Source flow structure ID (for structured data flows)
+     */
+    @Column(name = "source_flow_structure_id", columnDefinition = "char(36)")
+    private String sourceFlowStructureId;
+
+    /**
+     * Target flow structure ID (for structured data flows)
+     */
+    @Column(name = "target_flow_structure_id", columnDefinition = "char(36)")
+    private String targetFlowStructureId;
+    
+    /**
+     * Legacy: Source data structure ID (deprecated - use sourceFlowStructureId)
+     * @deprecated Use sourceFlowStructureId instead
      */
     @Column(name = "source_structure_id", columnDefinition = "char(36)")
+    @Deprecated
     private String sourceStructureId;
 
     /**
-     * Target data structure ID
+     * Legacy: Target data structure ID (deprecated - use targetFlowStructureId)
+     * @deprecated Use targetFlowStructureId instead
      */
     @Column(name = "target_structure_id", columnDefinition = "char(36)")
+    @Deprecated
     private String targetStructureId;
 
     /**

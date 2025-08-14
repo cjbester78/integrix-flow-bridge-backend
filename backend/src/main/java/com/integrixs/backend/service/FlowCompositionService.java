@@ -68,6 +68,8 @@ public class FlowCompositionService {
         flow.setDescription(request.getDescription());
         flow.setSourceAdapterId(request.getSourceAdapterId());
         flow.setTargetAdapterId(request.getTargetAdapterId());
+        flow.setSourceFlowStructureId(request.getSourceFlowStructureId());
+        flow.setTargetFlowStructureId(request.getTargetFlowStructureId());
         flow.setSourceStructureId(request.getSourceStructureId());
         flow.setTargetStructureId(request.getTargetStructureId());
         flow.setStatus(FlowStatus.DEVELOPED_INACTIVE);
@@ -253,6 +255,8 @@ public class FlowCompositionService {
                 flow.setTargetAdapterId(request.getTargetAdapterId());
             }
             
+            flow.setSourceFlowStructureId(request.getSourceFlowStructureId());
+            flow.setTargetFlowStructureId(request.getTargetFlowStructureId());
             flow.setSourceStructureId(request.getSourceStructureId());
             flow.setTargetStructureId(request.getTargetStructureId());
             
@@ -337,6 +341,8 @@ public class FlowCompositionService {
         private String targetBusinessComponentId;
         private String sourceAdapterId;
         private String targetAdapterId;
+        private String sourceFlowStructureId;
+        private String targetFlowStructureId;
         private String sourceStructureId;
         private String targetStructureId;
         private String createdBy;
@@ -359,6 +365,10 @@ public class FlowCompositionService {
         public void setSourceAdapterId(String sourceAdapterId) { this.sourceAdapterId = sourceAdapterId; }
         public String getTargetAdapterId() { return targetAdapterId; }
         public void setTargetAdapterId(String targetAdapterId) { this.targetAdapterId = targetAdapterId; }
+        public String getSourceFlowStructureId() { return sourceFlowStructureId; }
+        public void setSourceFlowStructureId(String sourceFlowStructureId) { this.sourceFlowStructureId = sourceFlowStructureId; }
+        public String getTargetFlowStructureId() { return targetFlowStructureId; }
+        public void setTargetFlowStructureId(String targetFlowStructureId) { this.targetFlowStructureId = targetFlowStructureId; }
         public String getSourceStructureId() { return sourceStructureId; }
         public void setSourceStructureId(String sourceStructureId) { this.sourceStructureId = sourceStructureId; }
         public String getTargetStructureId() { return targetStructureId; }
@@ -411,6 +421,8 @@ public class FlowCompositionService {
         private String description;
         private String sourceAdapterId;
         private String targetAdapterId;
+        private String sourceFlowStructureId;
+        private String targetFlowStructureId;
         private String sourceStructureId;
         private String targetStructureId;
 
@@ -423,6 +435,10 @@ public class FlowCompositionService {
         public void setSourceAdapterId(String sourceAdapterId) { this.sourceAdapterId = sourceAdapterId; }
         public String getTargetAdapterId() { return targetAdapterId; }
         public void setTargetAdapterId(String targetAdapterId) { this.targetAdapterId = targetAdapterId; }
+        public String getSourceFlowStructureId() { return sourceFlowStructureId; }
+        public void setSourceFlowStructureId(String sourceFlowStructureId) { this.sourceFlowStructureId = sourceFlowStructureId; }
+        public String getTargetFlowStructureId() { return targetFlowStructureId; }
+        public void setTargetFlowStructureId(String targetFlowStructureId) { this.targetFlowStructureId = targetFlowStructureId; }
         public String getSourceStructureId() { return sourceStructureId; }
         public void setSourceStructureId(String sourceStructureId) { this.sourceStructureId = sourceStructureId; }
         public String getTargetStructureId() { return targetStructureId; }
