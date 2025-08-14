@@ -118,6 +118,7 @@ public class IntegrationEndpointService {
         // Process through the flow with correlation ID
         logger.info("Processing message through flow: {} with correlation ID: {}", flow.getName(), correlationId);
         headers.put("correlationId", correlationId);
+        headers.put("isEndpointFlow", "true"); // Flag to prevent duplicate response logging
         String responseBody = flowExecutionSyncService.processMessage(flow, messageToProcess, headers, "SOAP");
         logger.debug("Received response body: {}", responseBody);
         
@@ -132,19 +133,19 @@ public class IntegrationEndpointService {
         }
         logger.debug("Final SOAP response prepared");
         
-        // Log the outgoing SOAP response payload
-        logger.info("DEBUG: About to log target adapter payload - correlationId: {}, adapter: {}, payloadSize: {}", 
-            correlationId, targetAdapter.getName(), soapResponse.length());
+        // Log the outgoing SOAP response payload for the SOURCE adapter (it's sending the response back)
+        logger.info("DEBUG: About to log source adapter response - correlationId: {}, adapter: {}, payloadSize: {}", 
+            correlationId, sourceAdapter.getName(), soapResponse.length());
         
         // Clone adapter to avoid lazy loading issues
-        CommunicationAdapter clonedTargetAdapter = new CommunicationAdapter();
-        clonedTargetAdapter.setId(targetAdapter.getId());
-        clonedTargetAdapter.setName(targetAdapter.getName());
-        clonedTargetAdapter.setType(targetAdapter.getType());
-        clonedTargetAdapter.setMode(targetAdapter.getMode());
+        CommunicationAdapter clonedSourceAdapter = new CommunicationAdapter();
+        clonedSourceAdapter.setId(sourceAdapter.getId());
+        clonedSourceAdapter.setName(sourceAdapter.getName());
+        clonedSourceAdapter.setType(sourceAdapter.getType());
+        clonedSourceAdapter.setMode(sourceAdapter.getMode());
         
-        messageService.logAdapterPayload(correlationId, clonedTargetAdapter, "RESPONSE", soapResponse, "OUTBOUND");
-        logger.info("DEBUG: Finished logging target adapter payload");
+        messageService.logAdapterPayload(correlationId, clonedSourceAdapter, "RESPONSE", soapResponse, "INBOUND");
+        logger.info("DEBUG: Finished logging source adapter response");
         
         return soapResponse;
     }

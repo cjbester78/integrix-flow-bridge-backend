@@ -75,6 +75,11 @@ public class FlowExecutionSyncService {
             correlationId = messageService.createMessage(flow, message, protocol, correlationId);
         }
         context.put("correlationId", correlationId);
+        context.put("flowId", flow.getId());
+        // Pass through the isEndpointFlow flag if present
+        if (headers.containsKey("isEndpointFlow")) {
+            context.put("isEndpointFlow", "true".equals(headers.get("isEndpointFlow")));
+        }
         logger.info("Using correlation ID: {}", correlationId);
         
         try {

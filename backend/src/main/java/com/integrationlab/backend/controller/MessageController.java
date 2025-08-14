@@ -122,7 +122,9 @@ public class MessageController {
     @GetMapping("/payloads/{correlationId}")
     @PreAuthorize("hasAnyRole('ADMINISTRATOR', 'DEVELOPER', 'VIEWER')")
     public ResponseEntity<List<?>> getAdapterPayloads(@PathVariable String correlationId) {
-        logger.debug("Getting adapter payloads for correlation ID: {}", correlationId);
-        return ResponseEntity.ok(messageService.getAdapterPayloads(correlationId));
+        logger.info("Getting adapter payloads for correlation ID: {}", correlationId);
+        var payloads = messageService.getAdapterPayloads(correlationId);
+        logger.info("Found {} payloads for correlation ID: {}", payloads.size(), correlationId);
+        return ResponseEntity.ok(payloads);
     }
 }

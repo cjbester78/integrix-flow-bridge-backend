@@ -202,8 +202,10 @@ public class AdapterExecutionService {
             logger.info("SOAP call successful. Response status: {}", response.getStatusCode());
             logger.debug("SOAP response body: {}", response.getBody());
             
-            // Log the response payload
-            if (correlationId != null) {
+            // Log the response payload only if not handled by IntegrationEndpointService
+            // Check if this is a SOAP endpoint flow (where IntegrationEndpointService will log the final response)
+            boolean isEndpointFlow = context.get("isEndpointFlow") != null && (boolean) context.get("isEndpointFlow");
+            if (correlationId != null && !isEndpointFlow) {
                 messageService.logAdapterPayload(correlationId, adapter, "RESPONSE", response.getBody(), "OUTBOUND");
             }
             
@@ -290,8 +292,10 @@ public class AdapterExecutionService {
                 String.class
             );
             
-            // Log the response payload
-            if (correlationId != null) {
+            // Log the response payload only if not handled by IntegrationEndpointService
+            // Check if this is a SOAP endpoint flow (where IntegrationEndpointService will log the final response)
+            boolean isEndpointFlow = context.get("isEndpointFlow") != null && (boolean) context.get("isEndpointFlow");
+            if (correlationId != null && !isEndpointFlow) {
                 messageService.logAdapterPayload(correlationId, adapter, "RESPONSE", response.getBody(), "OUTBOUND");
             }
             
