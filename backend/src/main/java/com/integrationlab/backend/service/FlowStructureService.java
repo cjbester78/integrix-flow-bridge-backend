@@ -248,7 +248,6 @@ public class FlowStructureService {
                 .id(entity.getId())
                 .name(entity.getName())
                 .description(entity.getDescription())
-                .isActive(entity.getIsActive())
                 .build();
     }
     

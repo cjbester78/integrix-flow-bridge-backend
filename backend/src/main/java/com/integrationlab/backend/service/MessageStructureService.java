@@ -154,7 +154,6 @@ public class MessageStructureService {
                 .id(entity.getId())
                 .name(entity.getName())
                 .description(entity.getDescription())
-                .isActive(entity.getIsActive())
                 .build();
     }
     
