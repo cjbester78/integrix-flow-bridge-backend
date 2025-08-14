@@ -23,6 +23,8 @@ public interface DataStructureRepository extends JpaRepository<DataStructure, St
     
     List<DataStructure> findByType(String type);
     
+    List<DataStructure> findByTypeIn(List<String> types);
+    
     List<DataStructure> findByUsage(DataStructure.DataStructureUsage usage);
     
     List<DataStructure> findByBusinessComponentId(String businessComponentId);
