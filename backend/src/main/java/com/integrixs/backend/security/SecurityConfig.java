@@ -20,6 +20,8 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import java.util.Arrays;
 import java.util.List;
 
+import com.integrixs.data.repository.UserRepository;
+
 /**
  * Enhanced security configuration with comprehensive security features.
  * 
@@ -37,8 +39,10 @@ public class SecurityConfig {
     private String[] allowedOrigins;
 
     @Bean
-    public JwtAuthFilter jwtAuthFilter(JwtUtil jwtUtil) {
-        return new JwtAuthFilter(jwtUtil);
+    public JwtAuthFilter jwtAuthFilter(JwtUtil jwtUtil, UserRepository userRepository) {
+        JwtAuthFilter filter = new JwtAuthFilter(jwtUtil);
+        filter.setUserRepository(userRepository);
+        return filter;
     }
 
     @Bean

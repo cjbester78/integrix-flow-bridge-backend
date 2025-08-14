@@ -17,14 +17,23 @@ import java.util.Collections;
 import java.util.List;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
+import com.integrixs.data.repository.UserRepository;
+import com.integrixs.data.model.User;
+
 
 public class JwtAuthFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwtUtil;
+    private UserRepository userRepository;
 
     @Autowired
     public JwtAuthFilter(JwtUtil jwtUtil) {
         this.jwtUtil = jwtUtil;
+    }
+    
+    @Autowired
+    public void setUserRepository(UserRepository userRepository) {
+        this.userRepository = userRepository;
     }
 
     @Override
@@ -52,6 +61,12 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                     return;
                 }
                 
+                // Load the User entity from the database
+                User user = null;
+                if (userRepository != null) {
+                    user = userRepository.findByUsername(username);
+                }
+                
                 // Create authorities list with ROLE_ prefix for Spring Security
                 // Convert role to uppercase to match Spring Security expectations
                 List<SimpleGrantedAuthority> authorities = Collections.singletonList(
@@ -60,15 +75,16 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                 
                 System.out.println("JWT Auth - Authorities: " + authorities);
                 
+                // Set either the User entity or username as principal
                 var auth = new UsernamePasswordAuthenticationToken(
-                        username,
+                        user != null ? user : username,
                         null,
                         authorities
                 );
                 auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(auth);
                 
-                System.out.println("JWT Auth - Authentication set for: " + request.getRequestURI());
+                System.out.println("JWT Auth - Authentication set for: " + request.getRequestURI() + " with principal: " + (user != null ? "User entity" : "username"));
             } else {
                 System.out.println("JWT Auth - Invalid token for: " + request.getRequestURI());
             }
