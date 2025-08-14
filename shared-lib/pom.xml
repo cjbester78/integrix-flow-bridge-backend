@@ -4,7 +4,7 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<parent>
-		<groupId>com.integrationlab</groupId>
+		<groupId>com.integrixs</groupId>
 		<artifactId>integrix-flow-bridge</artifactId>
 		<version>0.0.1-SNAPSHOT</version>
 		<relativePath>../pom.xml</relativePath>
