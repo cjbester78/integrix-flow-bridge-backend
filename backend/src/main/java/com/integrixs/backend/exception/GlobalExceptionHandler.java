@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.http.MediaType;
+import org.springframework.web.multipart.MultipartException;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -232,6 +233,46 @@ public class GlobalExceptionHandler {
                 .context(Map.of("parameter", ex.getName(),
                               "providedValue", Objects.toString(ex.getValue(), "null"),
                               "requiredType", ex.getRequiredType().getSimpleName()))
+                .build();
+        
+        return ResponseEntity.badRequest().body(errorResponse);
+    }
+    
+    /**
+     * Handles multipart/file upload exceptions.
+     * 
+     * @param ex the multipart exception
+     * @param request the HTTP request
+     * @return error response with file upload error details
+     */
+    @ExceptionHandler(MultipartException.class)
+    public ResponseEntity<ErrorResponse> handleMultipartException(
+            MultipartException ex, HttpServletRequest request) {
+        
+        log.error("Multipart exception occurred: {}", ex.getMessage(), ex);
+        
+        String message = "File upload error";
+        String errorCode = "FILE_UPLOAD_ERROR";
+        
+        // Extract more specific error information
+        if (ex.getMessage() != null) {
+            if (ex.getMessage().contains("exceeds its maximum permitted size")) {
+                message = "File size exceeds maximum allowed size";
+                errorCode = "FILE_SIZE_EXCEEDED";
+            } else if (ex.getMessage().contains("Failed to parse multipart servlet request")) {
+                message = "Invalid multipart request. Please ensure the request is properly formatted.";
+                errorCode = "INVALID_MULTIPART_REQUEST";
+            }
+        }
+        
+        ErrorResponse errorResponse = ErrorResponse.builder()
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.BAD_REQUEST.value())
+                .error("FILE_UPLOAD_ERROR")
+                .errorCode(errorCode)
+                .message(message)
+                .path(request.getRequestURI())
+                .context(Map.of("originalError", ex.getMessage() != null ? ex.getMessage() : "Unknown error"))
                 .build();
         
         return ResponseEntity.badRequest().body(errorResponse);
