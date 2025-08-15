@@ -331,11 +331,18 @@ public class MessageStructureService {
                                 .message("Message structure with this name already exists")
                                 .build());
                     } else {
+                        // Get the first active business component (or create a default one)
+                        BusinessComponent businessComponent = businessComponentRepository.findAll().stream()
+                                .filter(BusinessComponent::getIsActive)
+                                .findFirst()
+                                .orElseThrow(() -> new RuntimeException("No active business component found"));
+                        
                         // Create message structure
                         MessageStructure messageStructure = MessageStructure.builder()
                                 .name(structureName)
                                 .description("Imported from " + fileName)
                                 .xsdContent(content)
+                                .businessComponent(businessComponent)
                                 .metadata(serializeToJson(Map.of("importedFrom", fileName, "importedAt", new Date())))
                                 .createdBy(currentUser)
                                 .updatedBy(currentUser)
