@@ -19,6 +19,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.Arrays;
 import java.util.List;
 
 @RestController
@@ -90,18 +91,18 @@ public class MessageStructureController {
     @PostMapping(value = "/validate-xsd", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
     @Operation(summary = "Validate XSD files and check dependencies")
-    public ResponseEntity<List<?>> validateXsdFiles(@RequestParam("files") List<MultipartFile> files,
+    public ResponseEntity<List<?>> validateXsdFiles(@RequestParam("files") MultipartFile[] files,
                                                    @CurrentUser User currentUser) {
-        log.info("Validating {} XSD files", files.size());
-        return ResponseEntity.ok(messageStructureService.validateXsdFiles(files));
+        log.info("Validating {} XSD files", files.length);
+        return ResponseEntity.ok(messageStructureService.validateXsdFiles(Arrays.asList(files)));
     }
     
     @PostMapping(value = "/import-xsd", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
     @Operation(summary = "Import XSD files as message structures")
-    public ResponseEntity<List<?>> importXsdFiles(@RequestParam("files") List<MultipartFile> files,
+    public ResponseEntity<List<?>> importXsdFiles(@RequestParam("files") MultipartFile[] files,
                                                 @CurrentUser User currentUser) {
-        log.info("Importing {} XSD files", files.size());
-        return ResponseEntity.ok(messageStructureService.importXsdFiles(files, currentUser));
+        log.info("Importing {} XSD files", files.length);
+        return ResponseEntity.ok(messageStructureService.importXsdFiles(Arrays.asList(files), currentUser));
     }
 }

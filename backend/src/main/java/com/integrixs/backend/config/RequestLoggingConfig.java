@@ -40,8 +40,18 @@ public class RequestLoggingConfig {
                 return;
             }
 
-            ContentCachingRequestWrapper requestWrapper = new ContentCachingRequestWrapper(request);
-            ContentCachingResponseWrapper responseWrapper = new ContentCachingResponseWrapper(response);
+            // Check if this is a multipart request
+            boolean isMultipart = request.getContentType() != null && 
+                                request.getContentType().toLowerCase().startsWith("multipart/");
+            
+            HttpServletRequest requestToUse = request;
+            HttpServletResponse responseToUse = response;
+            
+            // Only wrap non-multipart requests
+            if (!isMultipart) {
+                requestToUse = new ContentCachingRequestWrapper(request);
+                responseToUse = new ContentCachingResponseWrapper(response);
+            }
 
             logger.info("🔵 === INCOMING REQUEST === {} {}", request.getMethod(), request.getRequestURI());
             logger.info("🔵 Headers: {}", Collections.list(request.getHeaderNames()));
@@ -52,17 +62,20 @@ public class RequestLoggingConfig {
             long startTime = System.currentTimeMillis();
             
             try {
-                filterChain.doFilter(requestWrapper, responseWrapper);
+                filterChain.doFilter(requestToUse, responseToUse);
                 
                 long duration = System.currentTimeMillis() - startTime;
                 
                 logger.info("🟢 === RESPONSE === {} {} -> Status: {}, Duration: {}ms", 
                            request.getMethod(), request.getRequestURI(), response.getStatus(), duration);
                 
-                // Log request body for POST requests
-                if ("POST".equals(request.getMethod()) && requestWrapper.getContentAsByteArray().length > 0) {
-                    String requestBody = new String(requestWrapper.getContentAsByteArray());
-                    logger.info("🔵 Request Body: {}", requestBody);
+                // Log request body for POST requests (only for non-multipart)
+                if (!isMultipart && "POST".equals(request.getMethod()) && requestToUse instanceof ContentCachingRequestWrapper) {
+                    ContentCachingRequestWrapper wrapper = (ContentCachingRequestWrapper) requestToUse;
+                    if (wrapper.getContentAsByteArray().length > 0) {
+                        String requestBody = new String(wrapper.getContentAsByteArray());
+                        logger.info("🔵 Request Body: {}", requestBody);
+                    }
                 }
                 
             } catch (Exception e) {
@@ -71,7 +84,9 @@ public class RequestLoggingConfig {
                             request.getMethod(), request.getRequestURI(), e.getMessage(), duration);
                 throw e;
             } finally {
-                responseWrapper.copyBodyToResponse();
+                if (responseToUse instanceof ContentCachingResponseWrapper) {
+                    ((ContentCachingResponseWrapper) responseToUse).copyBodyToResponse();
+                }
             }
         }
     }
