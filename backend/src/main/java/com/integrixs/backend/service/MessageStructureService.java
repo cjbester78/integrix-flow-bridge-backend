@@ -334,11 +334,10 @@ public class MessageStructureService {
                                 .message("Message structure with this name already exists")
                                 .build());
                     } else {
-                        // Get the first active business component (or create a default one)
+                        // Get the first business component
                         BusinessComponent businessComponent = businessComponentRepository.findAll().stream()
-                                .filter(bc -> bc.getIsActive() != null && bc.getIsActive())
                                 .findFirst()
-                                .orElseThrow(() -> new RuntimeException("No active business component found"));
+                                .orElseThrow(() -> new RuntimeException("No business component found"));
                         
                         // Create message structure
                         MessageStructure messageStructure = MessageStructure.builder()
