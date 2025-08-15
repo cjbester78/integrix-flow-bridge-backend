@@ -336,7 +336,7 @@ public class MessageStructureService {
                     } else {
                         // Get the first active business component (or create a default one)
                         BusinessComponent businessComponent = businessComponentRepository.findAll().stream()
-                                .filter(BusinessComponent::getIsActive)
+                                .filter(bc -> bc.getIsActive() != null && bc.getIsActive())
                                 .findFirst()
                                 .orElseThrow(() -> new RuntimeException("No active business component found"));
                         
