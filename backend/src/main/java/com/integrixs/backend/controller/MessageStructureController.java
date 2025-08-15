@@ -13,9 +13,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -83,5 +85,23 @@ public class MessageStructureController {
         log.info("Deleting message structure: {}", id);
         messageStructureService.delete(id);
         return ResponseEntity.noContent().build();
+    }
+    
+    @PostMapping(value = "/validate-xsd", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
+    @Operation(summary = "Validate XSD files and check dependencies")
+    public ResponseEntity<List<?>> validateXsdFiles(@RequestParam("files") List<MultipartFile> files,
+                                                   @CurrentUser User currentUser) {
+        log.info("Validating {} XSD files", files.size());
+        return ResponseEntity.ok(messageStructureService.validateXsdFiles(files));
+    }
+    
+    @PostMapping(value = "/import-xsd", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
+    @Operation(summary = "Import XSD files as message structures")
+    public ResponseEntity<List<?>> importXsdFiles(@RequestParam("files") List<MultipartFile> files,
+                                                @CurrentUser User currentUser) {
+        log.info("Importing {} XSD files", files.size());
+        return ResponseEntity.ok(messageStructureService.importXsdFiles(files, currentUser));
     }
 }

@@ -16,10 +16,15 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
+import org.w3c.dom.Document;
+import org.w3c.dom.NodeList;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import java.io.ByteArrayInputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -173,5 +178,227 @@ public class MessageStructureService {
             log.error("Error serializing to JSON", e);
             throw new RuntimeException("Error serializing to JSON", e);
         }
+    }
+    
+    public List<XsdValidationResult> validateXsdFiles(List<MultipartFile> files) {
+        List<XsdValidationResult> results = new ArrayList<>();
+        Map<String, String> fileContents = new HashMap<>();
+        
+        // First, read all files
+        for (MultipartFile file : files) {
+            try {
+                String content = new String(file.getBytes(), StandardCharsets.UTF_8);
+                fileContents.put(file.getOriginalFilename(), content);
+            } catch (Exception e) {
+                results.add(XsdValidationResult.builder()
+                        .fileName(file.getOriginalFilename())
+                        .valid(false)
+                        .errors(Arrays.asList("Failed to read file: " + e.getMessage()))
+                        .build());
+            }
+        }
+        
+        // Then validate each file and check dependencies
+        for (MultipartFile file : files) {
+            if (!fileContents.containsKey(file.getOriginalFilename())) {
+                continue; // Already reported as error
+            }
+            
+            XsdValidationResult result = XsdValidationResult.builder()
+                    .fileName(file.getOriginalFilename())
+                    .valid(true)
+                    .errors(new ArrayList<>())
+                    .dependencies(new ArrayList<>())
+                    .resolvedDependencies(new ArrayList<>())
+                    .missingDependencies(new ArrayList<>())
+                    .build();
+            
+            try {
+                String content = fileContents.get(file.getOriginalFilename());
+                
+                // Parse XSD to check validity and extract dependencies
+                DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+                factory.setNamespaceAware(true);
+                DocumentBuilder builder = factory.newDocumentBuilder();
+                Document doc = builder.parse(new ByteArrayInputStream(content.getBytes(StandardCharsets.UTF_8)));
+                
+                // Extract imports and includes
+                NodeList imports = doc.getElementsByTagNameNS("http://www.w3.org/2001/XMLSchema", "import");
+                NodeList includes = doc.getElementsByTagNameNS("http://www.w3.org/2001/XMLSchema", "include");
+                
+                List<String> dependencies = new ArrayList<>();
+                
+                for (int i = 0; i < imports.getLength(); i++) {
+                    var schemaLocationAttr = imports.item(i).getAttributes().getNamedItem("schemaLocation");
+                    if (schemaLocationAttr != null) {
+                        String schemaLocation = schemaLocationAttr.getNodeValue();
+                        if (schemaLocation != null && !schemaLocation.startsWith("http")) {
+                            dependencies.add(schemaLocation);
+                        }
+                    }
+                }
+                
+                for (int i = 0; i < includes.getLength(); i++) {
+                    var schemaLocationAttr = includes.item(i).getAttributes().getNamedItem("schemaLocation");
+                    if (schemaLocationAttr != null) {
+                        String schemaLocation = schemaLocationAttr.getNodeValue();
+                        if (schemaLocation != null && !schemaLocation.startsWith("http")) {
+                            dependencies.add(schemaLocation);
+                        }
+                    }
+                }
+                
+                result.setDependencies(dependencies);
+                
+                // Check which dependencies are resolved in the current batch
+                for (String dep : dependencies) {
+                    String depFileName = dep.substring(dep.lastIndexOf('/') + 1);
+                    if (fileContents.containsKey(depFileName)) {
+                        result.getResolvedDependencies().add(dep);
+                    } else {
+                        result.getMissingDependencies().add(dep);
+                        result.setValid(false);
+                        result.getErrors().add("Missing dependency: " + dep);
+                    }
+                }
+                
+            } catch (Exception e) {
+                result.setValid(false);
+                result.getErrors().add("XML parsing error: " + e.getMessage());
+            }
+            
+            results.add(result);
+        }
+        
+        return results;
+    }
+    
+    @Transactional
+    public List<XsdImportResult> importXsdFiles(List<MultipartFile> files, User currentUser) {
+        List<XsdImportResult> results = new ArrayList<>();
+        
+        // First validate all files
+        List<XsdValidationResult> validationResults = validateXsdFiles(files);
+        
+        // Group files by validation status
+        Map<String, XsdValidationResult> validationMap = validationResults.stream()
+                .collect(Collectors.toMap(XsdValidationResult::getFileName, v -> v));
+        
+        // Import valid files in dependency order
+        Set<String> imported = new HashSet<>();
+        boolean progress = true;
+        
+        while (progress) {
+            progress = false;
+            
+            for (MultipartFile file : files) {
+                String fileName = file.getOriginalFilename();
+                
+                if (imported.contains(fileName)) {
+                    continue;
+                }
+                
+                XsdValidationResult validation = validationMap.get(fileName);
+                if (validation == null || !validation.isValid()) {
+                    continue;
+                }
+                
+                // Check if all dependencies are imported
+                boolean allDepsImported = true;
+                for (String dep : validation.getResolvedDependencies()) {
+                    String depFileName = dep.substring(dep.lastIndexOf('/') + 1);
+                    if (!imported.contains(depFileName)) {
+                        allDepsImported = false;
+                        break;
+                    }
+                }
+                
+                if (!allDepsImported) {
+                    continue;
+                }
+                
+                // Import this file
+                try {
+                    String content = new String(file.getBytes(), StandardCharsets.UTF_8);
+                    String structureName = fileName.replace(".xsd", "");
+                    
+                    // Check if already exists
+                    if (messageStructureRepository.existsByNameAndIsActiveTrue(structureName)) {
+                        results.add(XsdImportResult.builder()
+                                .fileName(fileName)
+                                .structureName(structureName)
+                                .success(false)
+                                .message("Message structure with this name already exists")
+                                .build());
+                    } else {
+                        // Create message structure
+                        MessageStructure messageStructure = MessageStructure.builder()
+                                .name(structureName)
+                                .description("Imported from " + fileName)
+                                .xsdContent(content)
+                                .metadata(serializeToJson(Map.of("importedFrom", fileName, "importedAt", new Date())))
+                                .createdBy(currentUser)
+                                .updatedBy(currentUser)
+                                .build();
+                        
+                        messageStructureRepository.save(messageStructure);
+                        
+                        results.add(XsdImportResult.builder()
+                                .fileName(fileName)
+                                .structureName(structureName)
+                                .success(true)
+                                .build());
+                        
+                        imported.add(fileName);
+                        progress = true;
+                    }
+                } catch (Exception e) {
+                    results.add(XsdImportResult.builder()
+                            .fileName(fileName)
+                            .success(false)
+                            .message("Import failed: " + e.getMessage())
+                            .build());
+                }
+            }
+        }
+        
+        // Report files that couldn't be imported
+        for (MultipartFile file : files) {
+            String fileName = file.getOriginalFilename();
+            if (!imported.contains(fileName) && !results.stream().anyMatch(r -> r.getFileName().equals(fileName))) {
+                XsdValidationResult validation = validationMap.get(fileName);
+                String message = validation != null && !validation.isValid() 
+                        ? "Validation failed: " + String.join(", ", validation.getErrors())
+                        : "Could not import due to unresolved dependencies";
+                        
+                results.add(XsdImportResult.builder()
+                        .fileName(fileName)
+                        .success(false)
+                        .message(message)
+                        .build());
+            }
+        }
+        
+        return results;
+    }
+    
+    @lombok.Builder
+    @lombok.Data
+    public static class XsdValidationResult {
+        private String fileName;
+        private boolean valid;
+        private List<String> errors;
+        private List<String> dependencies;
+        private List<String> resolvedDependencies;
+        private List<String> missingDependencies;
+    }
+    
+    @lombok.Builder
+    @lombok.Data
+    public static class XsdImportResult {
+        private String fileName;
+        private String structureName;
+        private boolean success;
+        private String message;
     }
 }
