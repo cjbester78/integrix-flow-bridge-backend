@@ -362,9 +362,13 @@ public class MessageStructureService {
     }
     
     @Transactional
-    public List<XsdImportResult> importXsdFiles(List<MultipartFile> files, User currentUser) {
-        log.info("=== Starting XSD import for {} files ===", files.size());
+    public List<XsdImportResult> importXsdFiles(List<MultipartFile> files, String businessComponentId, User currentUser) {
+        log.info("=== Starting XSD import for {} files with business component: {} ===", files.size(), businessComponentId);
         List<XsdImportResult> results = new ArrayList<>();
+        
+        // Get business component
+        BusinessComponent businessComponent = businessComponentRepository.findById(businessComponentId)
+                .orElseThrow(() -> new RuntimeException("Business component not found: " + businessComponentId));
         
         // First validate all files
         List<XsdValidationResult> validationResults = validateXsdFiles(files);
@@ -435,11 +439,6 @@ public class MessageStructureService {
                                 .message("Message structure with this name already exists")
                                 .build());
                     } else {
-                        // Get the first business component
-                        BusinessComponent businessComponent = businessComponentRepository.findAll().stream()
-                                .findFirst()
-                                .orElseThrow(() -> new RuntimeException("No business component found"));
-                        
                         // Create message structure
                         Map<String, Object> importMetadata = new HashMap<>();
                         importMetadata.put("originalFileName", fileName);

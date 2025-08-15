@@ -114,9 +114,10 @@ public class MessageStructureController {
     @PreAuthorize("hasAnyRole('ADMINISTRATOR', 'DEVELOPER', 'INTEGRATOR')")
     @Operation(summary = "Import XSD files as message structures")
     public ResponseEntity<List<?>> importXsdFiles(@RequestPart("files") List<MultipartFile> files,
+                                                @RequestParam("businessComponentId") String businessComponentId,
                                                 @CurrentUser User currentUser) {
-        log.info("Importing {} XSD files", files.size());
-        return ResponseEntity.ok(messageStructureService.importXsdFiles(files, currentUser));
+        log.info("Importing {} XSD files for business component: {}", files.size(), businessComponentId);
+        return ResponseEntity.ok(messageStructureService.importXsdFiles(files, businessComponentId, currentUser));
     }
     
     @PostMapping(value = "/test-multipart", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
