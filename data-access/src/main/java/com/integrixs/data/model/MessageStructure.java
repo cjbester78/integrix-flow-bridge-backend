@@ -44,9 +44,20 @@ public class MessageStructure {
     @Builder.Default
     private Integer version = 1;
     
+    @Column(name = "source_type", length = 20)
+    @Builder.Default
+    private String sourceType = "INTERNAL";
+    
+    @Column(name = "is_editable")
+    @Builder.Default
+    private Boolean isEditable = true;
+    
     @Column(name = "is_active")
     @Builder.Default
     private Boolean isActive = true;
+    
+    @Column(name = "import_metadata", columnDefinition = "JSON")
+    private String importMetadata;
     
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "business_component_id", nullable = false)

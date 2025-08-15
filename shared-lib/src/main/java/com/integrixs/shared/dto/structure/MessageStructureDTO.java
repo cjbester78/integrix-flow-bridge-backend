@@ -24,7 +24,10 @@ public class MessageStructureDTO {
     private Map<String, Object> metadata;
     private Set<String> tags;
     private Integer version;
+    private String sourceType;
+    private Boolean isEditable;
     private Boolean isActive;
+    private Map<String, Object> importMetadata;
     private BusinessComponentDTO businessComponent;
     private UserDTO createdBy;
     private UserDTO updatedBy;

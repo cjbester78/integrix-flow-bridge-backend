@@ -57,6 +57,8 @@ public class MessageStructureService {
                 .namespace(request.getNamespace() != null ? serializeToJson(request.getNamespace()) : null)
                 .metadata(request.getMetadata() != null ? serializeToJson(request.getMetadata()) : null)
                 .tags(request.getTags() != null ? serializeToJson(request.getTags()) : null)
+                .sourceType("INTERNAL")
+                .isEditable(true)
                 .businessComponent(businessComponentRepository.findById(request.getBusinessComponentId())
                         .orElseThrow(() -> new RuntimeException("Business component not found")))
                 .createdBy(currentUser)
@@ -73,6 +75,11 @@ public class MessageStructureService {
         
         MessageStructure messageStructure = messageStructureRepository.findByIdAndIsActiveTrue(id)
                 .orElseThrow(() -> new RuntimeException("Message structure not found"));
+        
+        // Check if structure is editable
+        if (!messageStructure.getIsEditable()) {
+            throw new RuntimeException("Cannot edit external message structure. This structure is read-only.");
+        }
         
         // Check if name is being changed and already exists
         if (!messageStructure.getName().equals(request.getName()) &&
@@ -143,7 +150,11 @@ public class MessageStructureService {
                     .tags(entity.getTags() != null ? 
                             objectMapper.readValue(entity.getTags(), new TypeReference<Set<String>>() {}) : null)
                     .version(entity.getVersion())
+                    .sourceType(entity.getSourceType())
+                    .isEditable(entity.getIsEditable())
                     .isActive(entity.getIsActive())
+                    .importMetadata(entity.getImportMetadata() != null ?
+                            objectMapper.readValue(entity.getImportMetadata(), new TypeReference<Map<String, Object>>() {}) : null)
                     .businessComponent(toBusinessComponentDTO(entity.getBusinessComponent()))
                     .createdBy(toUserDTO(entity.getCreatedBy()))
                     .updatedBy(toUserDTO(entity.getUpdatedBy()))
@@ -340,12 +351,20 @@ public class MessageStructureService {
                                 .orElseThrow(() -> new RuntimeException("No business component found"));
                         
                         // Create message structure
+                        Map<String, Object> importMetadata = new HashMap<>();
+                        importMetadata.put("originalFileName", fileName);
+                        importMetadata.put("importedAt", new Date());
+                        importMetadata.put("importedBy", currentUser.getUsername());
+                        
                         MessageStructure messageStructure = MessageStructure.builder()
                                 .name(structureName)
                                 .description("Imported from " + fileName)
                                 .xsdContent(content)
+                                .sourceType("EXTERNAL")
+                                .isEditable(false)
                                 .businessComponent(businessComponent)
                                 .metadata(serializeToJson(Map.of("importedFrom", fileName, "importedAt", new Date())))
+                                .importMetadata(serializeToJson(importMetadata))
                                 .createdBy(currentUser)
                                 .updatedBy(currentUser)
                                 .build();
