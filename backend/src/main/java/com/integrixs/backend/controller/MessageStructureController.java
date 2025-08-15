@@ -80,7 +80,7 @@ public class MessageStructureController {
     }
     
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMINISTRATOR')")
     @Operation(summary = "Delete a message structure")
     public ResponseEntity<Void> delete(@PathVariable String id) {
         log.info("Deleting message structure: {}", id);
@@ -89,7 +89,7 @@ public class MessageStructureController {
     }
     
     @PostMapping(value = "/validate-xsd", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
+    @PreAuthorize("hasAnyRole('ADMINISTRATOR', 'DEVELOPER', 'INTEGRATOR')")
     @Operation(summary = "Validate XSD files and check dependencies")
     public ResponseEntity<List<?>> validateXsdFiles(@RequestParam("files") MultipartFile[] files,
                                                    @CurrentUser User currentUser) {
@@ -98,7 +98,7 @@ public class MessageStructureController {
     }
     
     @PostMapping(value = "/import-xsd", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
+    @PreAuthorize("hasAnyRole('ADMINISTRATOR', 'DEVELOPER', 'INTEGRATOR')")
     @Operation(summary = "Import XSD files as message structures")
     public ResponseEntity<List<?>> importXsdFiles(@RequestParam("files") MultipartFile[] files,
                                                 @CurrentUser User currentUser) {
