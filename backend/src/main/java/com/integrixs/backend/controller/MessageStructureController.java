@@ -94,14 +94,14 @@ public class MessageStructureController {
     @PostMapping(value = "/validate-xsd", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasAnyRole('ADMINISTRATOR', 'DEVELOPER', 'INTEGRATOR')")
     @Operation(summary = "Validate XSD files and check dependencies")
-    public ResponseEntity<List<?>> validateXsdFiles(@RequestParam("files") MultipartFile[] files,
+    public ResponseEntity<List<?>> validateXsdFiles(@RequestPart("files") List<MultipartFile> files,
                                                    @CurrentUser User currentUser) {
-        log.info("Validating {} XSD files", files.length);
+        log.info("Validating {} XSD files", files.size());
         for (MultipartFile file : files) {
             log.info("  - File: {}, Size: {} bytes", file.getOriginalFilename(), file.getSize());
         }
         try {
-            List<?> results = messageStructureService.validateXsdFiles(Arrays.asList(files));
+            List<?> results = messageStructureService.validateXsdFiles(files);
             log.info("Validation completed with {} results", results.size());
             return ResponseEntity.ok(results);
         } catch (Exception e) {
@@ -113,10 +113,10 @@ public class MessageStructureController {
     @PostMapping(value = "/import-xsd", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasAnyRole('ADMINISTRATOR', 'DEVELOPER', 'INTEGRATOR')")
     @Operation(summary = "Import XSD files as message structures")
-    public ResponseEntity<List<?>> importXsdFiles(@RequestParam("files") MultipartFile[] files,
+    public ResponseEntity<List<?>> importXsdFiles(@RequestPart("files") List<MultipartFile> files,
                                                 @CurrentUser User currentUser) {
-        log.info("Importing {} XSD files", files.length);
-        return ResponseEntity.ok(messageStructureService.importXsdFiles(Arrays.asList(files), currentUser));
+        log.info("Importing {} XSD files", files.size());
+        return ResponseEntity.ok(messageStructureService.importXsdFiles(files, currentUser));
     }
     
     @PostMapping(value = "/test-multipart", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
