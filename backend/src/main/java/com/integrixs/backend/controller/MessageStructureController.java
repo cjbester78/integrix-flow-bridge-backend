@@ -94,7 +94,17 @@ public class MessageStructureController {
     public ResponseEntity<List<?>> validateXsdFiles(@RequestParam("files") MultipartFile[] files,
                                                    @CurrentUser User currentUser) {
         log.info("Validating {} XSD files", files.length);
-        return ResponseEntity.ok(messageStructureService.validateXsdFiles(Arrays.asList(files)));
+        for (MultipartFile file : files) {
+            log.info("  - File: {}, Size: {} bytes", file.getOriginalFilename(), file.getSize());
+        }
+        try {
+            List<?> results = messageStructureService.validateXsdFiles(Arrays.asList(files));
+            log.info("Validation completed with {} results", results.size());
+            return ResponseEntity.ok(results);
+        } catch (Exception e) {
+            log.error("Validation failed", e);
+            throw e;
+        }
     }
     
     @PostMapping(value = "/import-xsd", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)

@@ -264,16 +264,27 @@ public class MessageStructureService {
                 
                 result.setDependencies(dependencies);
                 
-                // Check which dependencies are resolved in the current batch
+                // Check which dependencies are resolved in the current batch or already exist
                 for (String dep : dependencies) {
                     String depFileName = dep.substring(dep.lastIndexOf('/') + 1);
+                    String depStructureName = depFileName.replace(".xsd", "");
+                    
                     if (fileContents.containsKey(depFileName)) {
+                        // Dependency is in current batch
+                        result.getResolvedDependencies().add(dep);
+                    } else if (messageStructureRepository.existsByNameAndIsActiveTrue(depStructureName)) {
+                        // Dependency already exists in database
                         result.getResolvedDependencies().add(dep);
                     } else {
+                        // Dependency is truly missing
                         result.getMissingDependencies().add(dep);
-                        result.setValid(false);
-                        result.getErrors().add("Missing dependency: " + dep);
                     }
+                }
+                
+                // Only mark as invalid if there are truly missing dependencies
+                if (!result.getMissingDependencies().isEmpty()) {
+                    result.setValid(false);
+                    result.getErrors().add("Missing dependencies not found in batch or database: " + String.join(", ", result.getMissingDependencies()));
                 }
                 
             } catch (Exception e) {
@@ -317,17 +328,21 @@ public class MessageStructureService {
                     continue;
                 }
                 
-                // Check if all dependencies are imported
-                boolean allDepsImported = true;
-                for (String dep : validation.getResolvedDependencies()) {
+                // Check if all dependencies are imported or already exist
+                boolean allDepsAvailable = true;
+                for (String dep : validation.getDependencies()) {
                     String depFileName = dep.substring(dep.lastIndexOf('/') + 1);
-                    if (!imported.contains(depFileName)) {
-                        allDepsImported = false;
+                    String depStructureName = depFileName.replace(".xsd", "");
+                    
+                    // Check if dependency is already imported in this batch or exists in DB
+                    if (!imported.contains(depFileName) && 
+                        !messageStructureRepository.existsByNameAndIsActiveTrue(depStructureName)) {
+                        allDepsAvailable = false;
                         break;
                     }
                 }
                 
-                if (!allDepsImported) {
+                if (!allDepsAvailable) {
                     continue;
                 }
                 
