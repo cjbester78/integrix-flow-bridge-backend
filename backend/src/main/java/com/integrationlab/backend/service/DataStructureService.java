@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.integrationlab.backend.exception.BusinessException;
+import com.integrationlab.backend.util.XsdDependencyResolver;
 import com.integrationlab.data.model.BusinessComponent;
 import com.integrationlab.data.model.DataStructure;
 import com.integrationlab.data.model.User;
@@ -19,6 +20,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -36,15 +38,18 @@ public class DataStructureService {
     private final UserRepository userRepository;
     private final EnvironmentPermissionService environmentPermissionService;
     private final ObjectMapper objectMapper;
+    private final XsdDependencyResolver xsdDependencyResolver;
     
     public DataStructureService(DataStructureRepository dataStructureRepository,
                                BusinessComponentRepository businessComponentRepository,
                                UserRepository userRepository,
-                               EnvironmentPermissionService environmentPermissionService) {
+                               EnvironmentPermissionService environmentPermissionService,
+                               XsdDependencyResolver xsdDependencyResolver) {
         this.dataStructureRepository = dataStructureRepository;
         this.businessComponentRepository = businessComponentRepository;
         this.userRepository = userRepository;
         this.environmentPermissionService = environmentPermissionService;
+        this.xsdDependencyResolver = xsdDependencyResolver;
         
         // Configure ObjectMapper to preserve field order using LinkedHashMap
         this.objectMapper = new ObjectMapper();
@@ -144,6 +149,20 @@ public class DataStructureService {
                 originalFormat = deriveFormatFromType(type);
             }
             
+            // Extract dependencies for XSD/WSDL types
+            XsdDependencyResolver.DependencyMetadata dependencyMetadata = null;
+            if ("xsd".equalsIgnoreCase(type) && originalContent != null) {
+                dependencyMetadata = xsdDependencyResolver.extractDependencies(originalContent);
+                xsdDependencyResolver.resolveDependencies(dependencyMetadata, null);
+                log.info("Extracted {} imports and {} includes from XSD", 
+                    dependencyMetadata.getImports().size(), 
+                    dependencyMetadata.getIncludes().size());
+            } else if ("wsdl".equalsIgnoreCase(type) && originalContent != null) {
+                dependencyMetadata = xsdDependencyResolver.extractWsdlDependencies(originalContent);
+                xsdDependencyResolver.resolveDependencies(dependencyMetadata, null);
+                log.info("Extracted {} imports from WSDL", dependencyMetadata.getImports().size());
+            }
+            
             // Get the structure object
             Object structureObj = structureData.get("structure");
             log.info("Structure type: {}, structureObj class: {}", type, structureObj != null ? structureObj.getClass().getName() : "null");
@@ -169,6 +188,76 @@ public class DataStructureService {
                     type, originalContent != null, structureObj instanceof Map);
             }
             
+            // Prepare metadata with dependencies
+            Map<String, Object> metadata = structureData.get("metadata") != null ? 
+                (Map<String, Object>) structureData.get("metadata") : new HashMap<>();
+            
+            // Add dependency information to metadata if present
+            if (dependencyMetadata != null) {
+                metadata.put("dependencies", dependencyMetadata);
+            }
+            
+            // Process resolved dependency files from frontend
+            List<Map<String, Object>> resolvedFiles = null;
+            if (metadata.containsKey("resolvedFiles")) {
+                resolvedFiles = (List<Map<String, Object>>) metadata.get("resolvedFiles");
+                
+                // Save each dependency file as a separate data structure
+                List<String> savedDependencyIds = new ArrayList<>();
+                for (Map<String, Object> depFile : resolvedFiles) {
+                    String depName = (String) depFile.get("name");
+                    String depType = (String) depFile.get("type");
+                    String depContent = (String) depFile.get("content");
+                    
+                    // Skip if this is the primary file
+                    if (depName.equals(name) || (depContent != null && depContent.equals(originalContent))) {
+                        continue;
+                    }
+                    
+                    // Check if a structure with this name already exists
+                    Optional<DataStructure> existing = dataStructureRepository.findByName(depName);
+                    if (!existing.isPresent()) {
+                        // Create a new data structure for the dependency
+                        Map<String, Object> depStructureData = new HashMap<>();
+                        depStructureData.put("name", depName);
+                        depStructureData.put("type", depType);
+                        depStructureData.put("description", "Dependency of " + name);
+                        depStructureData.put("usage", structureData.get("usage"));
+                        depStructureData.put("originalContent", depContent);
+                        depStructureData.put("originalFormat", "xml");
+                        depStructureData.put("businessComponentId", structureData.get("businessComponentId"));
+                        
+                        // Parse structure from content
+                        Object depStructureObj = null;
+                        if ("xsd".equalsIgnoreCase(depType)) {
+                            depStructureObj = Map.of("message", "XSD dependency");
+                        } else if ("wsdl".equalsIgnoreCase(depType)) {
+                            depStructureObj = Map.of("message", "WSDL dependency");
+                        }
+                        depStructureData.put("structure", depStructureObj);
+                        
+                        try {
+                            DataStructure depStructure = createDataStructure(depStructureData, userId);
+                            savedDependencyIds.add(depStructure.getId());
+                            log.info("Saved dependency structure: {} with ID: {}", depName, depStructure.getId());
+                        } catch (Exception e) {
+                            log.warn("Failed to save dependency structure {}: {}", depName, e.getMessage());
+                        }
+                    } else {
+                        savedDependencyIds.add(existing.get().getId());
+                        log.info("Dependency structure already exists: {} with ID: {}", depName, existing.get().getId());
+                    }
+                }
+                
+                // Update metadata with saved dependency IDs
+                metadata.put("savedDependencyIds", savedDependencyIds);
+                
+                // Update dependency metadata with resolved structure IDs
+                if (dependencyMetadata != null) {
+                    xsdDependencyResolver.resolveDependencies(dependencyMetadata, null);
+                }
+            }
+            
             // Build the data structure
             DataStructure dataStructure = DataStructure.builder()
                 .id(UUID.randomUUID().toString())
@@ -180,7 +269,7 @@ public class DataStructureService {
                 .originalContent(originalContent)
                 .originalFormat(originalFormat)
                 .namespace(convertToJson(structureData.get("namespace")))
-                .metadata(convertToJson(structureData.get("metadata")))
+                .metadata(convertToJson(metadata))
                 .tags(convertToJson(structureData.get("tags")))
                 .version(1)
                 .isActive(true)
@@ -538,5 +627,110 @@ public class DataStructureService {
             case "custom" -> "custom";
             default -> null;
         };
+    }
+    
+    /**
+     * Get resolved XSD/WSDL content with dependencies
+     */
+    @Transactional(readOnly = true)
+    public String getResolvedContent(String id) {
+        DataStructure dataStructure = getDataStructure(id);
+        
+        if (dataStructure.getOriginalContent() == null) {
+            return null;
+        }
+        
+        // For XSD/WSDL types, return content with resolved dependencies
+        if ("xsd".equalsIgnoreCase(dataStructure.getType()) || 
+            "wsdl".equalsIgnoreCase(dataStructure.getType())) {
+            
+            // Parse metadata to get dependency information
+            if (dataStructure.getMetadata() != null) {
+                try {
+                    Map<String, Object> metadata = objectMapper.readValue(
+                        dataStructure.getMetadata(), 
+                        new TypeReference<Map<String, Object>>() {}
+                    );
+                    
+                    if (metadata.containsKey("dependencies")) {
+                        // Dependencies exist, return content with custom entity resolver info
+                        // The actual resolution will happen during parsing
+                        return dataStructure.getOriginalContent();
+                    }
+                } catch (Exception e) {
+                    log.warn("Error parsing metadata for structure {}: {}", id, e.getMessage());
+                }
+            }
+        }
+        
+        return dataStructure.getOriginalContent();
+    }
+    
+    /**
+     * Check and report missing dependencies for a data structure
+     */
+    @Transactional(readOnly = true)
+    public Map<String, Object> checkDependencies(String id) {
+        DataStructure dataStructure = getDataStructure(id);
+        Map<String, Object> result = new HashMap<>();
+        result.put("id", id);
+        result.put("name", dataStructure.getName());
+        result.put("hasDependencies", false);
+        result.put("missingDependencies", new ArrayList<>());
+        result.put("resolvedDependencies", new ArrayList<>());
+        
+        if (dataStructure.getMetadata() != null) {
+            try {
+                Map<String, Object> metadata = objectMapper.readValue(
+                    dataStructure.getMetadata(), 
+                    new TypeReference<Map<String, Object>>() {}
+                );
+                
+                if (metadata.containsKey("dependencies")) {
+                    result.put("hasDependencies", true);
+                    
+                    XsdDependencyResolver.DependencyMetadata deps = 
+                        objectMapper.convertValue(
+                            metadata.get("dependencies"), 
+                            XsdDependencyResolver.DependencyMetadata.class
+                        );
+                    
+                    // Check imports
+                    for (XsdDependencyResolver.ImportInfo importInfo : deps.getImports()) {
+                        Map<String, String> depInfo = new HashMap<>();
+                        depInfo.put("namespace", importInfo.getNamespace());
+                        depInfo.put("schemaLocation", importInfo.getSchemaLocation());
+                        depInfo.put("type", "import");
+                        
+                        if (importInfo.getDataStructureId() != null) {
+                            depInfo.put("dataStructureId", importInfo.getDataStructureId());
+                            depInfo.put("dataStructureName", importInfo.getDataStructureName());
+                            ((List<Map<String, String>>) result.get("resolvedDependencies")).add(depInfo);
+                        } else {
+                            ((List<Map<String, String>>) result.get("missingDependencies")).add(depInfo);
+                        }
+                    }
+                    
+                    // Check includes
+                    for (XsdDependencyResolver.ImportInfo includeInfo : deps.getIncludes()) {
+                        Map<String, String> depInfo = new HashMap<>();
+                        depInfo.put("schemaLocation", includeInfo.getSchemaLocation());
+                        depInfo.put("type", "include");
+                        
+                        if (includeInfo.getDataStructureId() != null) {
+                            depInfo.put("dataStructureId", includeInfo.getDataStructureId());
+                            depInfo.put("dataStructureName", includeInfo.getDataStructureName());
+                            ((List<Map<String, String>>) result.get("resolvedDependencies")).add(depInfo);
+                        } else {
+                            ((List<Map<String, String>>) result.get("missingDependencies")).add(depInfo);
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                log.error("Error checking dependencies for structure {}: {}", id, e.getMessage());
+            }
+        }
+        
+        return result;
     }
 }

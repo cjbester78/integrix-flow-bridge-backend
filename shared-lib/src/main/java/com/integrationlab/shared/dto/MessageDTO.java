@@ -24,6 +24,7 @@ public class MessageDTO {
     private String processingTime; // in milliseconds, e.g. "250ms"
     private String size; // in bytes, e.g. "1024 bytes"
     private String businessComponentId;
+    private String correlationId;
     private List<MessageLogDTO> logs;
     
     @Data

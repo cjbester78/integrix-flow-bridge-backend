@@ -47,7 +47,7 @@ public class IntegrationEndpointService {
     private DataStructureRepository dataStructureRepository;
     
     @Autowired
-    private FlowProcessingService flowProcessingService;
+    private FlowExecutionSyncService flowExecutionSyncService;
     
     @Autowired
     private ObjectMapper objectMapper;
@@ -78,6 +78,26 @@ public class IntegrationEndpointService {
             "Endpoint: /" + flowPath + "\nRequest size: " + soapRequest.length() + " bytes",
             com.integrationlab.data.model.SystemLog.LogLevel.INFO,
             correlationId);
+            
+        // Log the incoming SOAP request payload
+        logger.info("DEBUG: About to log source adapter payload - correlationId: {}, adapter: {}, payloadSize: {}", 
+            correlationId, sourceAdapter.getName(), soapRequest.length());
+        try {
+            logger.info("DEBUG: Source adapter details - ID: {}, Type: {}, Mode: {}", 
+                sourceAdapter.getId(), sourceAdapter.getType(), sourceAdapter.getMode());
+            
+            // Clone adapter to avoid lazy loading issues
+            CommunicationAdapter clonedAdapter = new CommunicationAdapter();
+            clonedAdapter.setId(sourceAdapter.getId());
+            clonedAdapter.setName(sourceAdapter.getName());
+            clonedAdapter.setType(sourceAdapter.getType());
+            clonedAdapter.setMode(sourceAdapter.getMode());
+            
+            messageService.logAdapterPayload(correlationId, clonedAdapter, "REQUEST", soapRequest, "INBOUND");
+            logger.info("DEBUG: Finished logging source adapter payload");
+        } catch (Exception e) {
+            logger.error("DEBUG: Exception caught when logging source adapter payload: ", e);
+        }
         
         // Check if target adapter is also SOAP
         CommunicationAdapter targetAdapter = adapterRepository.findById(flow.getTargetAdapterId())
@@ -98,7 +118,8 @@ public class IntegrationEndpointService {
         // Process through the flow with correlation ID
         logger.info("Processing message through flow: {} with correlation ID: {}", flow.getName(), correlationId);
         headers.put("correlationId", correlationId);
-        String responseBody = flowProcessingService.processMessage(flow, messageToProcess, headers, "SOAP");
+        headers.put("isEndpointFlow", "true"); // Flag to prevent duplicate response logging
+        String responseBody = flowExecutionSyncService.processMessage(flow, messageToProcess, headers, "SOAP");
         logger.debug("Received response body: {}", responseBody);
         
         // Check if response is already a SOAP envelope
@@ -111,6 +132,20 @@ public class IntegrationEndpointService {
             soapResponse = wrapInSoapEnvelope(responseBody);
         }
         logger.debug("Final SOAP response prepared");
+        
+        // Log the outgoing SOAP response payload for the SOURCE adapter (it's sending the response back)
+        logger.info("DEBUG: About to log source adapter response - correlationId: {}, adapter: {}, payloadSize: {}", 
+            correlationId, sourceAdapter.getName(), soapResponse.length());
+        
+        // Clone adapter to avoid lazy loading issues
+        CommunicationAdapter clonedSourceAdapter = new CommunicationAdapter();
+        clonedSourceAdapter.setId(sourceAdapter.getId());
+        clonedSourceAdapter.setName(sourceAdapter.getName());
+        clonedSourceAdapter.setType(sourceAdapter.getType());
+        clonedSourceAdapter.setMode(sourceAdapter.getMode());
+        
+        messageService.logAdapterPayload(correlationId, clonedSourceAdapter, "RESPONSE", soapResponse, "INBOUND");
+        logger.info("DEBUG: Finished logging source adapter response");
         
         return soapResponse;
     }
@@ -162,7 +197,7 @@ public class IntegrationEndpointService {
         IntegrationFlow flow = findDeployedFlow(flowPath);
         
         // Process through the flow
-        String response = flowProcessingService.processMessage(flow, requestBody, headers, "REST");
+        String response = flowExecutionSyncService.processMessage(flow, requestBody, headers, "REST");
         
         // Parse response as JSON if possible
         try {

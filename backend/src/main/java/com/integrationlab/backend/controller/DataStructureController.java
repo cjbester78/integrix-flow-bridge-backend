@@ -140,6 +140,45 @@ public class DataStructureController {
         }
     }
     
+    @GetMapping("/{id}/dependencies")
+    @PreAuthorize("hasAnyRole('ADMINISTRATOR', 'DEVELOPER', 'INTEGRATOR', 'VIEWER')")
+    public ResponseEntity<?> checkDependencies(@PathVariable String id) {
+        try {
+            log.info("Checking dependencies for data structure: {}", id);
+            
+            Map<String, Object> dependencies = dataStructureService.checkDependencies(id);
+            return ResponseEntity.ok(dependencies);
+            
+        } catch (Exception e) {
+            log.error("Error checking dependencies", e);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(Map.of("error", e.getMessage()));
+        }
+    }
+    
+    @GetMapping("/{id}/resolved-content")
+    @PreAuthorize("hasAnyRole('ADMINISTRATOR', 'DEVELOPER', 'INTEGRATOR', 'VIEWER')")
+    public ResponseEntity<?> getResolvedContent(@PathVariable String id) {
+        try {
+            log.info("Getting resolved content for data structure: {}", id);
+            
+            String resolvedContent = dataStructureService.getResolvedContent(id);
+            if (resolvedContent == null) {
+                return ResponseEntity.notFound().build();
+            }
+            
+            return ResponseEntity.ok(Map.of(
+                "id", id,
+                "content", resolvedContent
+            ));
+            
+        } catch (Exception e) {
+            log.error("Error getting resolved content", e);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(Map.of("error", e.getMessage()));
+        }
+    }
+    
     @PostMapping("/{id}/convert-to-xml")
     @PreAuthorize("hasAnyRole('ADMINISTRATOR', 'DEVELOPER', 'INTEGRATOR', 'VIEWER')")
     public ResponseEntity<?> convertStructureToXml(

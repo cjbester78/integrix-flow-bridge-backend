@@ -6,6 +6,54 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Integrix Flow Bridge is a comprehensive integration middleware platform built with Spring Boot backend and React/TypeScript frontend. It provides visual flow composition, adapter management, field mapping, and orchestration capabilities for enterprise integration scenarios.
 
+## CRITICAL: Instruction Verification Process
+
+**CRITICAL**: After every fix do a git commit.
+**CRITICAL**: Frontend has it's own repository.
+**CRITICAL**: Backend has it's own repository.
+**Critical**: Run below bash after each fix.
+```bash
+# Full deployment (frontend + backend)
+./deploy.sh
+```
+**IMPORTANT**: Before implementing any user request, follow this process:
+
+1. **Read** the user's instruction carefully
+2. **Interpret** and write out your understanding of what they're asking
+3. **Display** your interpretation on screen with:
+   - What you think they want
+   - How you plan to implement it
+   - Any assumptions you're making
+4. **Wait** for user confirmation that you understood correctly
+5. **Only proceed** with implementation after confirmation
+
+### Example Format:
+```
+USER REQUEST: [User's actual request]
+
+MY UNDERSTANDING:
+- [Point 1 of what I think they want]
+- [Point 2 of what I think they want]
+- [Any assumptions I'm making]
+
+PLANNED APPROACH:
+- [Step 1 of how I'll implement]
+- [Step 2 of how I'll implement]
+
+Please confirm if this understanding is correct before I proceed.
+```
+
+This prevents misunderstandings, wasted work, and ensures alignment between user expectations and implementation.
+
+## Standard Workflow
+1. First think through the problem, read the codebase for relevant files, and write a plan to todo.md.
+2. The plan should have a list of todo items that you can check off as you complete them
+3. Before you begin working, check in with me and I will verify the plan.
+4. Then, begin working on the todo items, marking them as complete as you go.
+5. Please every step of the way just give me a high level explanation of what changes you made
+6. Make every task and code change you do as simple as possible. We want to avoid making any massive or complex changes. Every change should impact as little code as possible. Everything is about simplicity.
+7. Finally, add a review section to the todo.md file with a summary of the changes you made and any other relevant information.
+
 **CRITICAL**: Do what has been asked; nothing more, nothing less.
 **CRITICAL**: NEVER create files unless they're absolutely necessary for achieving your goal.
 **CRITICAL**: ALWAYS prefer editing an existing file to creating a new one.
@@ -153,12 +201,6 @@ cd frontend-ui && npm install
 
 # Lint code
 npm run lint
-
-# Build for production
-npm run build
-
-# Build and copy to backend
-npm run build-and-copy
 ```
 
 ## API Structure
@@ -249,42 +291,3 @@ See `PRODUCTION_DEPLOYMENT.md` for detailed production deployment instructions i
 - Monitoring and health checks
 - Performance tuning recommendations
 
-## CRITICAL: Instruction Verification Process
-
-**IMPORTANT**: Before implementing any user request, follow this process:
-
-1. **Read** the user's instruction carefully
-2. **Interpret** and write out your understanding of what they're asking
-3. **Display** your interpretation on screen with:
-   - What you think they want
-   - How you plan to implement it
-   - Any assumptions you're making
-4. **Wait** for user confirmation that you understood correctly
-5. **Only proceed** with implementation after confirmation
-
-### Example Format:
-```
-USER REQUEST: [User's actual request]
-
-MY UNDERSTANDING:
-- [Point 1 of what I think they want]
-- [Point 2 of what I think they want]
-- [Any assumptions I'm making]
-
-PLANNED APPROACH:
-- [Step 1 of how I'll implement]
-- [Step 2 of how I'll implement]
-
-Please confirm if this understanding is correct before I proceed.
-```
-
-This prevents misunderstandings, wasted work, and ensures alignment between user expectations and implementation.
-
-## Standard Workflow
-1. First think through the problem, read the codebase for relevant files, and write a plan to todo.md.
-2. The plan should have a list of todo items that you can check off as you complete them
-3. Before you begin working, check in with me and I will verify the plan.
-4. Then, begin working on the todo items, marking them as complete as you go.
-5. Please every step of the way just give me a high level explanation of what changes you made
-6. Make every task and code change you do as simple as possible. We want to avoid making any massive or complex changes. Every change should impact as little code as possible. Everything is about simplicity.
-7. Finally, add a review section to the todo.md file with a summary of the changes you made and any other relevant information.

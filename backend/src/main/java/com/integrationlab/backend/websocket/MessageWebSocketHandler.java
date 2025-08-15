@@ -40,8 +40,8 @@ public class MessageWebSocketHandler extends TextWebSocketHandler {
         logger.info("WebSocket connection established: {}", session.getId());
         sessions.put(session.getId(), session);
         
-        // Send initial stats
-        sendMessageStats(session);
+        // Don't send initial stats - let the client request with filters
+        // sendMessageStats(session);
     }
     
     @Override
@@ -75,7 +75,9 @@ public class MessageWebSocketHandler extends TextWebSocketHandler {
     /**
      * Broadcast updates to all connected sessions
      */
-    @Scheduled(fixedDelay = 5000) // Every 5 seconds
+    // Disabled scheduled updates as they override filtered stats in the UI
+    // TODO: Implement filtered stats based on client's current filters
+    // @Scheduled(fixedDelay = 5000) // Every 5 seconds
     public void broadcastUpdates() {
         if (sessions.isEmpty()) {
             return;

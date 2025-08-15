@@ -91,7 +91,7 @@ public class MessageController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dateFrom,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dateTo) {
         
-        logger.debug("Getting message statistics");
+        logger.debug("Getting message statistics with dateFrom: {}, dateTo: {}", dateFrom, dateTo);
         
         Map<String, Object> filters = new HashMap<>();
         if (status != null && !status.isEmpty()) filters.put("status", status);
@@ -114,5 +114,17 @@ public class MessageController {
         logger.info("Reprocessing message with id: {}", id);
         MessageDTO message = messageService.reprocessMessage(id);
         return ResponseEntity.ok(message);
+    }
+    
+    /**
+     * Get adapter payloads by correlation ID
+     */
+    @GetMapping("/payloads/{correlationId}")
+    @PreAuthorize("hasAnyRole('ADMINISTRATOR', 'DEVELOPER', 'VIEWER')")
+    public ResponseEntity<List<?>> getAdapterPayloads(@PathVariable String correlationId) {
+        logger.info("Getting adapter payloads for correlation ID: {}", correlationId);
+        var payloads = messageService.getAdapterPayloads(correlationId);
+        logger.info("Found {} payloads for correlation ID: {}", payloads.size(), correlationId);
+        return ResponseEntity.ok(payloads);
     }
 }

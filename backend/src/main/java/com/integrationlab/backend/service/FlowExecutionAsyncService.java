@@ -7,7 +7,7 @@ import com.integrationlab.data.model.FieldMapping;
 import com.integrationlab.data.model.FlowTransformation;
 import com.integrationlab.data.model.IntegrationFlow;
 import com.integrationlab.data.model.MappingMode;
-import com.integrationlab.data.model.ReusableFunction;
+import com.integrationlab.data.model.TransformationCustomFunction;
 import com.integrationlab.data.repository.FieldMappingRepository;
 import com.integrationlab.data.repository.FlowTransformationRepository;
 import com.integrationlab.data.repository.IntegrationFlowRepository;
@@ -33,10 +33,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+/**
+ * Service that handles asynchronous flow execution for scheduled jobs and batch processing.
+ * Used for ETL operations, file transfers, and data synchronization where source adapters 
+ * pull data and target adapters push data without requiring immediate response.
+ */
 @Service
-public class FlowExecutionService {
+public class FlowExecutionAsyncService {
     
-    private static final Logger logger = LoggerFactory.getLogger(FlowExecutionService.class);
+    private static final Logger logger = LoggerFactory.getLogger(FlowExecutionAsyncService.class);
 
     private final IntegrationFlowRepository flowRepository;
     private final FlowTransformationRepository transformationRepository;
@@ -47,12 +52,13 @@ public class FlowExecutionService {
     private final FilterTransformationService filterTransformationService;
     private final EnrichmentTransformationService enrichmentTransformationService;
     private final ValidationTransformationService validationTransformationService;
-    private final ReusableJavaFunctionService reusableFunctionService;
+    private final DevelopmentFunctionService developmentFunctionService;
     private final FormatConversionService formatConversionService;
     private final DirectFileTransferService directFileTransferService;
+    private final MessageService messageService;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    public FlowExecutionService(
+    public FlowExecutionAsyncService(
             IntegrationFlowRepository flowRepository,
             FlowTransformationRepository transformationRepository,
             FieldMappingRepository fieldMappingRepository,
@@ -62,9 +68,10 @@ public class FlowExecutionService {
             FilterTransformationService filterTransformationService,
             EnrichmentTransformationService enrichmentTransformationService,
             ValidationTransformationService validationTransformationService,
-            ReusableJavaFunctionService reusableFunctionService,
+            DevelopmentFunctionService developmentFunctionService,
             FormatConversionService formatConversionService,
-            DirectFileTransferService directFileTransferService
+            DirectFileTransferService directFileTransferService,
+            MessageService messageService
     ) {
         this.flowRepository = flowRepository;
         this.transformationRepository = transformationRepository;
@@ -75,14 +82,19 @@ public class FlowExecutionService {
         this.filterTransformationService = filterTransformationService;
         this.enrichmentTransformationService = enrichmentTransformationService;
         this.validationTransformationService = validationTransformationService;
-        this.reusableFunctionService = reusableFunctionService;
+        this.developmentFunctionService = developmentFunctionService;
         this.formatConversionService = formatConversionService;
         this.directFileTransferService = directFileTransferService;
+        this.messageService = messageService;
     }
 
     public void executeFlow(String flowId) {
         IntegrationFlow flow = flowRepository.findById(flowId)
                 .orElseThrow(() -> new RuntimeException("Flow not found"));
+
+        // Create correlation ID for this flow execution
+        String correlationId = messageService.createMessage(flow, "Flow execution started", "ASYNC_FLOW");
+        logger.info("Starting flow execution with correlation ID: {}", correlationId);
 
         try {
             // Get adapters
@@ -90,6 +102,16 @@ public class FlowExecutionService {
                     .orElseThrow(() -> new RuntimeException("Source adapter not found"));
             CommunicationAdapter targetAdapter = adapterRepository.findById(flow.getTargetAdapterId())
                     .orElseThrow(() -> new RuntimeException("Target adapter not found"));
+
+            // Validate adapters are active
+            if (!sourceAdapter.isActive()) {
+                throw new RuntimeException("Cannot execute flow: Source adapter '" + sourceAdapter.getName() + 
+                    "' is in a stopped status. Please activate the adapter before using it in a flow.");
+            }
+            if (!targetAdapter.isActive()) {
+                throw new RuntimeException("Cannot execute flow: Target adapter '" + targetAdapter.getName() + 
+                    "' is in a stopped status. Please activate the adapter before using it in a flow.");
+            }
 
             // Check if we should skip XML conversion (direct passthrough)
             if (flow.isSkipXmlConversion()) {
@@ -105,6 +127,11 @@ public class FlowExecutionService {
             // Step 1: Fetch source data
             Object rawData = adapterExecutor.fetchDataAsObject(flow.getSourceAdapterId());
             logger.info("Fetched data from source adapter: {}", sourceAdapter.getName());
+            
+            // Log source adapter payload (what the adapter received FROM external system)
+            String rawDataStr = rawData instanceof byte[] ? 
+                new String((byte[]) rawData) : rawData.toString();
+            messageService.logAdapterPayload(correlationId, sourceAdapter, "REQUEST", rawDataStr, "INBOUND");
 
             // Check if the data is binary and should skip XML conversion
             if (directFileTransferService.isBinaryFile(rawData)) {
@@ -149,12 +176,17 @@ public class FlowExecutionService {
             }
 
             // Step 3: Send to target adapter
-            adapterExecutor.sendData(flow.getTargetAdapterId(), processedData);
+            Map<String, Object> context = new HashMap<>();
+            context.put("correlationId", correlationId);
+            context.put("flowId", flow.getId());
+            
+            adapterExecutor.sendData(flow.getTargetAdapterId(), processedData, context);
             logger.info("Sent data to target adapter: {}", targetAdapter.getName());
+            
+            // Log target adapter payload (what the adapter will send TO external system)
+            messageService.logAdapterPayload(correlationId, targetAdapter, "REQUEST", processedData, "OUTBOUND");
 
             // Step 4: Log success
-            String rawDataStr = rawData instanceof byte[] ? 
-                new String((byte[]) rawData) : rawData.toString();
             logService.logFlowExecutionSuccess(flow, rawDataStr, processedData);
 
         } catch (XmlConversionException e) {
@@ -268,7 +300,7 @@ public class FlowExecutionService {
             switch (t.getType()) {
                 case FIELD_MAPPING -> {
                     List<FieldMapping> mappings = fieldMappingRepository.findByTransformationId(t.getId());
-                    currentData = FieldMapper.apply(currentData, mappings, reusableFunctionService);
+                    currentData = FieldMapper.apply(currentData, mappings, developmentFunctionService);
                 }
                 case CUSTOM_FUNCTION -> {
                     currentData = applyCustomFunctionTransformation(t, currentData);
@@ -301,12 +333,13 @@ public class FlowExecutionService {
                 throw new RuntimeException("Custom function name/body is missing");
             }
 
-            Optional<ReusableFunction> reusableFuncOpt = reusableFunctionService.findByName(functionBody);
-            if (reusableFuncOpt.isEmpty()) {
-                reusableFuncOpt = reusableFunctionService.findById(functionBody);
-            }
-            if (reusableFuncOpt.isPresent()) {
-                functionBody = reusableFuncOpt.get().getFunctionBody();
+            // Try to find the function in transformation_custom_functions table
+            try {
+                TransformationCustomFunction customFunction = developmentFunctionService.getBuiltInFunctionByName(functionBody);
+                functionBody = customFunction.getFunctionBody();
+            } catch (Exception e) {
+                // Function not found in database, assume functionBody contains the actual code
+                logger.debug("Function '{}' not found in transformation_custom_functions, using as direct code", functionBody);
             }
 
             Object result = JavaFunctionRunner.run(functionBody, config.getSourceFields(), inputMap);

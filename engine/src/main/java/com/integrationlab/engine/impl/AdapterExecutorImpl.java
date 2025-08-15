@@ -17,6 +17,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.channels.WritableByteChannel;
 import java.util.Map;
+import java.util.HashMap;
 
 @Component
 /**
@@ -71,6 +72,11 @@ public class AdapterExecutorImpl implements AdapterExecutor {
 
     @Override
     public void sendData(String adapterId, String payload) {
+        sendData(adapterId, payload, new HashMap<>());
+    }
+    
+    @Override
+    public void sendData(String adapterId, String payload, Map<String, Object> context) {
         CommunicationAdapter adapter = getAdapter(adapterId);
         
         try {

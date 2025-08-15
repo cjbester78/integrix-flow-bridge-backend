@@ -3,6 +3,7 @@ package com.integrationlab.backend.service;
 import com.integrationlab.data.model.SystemSetting;
 import com.integrationlab.data.repository.SystemSettingRepository;
 import com.integrationlab.shared.dto.system.SystemSettingDTO;
+import com.integrationlab.shared.dto.GlobalRetrySettingsDTO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -139,9 +140,6 @@ public class SystemSettingService {
         createSettingIfNotExists("default_timeout", "30", 
                 "Default timeout in seconds for adapter connections", "integration");
         
-        createSettingIfNotExists("max_retry_attempts", "3", 
-                "Maximum number of retry attempts for failed operations", "integration");
-        
         createSettingIfNotExists("log_level", "INFO", 
                 "Application log level (DEBUG, INFO, WARN, ERROR)", "system");
         
@@ -197,5 +195,77 @@ public class SystemSettingService {
         entity.setCreatedBy(dto.getCreatedBy());
         entity.setUpdatedBy(dto.getUpdatedBy());
         return entity;
+    }
+
+    /**
+     * Get global retry settings
+     */
+    public GlobalRetrySettingsDTO getGlobalRetrySettings() {
+        logger.debug("Retrieving global retry settings");
+        
+        GlobalRetrySettingsDTO settings = new GlobalRetrySettingsDTO();
+        
+        // Get retry enabled setting
+        String retryEnabled = getSettingValue("global_retry_enabled", "true");
+        settings.setEnabled(Boolean.parseBoolean(retryEnabled));
+        
+        // Get max retries
+        String maxRetries = getSettingValue("global_max_retries", "3");
+        settings.setMaxRetries(Integer.parseInt(maxRetries));
+        
+        // Get retry interval
+        String retryInterval = getSettingValue("global_retry_interval", "30");
+        settings.setRetryInterval(Integer.parseInt(retryInterval));
+        
+        // Get retry interval unit
+        String retryIntervalUnit = getSettingValue("global_retry_interval_unit", "seconds");
+        settings.setRetryIntervalUnit(retryIntervalUnit);
+        
+        return settings;
+    }
+
+    /**
+     * Update global retry settings
+     */
+    public GlobalRetrySettingsDTO updateGlobalRetrySettings(GlobalRetrySettingsDTO dto) {
+        logger.info("Updating global retry settings");
+        
+        // Save each setting
+        saveSetting(createSettingDTO("global_retry_enabled", 
+            String.valueOf(dto.isEnabled()), 
+            "Enable/disable automatic retries globally", 
+            "retry"));
+            
+        saveSetting(createSettingDTO("global_max_retries", 
+            String.valueOf(dto.getMaxRetries()), 
+            "Maximum number of retry attempts", 
+            "retry"));
+            
+        saveSetting(createSettingDTO("global_retry_interval", 
+            String.valueOf(dto.getRetryInterval()), 
+            "Interval between retry attempts", 
+            "retry"));
+            
+        saveSetting(createSettingDTO("global_retry_interval_unit", 
+            dto.getRetryIntervalUnit(), 
+            "Unit for retry interval (seconds, minutes, hours)", 
+            "retry"));
+        
+        logger.info("Successfully updated global retry settings");
+        return getGlobalRetrySettings();
+    }
+
+    /**
+     * Helper method to create a SystemSettingDTO
+     */
+    private SystemSettingDTO createSettingDTO(String key, String value, String description, String category) {
+        SystemSettingDTO dto = new SystemSettingDTO();
+        dto.setSettingKey(key);
+        dto.setSettingValue(value);
+        dto.setDescription(description);
+        dto.setCategory(category);
+        dto.setDataType("STRING");
+        dto.setUpdatedBy("system");
+        return dto;
     }
 }

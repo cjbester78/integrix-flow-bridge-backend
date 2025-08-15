@@ -83,6 +83,8 @@ public class AuthController {
                 log.setUserId(user.getId());
                 log.setSource("AuthController");
                 log.setComponent("Login");
+                log.setDomainType("UserManagement");
+                log.setDomainReferenceId(user.getId());
                 log.setCreatedAt(LocalDateTime.now());
                 systemLogService.log(log);
             } catch (Exception logError) {
@@ -147,6 +149,8 @@ public class AuthController {
             log.setUserId(user.getId());
             log.setSource("AuthController");
             log.setComponent("Register");
+            log.setDomainType("UserManagement");
+            log.setDomainReferenceId(user.getId());
             log.setCreatedAt(LocalDateTime.now());
             systemLogService.log(log);
 
@@ -188,6 +192,8 @@ public class AuthController {
             log.setUserId(session.getUser().getId());
             log.setSource("AuthController");
             log.setComponent("Refresh");
+            log.setDomainType("UserManagement");
+            log.setDomainReferenceId(session.getUser().getId());
             log.setCreatedAt(LocalDateTime.now());
             systemLogService.log(log);
 
@@ -250,6 +256,8 @@ public class AuthController {
             log.setUserId(session.getUser().getId());
             log.setSource("AuthController");
             log.setComponent("Logout");
+            log.setDomainType("UserManagement");
+            log.setDomainReferenceId(session.getUser().getId());
             log.setCreatedAt(LocalDateTime.now());
             systemLogService.log(log);
 

@@ -1,6 +1,8 @@
 package com.integrationlab.backend.controller;
 
 import com.integrationlab.backend.service.EnvironmentPermissionService;
+import com.integrationlab.backend.service.SystemConfigurationService;
+import com.integrationlab.backend.security.SecurityUtils;
 import com.integrationlab.shared.enums.EnvironmentType;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -11,6 +13,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
+import java.util.List;
 
 /**
  * REST controller for system configuration.
@@ -24,6 +27,7 @@ import java.util.Map;
 public class SystemConfigController {
     
     private final EnvironmentPermissionService environmentPermissionService;
+    private final SystemConfigurationService systemConfigurationService;
     
     /**
      * Get current environment configuration
@@ -115,6 +119,67 @@ public class SystemConfigController {
     }
     
     /**
+     * Get all system configurations
+     */
+    @GetMapping("/settings")
+    @Operation(summary = "Get all system settings")
+    public ResponseEntity<Map<String, String>> getSystemSettings() {
+        log.debug("Getting all system settings");
+        return ResponseEntity.ok(systemConfigurationService.getAllConfigurations());
+    }
+    
+    /**
+     * Get system timezone
+     */
+    @GetMapping("/timezone")
+    @Operation(summary = "Get system timezone")
+    public ResponseEntity<Map<String, String>> getSystemTimezone() {
+        log.debug("Getting system timezone");
+        return ResponseEntity.ok(Map.of(
+            "timezone", systemConfigurationService.getSystemTimezone(),
+            "dateFormat", systemConfigurationService.getDateFormat(),
+            "timeFormat", systemConfigurationService.getTimeFormat(),
+            "dateTimeFormat", systemConfigurationService.getDateTimeFormat()
+        ));
+    }
+    
+    /**
+     * Update system timezone
+     */
+    @PutMapping("/timezone")
+    @PreAuthorize("hasRole('ADMINISTRATOR')")
+    @Operation(summary = "Update system timezone")
+    public ResponseEntity<Map<String, String>> updateSystemTimezone(
+            @RequestBody TimezoneUpdateRequest request) {
+        
+        log.info("Updating system timezone to: {}", request.getTimezone());
+        
+        try {
+            String username = SecurityUtils.getCurrentUsernameStatic();
+            systemConfigurationService.updateSystemTimezone(request.getTimezone(), username);
+            
+            return ResponseEntity.ok(Map.of(
+                "timezone", systemConfigurationService.getSystemTimezone(),
+                "message", "Timezone updated successfully"
+            ));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of(
+                "error", e.getMessage()
+            ));
+        }
+    }
+    
+    /**
+     * Get available timezones
+     */
+    @GetMapping("/timezones")
+    @Operation(summary = "Get available timezones")
+    public ResponseEntity<List<Map<String, String>>> getAvailableTimezones() {
+        log.debug("Getting available timezones");
+        return ResponseEntity.ok(systemConfigurationService.getAvailableTimezones());
+    }
+    
+    /**
      * Request DTO for environment update
      */
     public static class EnvironmentUpdateRequest {
@@ -126,6 +191,21 @@ public class SystemConfigController {
         
         public void setEnvironmentType(String environmentType) {
             this.environmentType = environmentType;
+        }
+    }
+    
+    /**
+     * Request DTO for timezone update
+     */
+    public static class TimezoneUpdateRequest {
+        private String timezone;
+        
+        public String getTimezone() {
+            return timezone;
+        }
+        
+        public void setTimezone(String timezone) {
+            this.timezone = timezone;
         }
     }
 }

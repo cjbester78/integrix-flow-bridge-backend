@@ -804,3 +804,60 @@ Implemented comprehensive UI/UX consistency improvements across the entire appli
 
 ## Result
 The application now has a cohesive, professional appearance with consistent patterns throughout. All UI elements follow the same design system, making the application more intuitive and easier to maintain.
+
+# TODO: Implement Domain Type Filtering for System Logs
+
+## Overview
+Add support for domainType filtering in system logs to allow different monitors (Message Monitor, Adapter Monitor, etc.) to filter logs relevant to their domain.
+
+## Domain Types to Support
+- UserManagement - Login, authentication, user CRUD operations
+- FlowEngine - Flow execution, deployment, validation
+- AdapterManagement - Adapter configuration, connection, execution
+- DataStructures - Schema validation, structure parsing
+- MessageProcessing - Message routing, transformation, delivery
+- OrchestrationEngine - Orchestration flow execution
+- FieldMapping - Mapping validation, transformation functions
+- SystemConfiguration - Environment settings, system config
+
+## Tasks
+
+### Backend Changes
+- [x] Update SystemLogController to accept domainType as query parameter
+- [x] Update SystemLogSpecifications to include domainType filtering
+- [x] Verify SystemLog entity has domainType field properly mapped
+- [x] Test filtering by domainType works correctly
+
+### Frontend Integration
+- [x] Verify frontend monitors can filter by domainType
+- [ ] Ensure error logging includes appropriate domainType
+
+### Testing
+- [x] Test each domain type filter returns appropriate logs
+- [x] Test combination of domainType with other filters (level, date range)
+- [x] Verify monitors show only relevant domain logs
+
+## Review
+
+### Implementation Summary
+Successfully implemented domainType filtering for system logs:
+
+1. **Backend Changes**
+   - Updated `SystemLogController` to accept `domainType` and `domainReferenceId` as query parameters
+   - Added `withDomainType` and `withDomainReferenceId` specifications to `SystemLogSpecifications`
+   - Confirmed SystemLog entity already has domainType and domainReferenceId fields properly mapped
+
+2. **API Support**
+   - Frontend can now call: `/api/logs/system?domainType=AdapterManagement`
+   - Can combine with other filters: `/api/logs/system?domainType=UserManagement&level=error`
+   - Can filter by specific entity: `/api/logs/system?domainType=AdapterManagement&domainReferenceId=ABC123`
+
+3. **Next Steps**
+   - Frontend monitors should be updated to include domainType when logging errors
+   - Each service should set appropriate domainType when creating system logs
+   - Consider creating a DomainType enum for consistency across the application
+
+### Technical Notes
+- The implementation uses JPA Specifications for dynamic query building
+- Null checks ensure optional parameters work correctly
+- Backend is now ready to support domain-based log filtering for all monitors

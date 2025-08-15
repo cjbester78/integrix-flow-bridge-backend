@@ -8,8 +8,11 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Service for managing environment-based permissions.
@@ -86,6 +89,13 @@ public class EnvironmentPermissionService {
         info.put("description", environmentConfig.getType().getDescription());
         info.put("enforceRestrictions", environmentConfig.isEnforceRestrictions());
         info.put("permissions", getPermissionSummary());
+        
+        // Add available environment types
+        List<String> availableTypes = Arrays.stream(EnvironmentType.values())
+                .map(EnvironmentType::name)
+                .collect(Collectors.toList());
+        info.put("availableTypes", availableTypes);
+        
         return info;
     }
     

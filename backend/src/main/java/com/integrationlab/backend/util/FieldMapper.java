@@ -3,8 +3,8 @@ package com.integrationlab.backend.util;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.integrationlab.data.model.FieldMapping;
-import com.integrationlab.data.model.ReusableFunction;
-import com.integrationlab.backend.service.ReusableJavaFunctionService;
+import com.integrationlab.data.model.TransformationCustomFunction;
+import com.integrationlab.backend.service.DevelopmentFunctionService;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -18,10 +18,10 @@ public class FieldMapper {
      *
      * @param inputJson JSON string input data
      * @param mappings List of FieldMapping objects
-     * @param reusableFunctionService Service to resolve reusable functions by name or id
+     * @param developmentFunctionService Service to resolve custom functions by name
      * @return JSON string of mapped output fields
      */
-    public static String apply(String inputJson, List<FieldMapping> mappings, ReusableJavaFunctionService reusableFunctionService) {
+    public static String apply(String inputJson, List<FieldMapping> mappings, DevelopmentFunctionService developmentFunctionService) {
         try {
             // Parse input JSON to a Map
             Map<String, Object> inputMap = objectMapper.readValue(inputJson, new TypeReference<>() {});
@@ -44,13 +44,15 @@ public class FieldMapper {
                 // Determine Java function to execute
                 String javaFunctionBody = mapping.getJavaFunction();
 
-                // If no inline function, try to resolve reusable function by functionName
-                if ((javaFunctionBody == null || javaFunctionBody.isBlank()) && reusableFunctionService != null) {
+                // If no inline function, try to resolve custom function by functionName
+                if ((javaFunctionBody == null || javaFunctionBody.isBlank()) && developmentFunctionService != null) {
                     String functionName = mapping.getFunctionName();
                     if (functionName != null && !functionName.isBlank()) {
-                        Optional<ReusableFunction> reusableFuncOpt = reusableFunctionService.findByName(functionName);
-                        if (reusableFuncOpt.isPresent()) {
-                            javaFunctionBody = reusableFuncOpt.get().getFunctionBody();
+                        try {
+                            TransformationCustomFunction customFunction = developmentFunctionService.getBuiltInFunctionByName(functionName);
+                            javaFunctionBody = customFunction.getFunctionBody();
+                        } catch (Exception e) {
+                            // Function not found, continue with null javaFunctionBody
                         }
                     }
                 }

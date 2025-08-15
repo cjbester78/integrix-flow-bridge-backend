@@ -15,12 +15,13 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Service that processes messages through integration flows
+ * Service that handles synchronous flow execution for real-time request/response processing.
+ * Used for API integrations where an immediate response is required (SOAP, REST endpoints).
  */
 @Service
-public class FlowProcessingService {
+public class FlowExecutionSyncService {
     
-    private static final Logger logger = LoggerFactory.getLogger(FlowProcessingService.class);
+    private static final Logger logger = LoggerFactory.getLogger(FlowExecutionSyncService.class);
     
     @Autowired
     private CommunicationAdapterRepository adapterRepository;
@@ -74,6 +75,11 @@ public class FlowProcessingService {
             correlationId = messageService.createMessage(flow, message, protocol, correlationId);
         }
         context.put("correlationId", correlationId);
+        context.put("flowId", flow.getId());
+        // Pass through the isEndpointFlow flag if present
+        if (headers.containsKey("isEndpointFlow")) {
+            context.put("isEndpointFlow", "true".equals(headers.get("isEndpointFlow")));
+        }
         logger.info("Using correlation ID: {}", correlationId);
         
         try {
@@ -121,8 +127,21 @@ public class FlowProcessingService {
                 "Executing target adapter: " + targetAdapter.getName(),
                 "Adapter type: " + targetAdapter.getType() + ", Mode: " + targetAdapter.getMode(),
                 com.integrationlab.data.model.SystemLog.LogLevel.INFO);
+            
+            // Note: Source adapter payload logging is handled by IntegrationEndpointService for SOAP/REST flows
+            // Only log here if not coming from IntegrationEndpointService (check protocol type)
+            if (!"SOAP".equals(protocol) && !"REST".equals(protocol)) {
+                // Log source payload for non-SOAP/REST flows (e.g., direct adapter tests)
+                messageService.logAdapterPayload(correlationId, sourceAdapter, "REQUEST", validatedMessage, "INBOUND");
+            }
                 
             String response = adapterExecutionService.executeAdapter(targetAdapter, transformedMessage, context);
+            
+            // Note: Target adapter response logging is handled by IntegrationEndpointService for SOAP/REST flows
+            if (response != null && !"SOAP".equals(protocol) && !"REST".equals(protocol)) {
+                // Log target response for non-SOAP/REST flows (e.g., direct adapter tests)
+                messageService.logAdapterPayload(correlationId, targetAdapter, "RESPONSE", response, "OUTBOUND");
+            }
             
             messageService.logProcessingStep(correlationId, flow,
                 "Target adapter execution completed",
