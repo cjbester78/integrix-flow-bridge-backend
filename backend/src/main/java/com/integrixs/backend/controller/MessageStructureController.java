@@ -21,6 +21,9 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.ArrayList;
 
 @RestController
 @RequestMapping("/api/message-structures")
@@ -114,5 +117,27 @@ public class MessageStructureController {
                                                 @CurrentUser User currentUser) {
         log.info("Importing {} XSD files", files.length);
         return ResponseEntity.ok(messageStructureService.importXsdFiles(Arrays.asList(files), currentUser));
+    }
+    
+    @PostMapping(value = "/test-multipart", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "Test multipart file upload")
+    public ResponseEntity<Map<String, Object>> testMultipart(@RequestParam("files") MultipartFile[] files) {
+        log.info("Test multipart endpoint called with {} files", files.length);
+        Map<String, Object> response = new HashMap<>();
+        response.put("fileCount", files.length);
+        
+        List<Map<String, Object>> fileInfos = new ArrayList<>();
+        for (MultipartFile file : files) {
+            Map<String, Object> fileInfo = new HashMap<>();
+            fileInfo.put("name", file.getOriginalFilename());
+            fileInfo.put("size", file.getSize());
+            fileInfo.put("contentType", file.getContentType());
+            fileInfos.add(fileInfo);
+            log.info("  - File: {}, Size: {} bytes, Type: {}", 
+                     file.getOriginalFilename(), file.getSize(), file.getContentType());
+        }
+        response.put("files", fileInfos);
+        
+        return ResponseEntity.ok(response);
     }
 }

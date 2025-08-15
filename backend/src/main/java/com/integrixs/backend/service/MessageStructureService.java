@@ -195,15 +195,20 @@ public class MessageStructureService {
     }
     
     public List<XsdValidationResult> validateXsdFiles(List<MultipartFile> files) {
+        log.info("=== Starting XSD validation for {} files ===", files.size());
         List<XsdValidationResult> results = new ArrayList<>();
         Map<String, String> fileContents = new HashMap<>();
         
         // First, read all files
+        log.info("Step 1: Reading all files into memory");
         for (MultipartFile file : files) {
+            log.info("  Reading file: {}", file.getOriginalFilename());
             try {
                 String content = new String(file.getBytes(), StandardCharsets.UTF_8);
                 fileContents.put(file.getOriginalFilename(), content);
+                log.info("  ✓ Successfully read file: {} ({} bytes)", file.getOriginalFilename(), content.length());
             } catch (Exception e) {
+                log.error("  ✗ Failed to read file: {}", file.getOriginalFilename(), e);
                 results.add(XsdValidationResult.builder()
                         .fileName(file.getOriginalFilename())
                         .valid(false)
@@ -212,14 +217,21 @@ public class MessageStructureService {
             }
         }
         
+        log.info("Successfully read {} files into memory", fileContents.size());
+        
         // Then validate each file and check dependencies
+        log.info("Step 2: Validating each file and checking dependencies");
         for (MultipartFile file : files) {
-            if (!fileContents.containsKey(file.getOriginalFilename())) {
+            String fileName = file.getOriginalFilename();
+            log.info("  Validating file: {}", fileName);
+            
+            if (!fileContents.containsKey(fileName)) {
+                log.info("  → Skipping (already reported as error)");
                 continue; // Already reported as error
             }
             
             XsdValidationResult result = XsdValidationResult.builder()
-                    .fileName(file.getOriginalFilename())
+                    .fileName(fileName)
                     .valid(true)
                     .errors(new ArrayList<>())
                     .dependencies(new ArrayList<>())
@@ -228,17 +240,46 @@ public class MessageStructureService {
                     .build();
             
             try {
-                String content = fileContents.get(file.getOriginalFilename());
+                String content = fileContents.get(fileName);
+                log.info("  → Parsing XSD content ({} chars)", content.length());
                 
                 // Parse XSD to check validity and extract dependencies
                 DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
                 factory.setNamespaceAware(true);
+                factory.setValidating(false); // Don't validate against DTD
+                factory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
                 DocumentBuilder builder = factory.newDocumentBuilder();
+                
+                // Set custom error handler to capture parsing errors
+                builder.setErrorHandler(new org.xml.sax.ErrorHandler() {
+                    @Override
+                    public void warning(org.xml.sax.SAXParseException e) {
+                        log.warn("  → XML Warning: {}", e.getMessage());
+                    }
+                    
+                    @Override
+                    public void error(org.xml.sax.SAXParseException e) {
+                        log.error("  → XML Error: {}", e.getMessage());
+                        result.setValid(false);
+                        result.getErrors().add("XML Error: " + e.getMessage());
+                    }
+                    
+                    @Override
+                    public void fatalError(org.xml.sax.SAXParseException e) {
+                        log.error("  → XML Fatal Error: {}", e.getMessage());
+                        result.setValid(false);
+                        result.getErrors().add("XML Fatal Error: " + e.getMessage());
+                    }
+                });
+                
                 Document doc = builder.parse(new ByteArrayInputStream(content.getBytes(StandardCharsets.UTF_8)));
+                log.info("  → Successfully parsed XML document");
                 
                 // Extract imports and includes
                 NodeList imports = doc.getElementsByTagNameNS("http://www.w3.org/2001/XMLSchema", "import");
                 NodeList includes = doc.getElementsByTagNameNS("http://www.w3.org/2001/XMLSchema", "include");
+                
+                log.info("  → Found {} imports and {} includes", imports.getLength(), includes.getLength());
                 
                 List<String> dependencies = new ArrayList<>();
                 
@@ -246,8 +287,10 @@ public class MessageStructureService {
                     var schemaLocationAttr = imports.item(i).getAttributes().getNamedItem("schemaLocation");
                     if (schemaLocationAttr != null) {
                         String schemaLocation = schemaLocationAttr.getNodeValue();
+                        log.info("    → Import schemaLocation: {}", schemaLocation);
                         if (schemaLocation != null && !schemaLocation.startsWith("http")) {
                             dependencies.add(schemaLocation);
+                            log.info("    → Added as dependency: {}", schemaLocation);
                         }
                     }
                 }
@@ -256,50 +299,71 @@ public class MessageStructureService {
                     var schemaLocationAttr = includes.item(i).getAttributes().getNamedItem("schemaLocation");
                     if (schemaLocationAttr != null) {
                         String schemaLocation = schemaLocationAttr.getNodeValue();
+                        log.info("    → Include schemaLocation: {}", schemaLocation);
                         if (schemaLocation != null && !schemaLocation.startsWith("http")) {
                             dependencies.add(schemaLocation);
+                            log.info("    → Added as dependency: {}", schemaLocation);
                         }
                     }
                 }
                 
                 result.setDependencies(dependencies);
+                log.info("  → Total dependencies found: {}", dependencies.size());
                 
                 // Check which dependencies are resolved in the current batch or already exist
+                log.info("  → Checking dependency resolution...");
                 for (String dep : dependencies) {
                     String depFileName = dep.substring(dep.lastIndexOf('/') + 1);
                     String depStructureName = depFileName.replace(".xsd", "");
+                    log.info("    → Checking dependency: {} (file: {}, structure: {})", dep, depFileName, depStructureName);
                     
                     if (fileContents.containsKey(depFileName)) {
                         // Dependency is in current batch
                         result.getResolvedDependencies().add(dep);
+                        log.info("      ✓ Found in current batch");
                     } else if (messageStructureRepository.existsByNameAndIsActiveTrue(depStructureName)) {
                         // Dependency already exists in database
                         result.getResolvedDependencies().add(dep);
+                        log.info("      ✓ Found in database");
                     } else {
                         // Dependency is truly missing
                         result.getMissingDependencies().add(dep);
+                        log.info("      ✗ NOT FOUND - marked as missing");
                     }
                 }
                 
                 // Only mark as invalid if there are truly missing dependencies
                 if (!result.getMissingDependencies().isEmpty()) {
                     result.setValid(false);
-                    result.getErrors().add("Missing dependencies not found in batch or database: " + String.join(", ", result.getMissingDependencies()));
+                    String errorMsg = "Missing dependencies not found in batch or database: " + String.join(", ", result.getMissingDependencies());
+                    result.getErrors().add(errorMsg);
+                    log.error("  ✗ Validation FAILED: {}", errorMsg);
+                } else {
+                    log.info("  ✓ Validation PASSED");
                 }
                 
             } catch (Exception e) {
                 result.setValid(false);
                 result.getErrors().add("XML parsing error: " + e.getMessage());
+                log.error("  ✗ Error validating XSD: {}", e.getMessage(), e);
             }
             
             results.add(result);
+            log.info("  → Validation result: valid={}, errors={}, dependencies={}, resolved={}, missing={}", 
+                     result.isValid(), 
+                     result.getErrors().size(), 
+                     result.getDependencies().size(),
+                     result.getResolvedDependencies().size(),
+                     result.getMissingDependencies().size());
         }
         
+        log.info("=== XSD validation completed. Total results: {} ===", results.size());
         return results;
     }
     
     @Transactional
     public List<XsdImportResult> importXsdFiles(List<MultipartFile> files, User currentUser) {
+        log.info("=== Starting XSD import for {} files ===", files.size());
         List<XsdImportResult> results = new ArrayList<>();
         
         // First validate all files
@@ -309,22 +373,33 @@ public class MessageStructureService {
         Map<String, XsdValidationResult> validationMap = validationResults.stream()
                 .collect(Collectors.toMap(XsdValidationResult::getFileName, v -> v));
         
+        // Log validation summary
+        long validCount = validationResults.stream().filter(XsdValidationResult::isValid).count();
+        long invalidCount = validationResults.size() - validCount;
+        log.info("Validation summary: {} valid, {} invalid", validCount, invalidCount);
+        
         // Import valid files in dependency order
         Set<String> imported = new HashSet<>();
         boolean progress = true;
+        int iteration = 0;
         
+        log.info("Starting dependency-ordered import...");
         while (progress) {
             progress = false;
+            iteration++;
+            log.info("Import iteration #{}", iteration);
             
             for (MultipartFile file : files) {
                 String fileName = file.getOriginalFilename();
                 
                 if (imported.contains(fileName)) {
+                    log.debug("  → {} already imported, skipping", fileName);
                     continue;
                 }
                 
                 XsdValidationResult validation = validationMap.get(fileName);
                 if (validation == null || !validation.isValid()) {
+                    log.debug("  → {} is invalid, skipping", fileName);
                     continue;
                 }
                 
