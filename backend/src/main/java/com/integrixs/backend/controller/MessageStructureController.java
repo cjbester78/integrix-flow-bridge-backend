@@ -32,7 +32,7 @@ public class MessageStructureController {
     private final MessageStructureService messageStructureService;
     
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
+    @PreAuthorize("hasAnyRole('ADMINISTRATOR', 'DEVELOPER', 'INTEGRATOR')")
     @Operation(summary = "Create a new message structure")
     public ResponseEntity<MessageStructureDTO> create(@Valid @RequestBody MessageStructureCreateRequestDTO request,
                                                     @CurrentUser User currentUser) {
@@ -42,7 +42,7 @@ public class MessageStructureController {
     }
     
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
+    @PreAuthorize("hasAnyRole('ADMINISTRATOR', 'DEVELOPER', 'INTEGRATOR')")
     @Operation(summary = "Update an existing message structure")
     public ResponseEntity<MessageStructureDTO> update(@PathVariable String id,
                                                     @Valid @RequestBody MessageStructureCreateRequestDTO request,
