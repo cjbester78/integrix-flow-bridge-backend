@@ -2,6 +2,9 @@ package com.integrixs.backend.service;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.integrixs.backend.dto.XsdImportResult;
+import com.integrixs.backend.dto.XsdValidationResult;
+import com.integrixs.data.model.BusinessComponent;
 import com.integrixs.data.model.MessageStructure;
 import com.integrixs.data.model.User;
 import com.integrixs.data.repository.BusinessComponentRepository;
