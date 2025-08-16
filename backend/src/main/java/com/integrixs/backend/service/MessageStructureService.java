@@ -475,6 +475,7 @@ public class MessageStructureService {
                                 .namespace(namespaceInfo != null ? serializeToJson(namespaceInfo) : null)
                                 .sourceType("EXTERNAL")
                                 .isEditable(false)
+                                .isActive(true)
                                 .businessComponent(businessComponent)
                                 .metadata(serializeToJson(Map.of("importedFrom", fileName, "importedAt", new Date())))
                                 .importMetadata(serializeToJson(importMetadata))
