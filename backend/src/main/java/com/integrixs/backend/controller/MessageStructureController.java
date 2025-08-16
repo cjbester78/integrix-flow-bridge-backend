@@ -24,6 +24,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.ArrayList;
+import java.util.Set;
+import java.util.HashSet;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 @RestController
 @RequestMapping("/api/message-structures")
@@ -94,14 +97,29 @@ public class MessageStructureController {
     @PostMapping(value = "/validate-xsd", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasAnyRole('ADMINISTRATOR', 'DEVELOPER', 'INTEGRATOR')")
     @Operation(summary = "Validate XSD files and check dependencies")
-    public ResponseEntity<List<?>> validateXsdFiles(@RequestPart("files") List<MultipartFile> files,
+    public ResponseEntity<List<?>> validateXsdFiles(@RequestParam("files") MultipartFile[] files,
+                                                   @RequestParam(value = "allFileNames", required = false) String allFileNamesJson,
                                                    @CurrentUser User currentUser) {
-        log.info("Validating {} XSD files", files.size());
-        for (MultipartFile file : files) {
+        log.info("Validating {} XSD files", files.length);
+        List<MultipartFile> fileList = Arrays.asList(files);
+        
+        Set<String> allFileNames = null;
+        if (allFileNamesJson != null) {
+            try {
+                allFileNames = new HashSet<>(Arrays.asList(
+                    new ObjectMapper().readValue(allFileNamesJson, String[].class)
+                ));
+                log.info("Received {} total file names for dependency checking", allFileNames.size());
+            } catch (Exception e) {
+                log.error("Failed to parse allFileNames", e);
+            }
+        }
+        
+        for (MultipartFile file : fileList) {
             log.info("  - File: {}, Size: {} bytes", file.getOriginalFilename(), file.getSize());
         }
         try {
-            List<?> results = messageStructureService.validateXsdFiles(files);
+            List<?> results = messageStructureService.validateXsdFiles(fileList, allFileNames);
             log.info("Validation completed with {} results", results.size());
             return ResponseEntity.ok(results);
         } catch (Exception e) {
@@ -113,11 +131,12 @@ public class MessageStructureController {
     @PostMapping(value = "/import-xsd", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasAnyRole('ADMINISTRATOR', 'DEVELOPER', 'INTEGRATOR')")
     @Operation(summary = "Import XSD files as message structures")
-    public ResponseEntity<List<?>> importXsdFiles(@RequestPart("files") List<MultipartFile> files,
+    public ResponseEntity<List<?>> importXsdFiles(@RequestParam("files") MultipartFile[] files,
                                                 @RequestParam("businessComponentId") String businessComponentId,
                                                 @CurrentUser User currentUser) {
-        log.info("Importing {} XSD files for business component: {}", files.size(), businessComponentId);
-        return ResponseEntity.ok(messageStructureService.importXsdFiles(files, businessComponentId, currentUser));
+        log.info("Importing {} XSD files for business component: {}", files.length, businessComponentId);
+        List<MultipartFile> fileList = Arrays.asList(files);
+        return ResponseEntity.ok(messageStructureService.importXsdFiles(fileList, businessComponentId, currentUser));
     }
     
     @PostMapping(value = "/test-multipart", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)

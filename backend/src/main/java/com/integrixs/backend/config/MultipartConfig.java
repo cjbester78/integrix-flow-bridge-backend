@@ -19,13 +19,13 @@ public class MultipartConfig {
     @Bean
     public MultipartConfigElement multipartConfigElement() {
         MultipartConfigFactory factory = new MultipartConfigFactory();
-        factory.setMaxFileSize(DataSize.ofMegabytes(10));
-        factory.setMaxRequestSize(DataSize.ofMegabytes(10));
+        factory.setMaxFileSize(DataSize.ofMegabytes(50));
+        factory.setMaxRequestSize(DataSize.ofMegabytes(100));
         return factory.createMultipartConfig();
     }
     
     @Bean
     public MultipartResolver multipartResolver() {
-        return new StandardServletMultipartResolver();
+        return new CustomMultipartResolver();
     }
 }

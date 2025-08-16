@@ -195,7 +195,14 @@ public class MessageStructureService {
     }
     
     public List<XsdValidationResult> validateXsdFiles(List<MultipartFile> files) {
+        return validateXsdFiles(files, null);
+    }
+    
+    public List<XsdValidationResult> validateXsdFiles(List<MultipartFile> files, Set<String> allFileNamesInBatch) {
         log.info("=== Starting XSD validation for {} files ===", files.size());
+        if (allFileNamesInBatch != null) {
+            log.info("Additional file names in batch: {}", allFileNamesInBatch);
+        }
         List<XsdValidationResult> results = new ArrayList<>();
         Map<String, String> fileContents = new HashMap<>();
         
@@ -317,15 +324,28 @@ public class MessageStructureService {
                     String depStructureName = depFileName.replace(".xsd", "");
                     log.info("    → Checking dependency: {} (file: {}, structure: {})", dep, depFileName, depStructureName);
                     
+                    boolean resolved = false;
+                    
+                    // Check if in current chunk
                     if (fileContents.containsKey(depFileName)) {
-                        // Dependency is in current batch
                         result.getResolvedDependencies().add(dep);
-                        log.info("      ✓ Found in current batch");
-                    } else if (messageStructureRepository.existsByNameAndIsActiveTrue(depStructureName)) {
-                        // Dependency already exists in database
+                        log.info("      ✓ Found in current chunk");
+                        resolved = true;
+                    } 
+                    // Check if in the full batch (all file names provided by frontend)
+                    else if (allFileNamesInBatch != null && allFileNamesInBatch.contains(depFileName)) {
+                        result.getResolvedDependencies().add(dep);
+                        log.info("      ✓ Found in full batch (different chunk)");
+                        resolved = true;
+                    }
+                    // Check if already exists in database
+                    else if (messageStructureRepository.existsByNameAndIsActiveTrue(depStructureName)) {
                         result.getResolvedDependencies().add(dep);
                         log.info("      ✓ Found in database");
-                    } else {
+                        resolved = true;
+                    }
+                    
+                    if (!resolved) {
                         // Dependency is truly missing
                         result.getMissingDependencies().add(dep);
                         log.info("      ✗ NOT FOUND - marked as missing");
@@ -439,6 +459,9 @@ public class MessageStructureService {
                                 .message("Message structure with this name already exists")
                                 .build());
                     } else {
+                        // Extract namespace information from XSD
+                        Map<String, Object> namespaceInfo = extractNamespaceInfo(content);
+                        
                         // Create message structure
                         Map<String, Object> importMetadata = new HashMap<>();
                         importMetadata.put("originalFileName", fileName);
@@ -449,6 +472,7 @@ public class MessageStructureService {
                                 .name(structureName)
                                 .description("Imported from " + fileName)
                                 .xsdContent(content)
+                                .namespace(namespaceInfo != null ? serializeToJson(namespaceInfo) : null)
                                 .sourceType("EXTERNAL")
                                 .isEditable(false)
                                 .businessComponent(businessComponent)
@@ -517,5 +541,48 @@ public class MessageStructureService {
         private String structureName;
         private boolean success;
         private String message;
+    }
+    
+    private Map<String, Object> extractNamespaceInfo(String xsdContent) {
+        try {
+            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+            factory.setNamespaceAware(true);
+            DocumentBuilder builder = factory.newDocumentBuilder();
+            Document doc = builder.parse(new ByteArrayInputStream(xsdContent.getBytes(StandardCharsets.UTF_8)));
+            
+            Map<String, Object> namespaceInfo = new HashMap<>();
+            
+            // Get the root schema element
+            var schemaElement = doc.getDocumentElement();
+            
+            // Extract targetNamespace
+            String targetNamespace = schemaElement.getAttribute("targetNamespace");
+            if (targetNamespace != null && !targetNamespace.isEmpty()) {
+                namespaceInfo.put("targetNamespace", targetNamespace);
+                namespaceInfo.put("uri", targetNamespace);
+            }
+            
+            // Extract default namespace
+            String xmlns = schemaElement.getAttribute("xmlns");
+            if (xmlns != null && !xmlns.isEmpty()) {
+                namespaceInfo.put("xmlns", xmlns);
+            }
+            
+            // Extract prefix for XS namespace
+            var attributes = schemaElement.getAttributes();
+            for (int i = 0; i < attributes.getLength(); i++) {
+                var attr = attributes.item(i);
+                if (attr.getNodeName().startsWith("xmlns:") && 
+                    "http://www.w3.org/2001/XMLSchema".equals(attr.getNodeValue())) {
+                    String prefix = attr.getNodeName().substring(6);
+                    namespaceInfo.put("prefix", prefix);
+                }
+            }
+            
+            return namespaceInfo.isEmpty() ? null : namespaceInfo;
+        } catch (Exception e) {
+            log.error("Error extracting namespace info from XSD", e);
+            return null;
+        }
     }
 }

@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Multipart Upload Test</title>
+</head>
+<body>
+    <h1>Test Multipart Upload</h1>
+    
+    <h2>Test 1: Simple Test Endpoint</h2>
+    <form id="testForm">
+        <input type="file" id="testFiles" multiple accept=".xsd">
+        <button type="button" onclick="testSimpleEndpoint()">Test Simple Endpoint</button>
+    </form>
+    
+    <h2>Test 2: XSD Validation Endpoint</h2>
+    <form id="xsdForm">
+        <input type="file" id="xsdFiles" multiple accept=".xsd">
+        <button type="button" onclick="testXsdEndpoint()">Test XSD Endpoint</button>
+    </form>
+    
+    <h2>Response:</h2>
+    <pre id="response"></pre>
+    
+    <script>
+        // Get JWT token from localStorage (assuming user is logged in)
+        const token = localStorage.getItem('token') || 'eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhZG1pbiIsImV4cCI6MTczNTA4MTk4Miwicm9sZSI6IkFETUlOSVNUUkFUT1IifQ.HsALqRZHJyBg2T-BSaQ0faMCgKGcOOYnfGOIBOBQOxs';
+        
+        async function testSimpleEndpoint() {
+            const files = document.getElementById('testFiles').files;
+            if (files.length === 0) {
+                alert('Please select files');
+                return;
+            }
+            
+            const formData = new FormData();
+            for (let i = 0; i < files.length; i++) {
+                formData.append('files', files[i]);
+            }
+            
+            try {
+                const response = await fetch('http://localhost:8080/api/test/multipart', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Bearer ' + token
+                    },
+                    body: formData
+                });
+                
+                const result = await response.text();
+                document.getElementById('response').textContent = 
+                    'Status: ' + response.status + '\n' +
+                    'Response: ' + result;
+            } catch (error) {
+                document.getElementById('response').textContent = 'Error: ' + error.message;
+            }
+        }
+        
+        async function testXsdEndpoint() {
+            const files = document.getElementById('xsdFiles').files;
+            if (files.length === 0) {
+                alert('Please select files');
+                return;
+            }
+            
+            const formData = new FormData();
+            for (let i = 0; i < files.length; i++) {
+                formData.append('files', files[i]);
+            }
+            
+            try {
+                const response = await fetch('http://localhost:8080/api/message-structures/validate-xsd', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Bearer ' + token
+                    },
+                    body: formData
+                });
+                
+                const result = await response.text();
+                document.getElementById('response').textContent = 
+                    'Status: ' + response.status + '\n' +
+                    'Response: ' + result;
+            } catch (error) {
+                document.getElementById('response').textContent = 'Error: ' + error.message;
+            }
+        }
+    </script>
+</body>
+</html>

@@ -58,6 +58,19 @@ public class RequestLoggingConfig {
             logger.info("🔵 Content-Type: {}", request.getContentType());
             logger.info("🔵 User-Agent: {}", request.getHeader("User-Agent"));
             logger.info("🔵 Origin: {}", request.getHeader("Origin"));
+            
+            // Special logging for multipart requests
+            if (isMultipart) {
+                logger.info("🔵 === MULTIPART REQUEST DETECTED ===");
+                logger.info("🔵 Content-Length: {}", request.getContentLength());
+                logger.info("🔵 Character Encoding: {}", request.getCharacterEncoding());
+                logger.info("🔵 Authorization Header Present: {}", request.getHeader("Authorization") != null);
+                
+                // Log all headers
+                Collections.list(request.getHeaderNames()).forEach(headerName -> {
+                    logger.info("🔵 Header {}: {}", headerName, request.getHeader(headerName));
+                });
+            }
 
             long startTime = System.currentTimeMillis();
             
