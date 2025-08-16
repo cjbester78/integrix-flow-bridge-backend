@@ -469,6 +469,32 @@ public class MessageStructureService {
                         importMetadata.put("importedAt", new Date());
                         importMetadata.put("importedBy", currentUser.getUsername());
                         
+                        // Build metadata with resolved dependencies
+                        Map<String, Object> metadata = new HashMap<>();
+                        metadata.put("importedFrom", fileName);
+                        metadata.put("importedAt", new Date());
+                        
+                        // Add resolved dependencies if any
+                        if (validation.getDependencies() != null && !validation.getDependencies().isEmpty()) {
+                            List<Map<String, String>> resolvedDeps = new ArrayList<>();
+                            for (String dep : validation.getDependencies()) {
+                                String depFileName = dep.substring(dep.lastIndexOf('/') + 1);
+                                String depStructureName = depFileName.replace(".xsd", "");
+                                
+                                // Find the message structure ID for this dependency
+                                messageStructureRepository.findByNameAndIsActiveTrue(depStructureName)
+                                    .ifPresent(depStructure -> {
+                                        Map<String, String> depInfo = new HashMap<>();
+                                        depInfo.put("name", depFileName);
+                                        depInfo.put("structureId", depStructure.getId());
+                                        resolvedDeps.add(depInfo);
+                                    });
+                            }
+                            if (!resolvedDeps.isEmpty()) {
+                                metadata.put("resolvedDependencies", resolvedDeps);
+                            }
+                        }
+                        
                         MessageStructure messageStructure = MessageStructure.builder()
                                 .name(structureName)
                                 .description("Imported from " + fileName)
@@ -478,7 +504,7 @@ public class MessageStructureService {
                                 .isEditable(false)
                                 .isActive(true)
                                 .businessComponent(businessComponent)
-                                .metadata(serializeToJson(Map.of("importedFrom", fileName, "importedAt", new Date())))
+                                .metadata(serializeToJson(metadata))
                                 .importMetadata(serializeToJson(importMetadata))
                                 .createdBy(currentUser)
                                 .updatedBy(currentUser)

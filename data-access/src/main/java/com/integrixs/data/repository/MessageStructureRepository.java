@@ -35,4 +35,6 @@ public interface MessageStructureRepository extends JpaRepository<MessageStructu
     boolean existsByNameAndBusinessComponentIdAndIdNotAndIsActiveTrue(String name, String businessComponentId, String id);
     
     boolean existsByNameAndIsActiveTrue(String name);
+    
+    Optional<MessageStructure> findByNameAndIsActiveTrue(String name);
 }
