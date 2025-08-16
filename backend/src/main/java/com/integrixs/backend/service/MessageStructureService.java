@@ -132,8 +132,9 @@ public class MessageStructureService {
         MessageStructure messageStructure = messageStructureRepository.findByIdAndIsActiveTrue(id)
                 .orElseThrow(() -> new RuntimeException("Message structure not found"));
         
-        messageStructure.setIsActive(false);
-        messageStructureRepository.save(messageStructure);
+        // Perform hard delete - permanently remove from database
+        messageStructureRepository.delete(messageStructure);
+        log.info("Message structure {} permanently deleted", id);
     }
     
     private MessageStructureDTO toDTO(MessageStructure entity) {
