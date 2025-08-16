@@ -225,15 +225,16 @@ public class FlowStructureService {
         Set<FlowStructureMessage> messages = flowStructure.getFlowStructureMessages();
         if (messages != null && !messages.isEmpty()) {
             for (FlowStructureMessage msg : messages) {
-                String elementName = getElementNameForMessageType(msg.getMessageType());
                 MessageStructure msgStructure = msg.getMessageStructure();
                 
-                if (msgStructure != null && msgStructure.getXsdContent() != null) {
-                    // Extract type definition from XSD content
-                    wsdl.append("      <!-- ").append(elementName).append(" from ").append(msgStructure.getName()).append(" -->\n");
+                if (msgStructure != null) {
+                    // Use the actual Message Structure name as the element name
+                    String elementName = msgStructure.getName();
+                    wsdl.append("      <!-- ").append(msg.getMessageType()).append(" message from ").append(msgStructure.getName()).append(" -->\n");
                     wsdl.append("      <xsd:element name=\"").append(elementName).append("\" type=\"xsd:anyType\"/>\n");
                 } else {
-                    // Default to anyType if no structure defined
+                    // Fallback to generic name if no structure defined
+                    String elementName = getElementNameForMessageType(msg.getMessageType());
                     wsdl.append("      <xsd:element name=\"").append(elementName).append("\" type=\"xsd:anyType\"/>\n");
                 }
             }
@@ -256,9 +257,10 @@ public class FlowStructureService {
         if (messages != null && !messages.isEmpty()) {
             for (FlowStructureMessage msg : messages) {
                 String messageName = getMessageNameForType(msg.getMessageType());
-                String elementName = getElementNameForMessageType(msg.getMessageType());
+                MessageStructure msgStructure = msg.getMessageStructure();
+                String elementName = msgStructure != null ? msgStructure.getName() : getElementNameForMessageType(msg.getMessageType());
                 wsdl.append("  <message name=\"").append(messageName).append("\">\n");
-                wsdl.append("    <part name=\"body\" element=\"tns:").append(elementName).append("\"/>\n");
+                wsdl.append("    <part name=\"parameters\" element=\"tns:").append(elementName).append("\"/>\n");
                 wsdl.append("  </message>\n");
                 wsdl.append("\n");
             }
@@ -266,20 +268,20 @@ public class FlowStructureService {
             // Default messages
             if (flowStructure.getProcessingMode() == ProcessingMode.SYNC) {
                 wsdl.append("  <message name=\"RequestMessage\">\n");
-                wsdl.append("    <part name=\"body\" element=\"tns:Request\"/>\n");
+                wsdl.append("    <part name=\"parameters\" element=\"tns:Request\"/>\n");
                 wsdl.append("  </message>\n");
                 wsdl.append("\n");
                 wsdl.append("  <message name=\"ResponseMessage\">\n");
-                wsdl.append("    <part name=\"body\" element=\"tns:Response\"/>\n");
+                wsdl.append("    <part name=\"parameters\" element=\"tns:Response\"/>\n");
                 wsdl.append("  </message>\n");
                 wsdl.append("\n");
                 wsdl.append("  <message name=\"FaultMessage\">\n");
-                wsdl.append("    <part name=\"body\" element=\"tns:Fault\"/>\n");
+                wsdl.append("    <part name=\"parameters\" element=\"tns:Fault\"/>\n");
                 wsdl.append("  </message>\n");
                 wsdl.append("\n");
             } else {
                 wsdl.append("  <message name=\"Message\">\n");
-                wsdl.append("    <part name=\"body\" element=\"tns:Message\"/>\n");
+                wsdl.append("    <part name=\"parameters\" element=\"tns:Message\"/>\n");
                 wsdl.append("  </message>\n");
                 wsdl.append("\n");
             }
