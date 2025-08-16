@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
     <!-- Define properties -->
-    <property name="LOG_PATH" value="logs" />
+    <property name="LOG_PATH" value="./logs" />
     <property name="LOG_FILE" value="integrix-flow-bridge" />
     <property name="LOG_PATTERN" value="%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n" />
     
@@ -16,6 +16,7 @@
     <!-- File Appender -->
     <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>${LOG_PATH}/${LOG_FILE}.log</file>
+        <append>true</append>
         <encoder>
             <pattern>${LOG_PATTERN}</pattern>
             <charset>UTF-8</charset>
@@ -39,12 +40,27 @@
         </rollingPolicy>
     </appender>
     
-    <!-- Async Appender for better performance -->
-    <appender name="ASYNC_FILE" class="ch.qos.logback.classic.AsyncAppender">
-        <appender-ref ref="FILE" />
-        <queueSize>512</queueSize>
-        <discardingThreshold>0</discardingThreshold>
+    <!-- Spring Boot Startup File Appender -->
+    <appender name="STARTUP_FILE" class="ch.qos.logback.core.FileAppender">
+        <file>${LOG_PATH}/startup.log</file>
+        <append>true</append>
+        <encoder>
+            <pattern>${LOG_PATTERN}</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
     </appender>
+    
+    <!-- Set up logging for Spring Boot startup -->
+    <logger name="org.springframework.boot" level="DEBUG" additivity="false">
+        <appender-ref ref="FILE" />
+        <appender-ref ref="STARTUP_FILE" />
+        <appender-ref ref="CONSOLE" />
+    </logger>
+    
+    <logger name="org.springframework" level="INFO" additivity="false">
+        <appender-ref ref="FILE" />
+        <appender-ref ref="CONSOLE" />
+    </logger>
     
     <!-- Spring Profile specific configurations -->
     <springProfile name="dev">
@@ -57,7 +73,7 @@
         
         <root level="INFO">
             <appender-ref ref="CONSOLE" />
-            <appender-ref ref="ASYNC_FILE" />
+            <appender-ref ref="FILE" />
         </root>
     </springProfile>
     
@@ -69,7 +85,7 @@
         
         <root level="INFO">
             <appender-ref ref="CONSOLE" />
-            <appender-ref ref="ASYNC_FILE" />
+            <appender-ref ref="FILE" />
         </root>
     </springProfile>
     
@@ -80,16 +96,16 @@
         <logger name="org.hibernate.SQL" level="WARN" />
         
         <root level="WARN">
-            <appender-ref ref="ASYNC_FILE" />
+            <appender-ref ref="FILE" />
         </root>
     </springProfile>
     
     <!-- Default configuration if no profile is active -->
     <springProfile name="!dev,!test,!prod">
-        <logger name="com.integrixs" level="INFO" />
+        <logger name="com.integrixs" level="DEBUG" />
         <root level="INFO">
             <appender-ref ref="CONSOLE" />
-            <appender-ref ref="ASYNC_FILE" />
+            <appender-ref ref="FILE" />
         </root>
     </springProfile>
 </configuration>

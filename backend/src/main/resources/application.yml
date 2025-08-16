@@ -85,6 +85,14 @@ spring:
         enable_lazy_load_no_trans: false
 
 # ✅ Logging configuration is in logback-spring.xml
+logging:
+  file:
+    path: ./logs
+    name: ./logs/integrix-flow-bridge.log
+  level:
+    root: INFO
+    com.integrixs: DEBUG
+    org.springframework: INFO
 
 # ✅ Actuator settings
 management:
