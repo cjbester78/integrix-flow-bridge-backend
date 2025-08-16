@@ -89,6 +89,18 @@ public class FlowStructureService {
         // Create flow structure messages
         if (request.getMessageStructureIds() != null) {
             createFlowStructureMessages(flowStructure, request.getMessageStructureIds());
+            // Flush to ensure associations are persisted
+            flowStructureRepository.flush();
+            // Reload the flow structure with associations
+            flowStructure = flowStructureRepository.findById(flowStructure.getId())
+                    .orElseThrow(() -> new RuntimeException("Flow structure not found after save"));
+            // Initialize associations
+            if (flowStructure.getFlowStructureMessages() != null) {
+                Hibernate.initialize(flowStructure.getFlowStructureMessages());
+                for (FlowStructureMessage fsm : flowStructure.getFlowStructureMessages()) {
+                    Hibernate.initialize(fsm.getMessageStructure());
+                }
+            }
         }
         
         // Set WSDL content if provided (imported WSDL), otherwise generate
@@ -138,6 +150,18 @@ public class FlowStructureService {
         flowStructureMessageRepository.deleteByFlowStructureId(id);
         if (request.getMessageStructureIds() != null) {
             createFlowStructureMessages(flowStructure, request.getMessageStructureIds());
+            // Flush to ensure associations are persisted
+            flowStructureRepository.flush();
+            // Reload the flow structure with associations
+            flowStructure = flowStructureRepository.findById(flowStructure.getId())
+                    .orElseThrow(() -> new RuntimeException("Flow structure not found after update"));
+            // Initialize associations
+            if (flowStructure.getFlowStructureMessages() != null) {
+                Hibernate.initialize(flowStructure.getFlowStructureMessages());
+                for (FlowStructureMessage fsm : flowStructure.getFlowStructureMessages()) {
+                    Hibernate.initialize(fsm.getMessageStructure());
+                }
+            }
         }
         
         // Update WSDL content if provided, otherwise regenerate
