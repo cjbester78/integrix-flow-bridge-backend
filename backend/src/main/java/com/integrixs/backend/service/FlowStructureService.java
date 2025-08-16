@@ -32,11 +32,15 @@ public class FlowStructureService {
     private final MessageStructureRepository messageStructureRepository;
     private final FlowStructureMessageRepository flowStructureMessageRepository;
     private final BusinessComponentRepository businessComponentRepository;
+    private final EnvironmentPermissionService environmentPermissionService;
     private final ObjectMapper objectMapper = new ObjectMapper();
     
     @Transactional
     public FlowStructureDTO create(FlowStructureCreateRequestDTO request, User currentUser) {
         log.info("Creating flow structure: {}", request.getName());
+        
+        // Check environment permissions
+        environmentPermissionService.checkPermission("dataStructure.create");
         
         // Check if name already exists for business component
         if (flowStructureRepository.existsByNameAndBusinessComponentIdAndIsActiveTrue(
@@ -75,6 +79,9 @@ public class FlowStructureService {
     @Transactional
     public FlowStructureDTO update(String id, FlowStructureCreateRequestDTO request, User currentUser) {
         log.info("Updating flow structure: {}", id);
+        
+        // Check environment permissions
+        environmentPermissionService.checkPermission("dataStructure.create");
         
         FlowStructure flowStructure = flowStructureRepository.findByIdAndIsActiveTrue(id)
                 .orElseThrow(() -> new RuntimeException("Flow structure not found"));
