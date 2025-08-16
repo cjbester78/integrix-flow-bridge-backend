@@ -21,6 +21,15 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.w3c.dom.*;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.transform.*;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
+import java.io.ByteArrayInputStream;
+import java.io.StringWriter;
+import java.nio.charset.StandardCharsets;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -177,6 +186,34 @@ public class FlowStructureService {
                 .collect(Collectors.toList());
     }
     
+    @Transactional(readOnly = true)
+    public List<FlowStructureDTO> findByMessageStructure(String messageStructureId) {
+        log.info("Finding flow structures using message structure: {}", messageStructureId);
+        List<FlowStructure> flowStructures = flowStructureMessageRepository.findFlowStructuresByMessageStructureId(messageStructureId);
+        
+        return flowStructures.stream()
+                .filter(FlowStructure::getIsActive)
+                .map(flowStructure -> {
+                    FlowStructureDTO dto = toDTO(flowStructure);
+                    
+                    // Add information about which message types use this message structure
+                    List<String> messageTypes = flowStructureMessageRepository.findByFlowStructureId(flowStructure.getId())
+                            .stream()
+                            .filter(fsm -> fsm.getMessageStructure().getId().equals(messageStructureId))
+                            .map(fsm -> fsm.getMessageType().toString())
+                            .collect(Collectors.toList());
+                    
+                    // Store message types in metadata for the frontend
+                    Map<String, Object> metadata = dto.getMetadata() != null ? 
+                            new HashMap<>(dto.getMetadata()) : new HashMap<>();
+                    metadata.put("messageTypes", messageTypes);
+                    dto.setMetadata(metadata);
+                    
+                    return dto;
+                })
+                .collect(Collectors.toList());
+    }
+    
     @Transactional
     public void delete(String id) {
         log.info("Deleting flow structure: {}", id);
@@ -224,11 +261,49 @@ public class FlowStructureService {
         // Generate element definitions based on message structures
         Set<FlowStructureMessage> messages = flowStructure.getFlowStructureMessages();
         if (messages != null && !messages.isEmpty()) {
+            boolean hasInlineXsd = false;
+            
+            // First, check if all message structures have XSD content for inline inclusion
             for (FlowStructureMessage msg : messages) {
                 MessageStructure msgStructure = msg.getMessageStructure();
-                
-                if (msgStructure != null) {
-                    // Use the actual Message Structure name as the element name
+                if (msgStructure != null && msgStructure.getXsdContent() != null && !msgStructure.getXsdContent().trim().isEmpty()) {
+                    hasInlineXsd = true;
+                    // Extract and inline the XSD content
+                    try {
+                        String xsdContent = msgStructure.getXsdContent();
+                        log.info("Processing XSD content for message structure: {} (type: {})", msgStructure.getName(), msg.getMessageType());
+                        
+                        // Parse the XSD to extract element definitions
+                        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+                        factory.setNamespaceAware(true);
+                        DocumentBuilder builder = factory.newDocumentBuilder();
+                        Document xsdDoc = builder.parse(new ByteArrayInputStream(xsdContent.getBytes(StandardCharsets.UTF_8)));
+                        
+                        // Get all element definitions from the XSD
+                        NodeList elements = xsdDoc.getElementsByTagNameNS("http://www.w3.org/2001/XMLSchema", "element");
+                        
+                        for (int i = 0; i < elements.getLength(); i++) {
+                            Element elem = (Element) elements.item(i);
+                            String elementName = elem.getAttribute("name");
+                            
+                            // Only include top-level elements (those without parent elements)
+                            if (elementName != null && !elementName.isEmpty() && elem.getParentNode().getNodeName().endsWith("schema")) {
+                                wsdl.append("      <!-- ").append(msg.getMessageType()).append(" message from ").append(msgStructure.getName()).append(" -->\n");
+                                
+                                // Serialize the element with all its content
+                                wsdl.append(serializeElement(elem, "      "));
+                                wsdl.append("\n");
+                            }
+                        }
+                    } catch (Exception e) {
+                        log.error("Error processing XSD content for message structure: " + msgStructure.getName(), e);
+                        // Fall back to anyType if parsing fails
+                        String elementName = msgStructure.getName();
+                        wsdl.append("      <!-- ").append(msg.getMessageType()).append(" message from ").append(msgStructure.getName()).append(" (parse error) -->\n");
+                        wsdl.append("      <xsd:element name=\"").append(elementName).append("\" type=\"xsd:anyType\"/>\n");
+                    }
+                } else if (msgStructure != null) {
+                    // No XSD content, use anyType
                     String elementName = msgStructure.getName();
                     wsdl.append("      <!-- ").append(msg.getMessageType()).append(" message from ").append(msgStructure.getName()).append(" -->\n");
                     wsdl.append("      <xsd:element name=\"").append(elementName).append("\" type=\"xsd:anyType\"/>\n");
@@ -493,6 +568,70 @@ public class FlowStructureService {
         } catch (Exception e) {
             log.error("Error serializing to JSON", e);
             throw new RuntimeException("Error serializing to JSON", e);
+        }
+    }
+    
+    private String serializeElement(Element element, String indent) {
+        try {
+            TransformerFactory transformerFactory = TransformerFactory.newInstance();
+            Transformer transformer = transformerFactory.newTransformer();
+            transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
+            transformer.setOutputProperty(OutputKeys.INDENT, "yes");
+            transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "2");
+            
+            // Clone the element to avoid modifying the original
+            Element clonedElement = (Element) element.cloneNode(true);
+            
+            // Fix namespace prefixes to use xsd: instead of xs:
+            fixNamespacePrefixes(clonedElement);
+            
+            DOMSource source = new DOMSource(clonedElement);
+            StringWriter writer = new StringWriter();
+            StreamResult result = new StreamResult(writer);
+            transformer.transform(source, result);
+            
+            // Add proper indentation
+            String serialized = writer.toString();
+            String[] lines = serialized.split("\n");
+            StringBuilder indented = new StringBuilder();
+            for (String line : lines) {
+                if (!line.trim().isEmpty()) {
+                    indented.append(indent).append(line.trim()).append("\n");
+                }
+            }
+            
+            return indented.toString().trim();
+        } catch (Exception e) {
+            log.error("Error serializing element", e);
+            // Fallback to basic element
+            return indent + "<xsd:element name=\"" + element.getAttribute("name") + "\" type=\"xsd:anyType\"/>";
+        }
+    }
+    
+    private void fixNamespacePrefixes(Node node) {
+        if (node.getNodeType() == Node.ELEMENT_NODE) {
+            Element elem = (Element) node;
+            
+            // Fix element name
+            if (elem.getPrefix() != null && elem.getPrefix().equals("xs")) {
+                elem.setPrefix("xsd");
+            }
+            
+            // Fix attributes
+            NamedNodeMap attributes = elem.getAttributes();
+            for (int i = 0; i < attributes.getLength(); i++) {
+                Node attr = attributes.item(i);
+                String value = attr.getNodeValue();
+                if (value != null && value.contains("xs:")) {
+                    attr.setNodeValue(value.replace("xs:", "xsd:"));
+                }
+            }
+            
+            // Recursively fix child nodes
+            NodeList children = node.getChildNodes();
+            for (int i = 0; i < children.getLength(); i++) {
+                fixNamespacePrefixes(children.item(i));
+            }
         }
     }
 }

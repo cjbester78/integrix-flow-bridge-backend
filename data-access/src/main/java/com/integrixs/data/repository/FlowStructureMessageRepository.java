@@ -23,4 +23,7 @@ public interface FlowStructureMessageRepository extends JpaRepository<FlowStruct
                                                                     @Param("messageType") FlowStructureMessage.MessageType messageType);
     
     void deleteByFlowStructureId(String flowStructureId);
+    
+    @Query("SELECT DISTINCT fsm.flowStructure FROM FlowStructureMessage fsm WHERE fsm.messageStructure.id = :messageStructureId")
+    List<FlowStructure> findFlowStructuresByMessageStructureId(@Param("messageStructureId") String messageStructureId);
 }

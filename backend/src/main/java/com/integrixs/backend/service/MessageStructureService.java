@@ -5,9 +5,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.integrixs.backend.dto.XsdImportResult;
 import com.integrixs.backend.dto.XsdValidationResult;
 import com.integrixs.data.model.BusinessComponent;
+import com.integrixs.data.model.FlowStructure;
 import com.integrixs.data.model.MessageStructure;
 import com.integrixs.data.model.User;
 import com.integrixs.data.repository.BusinessComponentRepository;
+import com.integrixs.data.repository.FlowStructureMessageRepository;
 import com.integrixs.data.repository.MessageStructureRepository;
 import com.integrixs.shared.dto.structure.MessageStructureCreateRequestDTO;
 import com.integrixs.shared.dto.structure.MessageStructureDTO;
@@ -37,6 +39,7 @@ public class MessageStructureService {
     
     private final MessageStructureRepository messageStructureRepository;
     private final BusinessComponentRepository businessComponentRepository;
+    private final FlowStructureMessageRepository flowStructureMessageRepository;
     private final ObjectMapper objectMapper = new ObjectMapper();
     
     @Transactional
@@ -131,6 +134,29 @@ public class MessageStructureService {
         log.info("Deleting message structure: {}", id);
         MessageStructure messageStructure = messageStructureRepository.findByIdAndIsActiveTrue(id)
                 .orElseThrow(() -> new RuntimeException("Message structure not found"));
+        
+        // First check if there are any flow structures using this message structure
+        List<FlowStructure> flowStructures = flowStructureMessageRepository.findFlowStructuresByMessageStructureId(id);
+        
+        // Filter out inactive flow structures (soft-deleted ones)
+        List<FlowStructure> activeFlowStructures = flowStructures.stream()
+                .filter(FlowStructure::getIsActive)
+                .collect(Collectors.toList());
+        
+        if (!activeFlowStructures.isEmpty()) {
+            // There are still active flow structures using this message structure
+            String flowNames = activeFlowStructures.stream()
+                    .map(FlowStructure::getName)
+                    .collect(Collectors.joining(", "));
+            throw new RuntimeException("Cannot delete message structure. It is being used by the following flow structures: " + flowNames);
+        }
+        
+        // Clean up any orphaned flow_structure_messages records from inactive flow structures
+        if (!flowStructures.isEmpty()) {
+            log.info("Found {} total flow structures (active and inactive) using this message structure", flowStructures.size());
+            // Since we already checked there are no active flow structures, we can proceed with deletion
+            // The cascade delete will handle the flow_structure_messages cleanup
+        }
         
         // Perform hard delete - permanently remove from database
         messageStructureRepository.delete(messageStructure);

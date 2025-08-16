@@ -2,6 +2,11 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## CRITICAL PRINCIPLES
+
+1. **Never do work arounds - always fix the root issue**
+2. **Never do place holders - implement the full solution**
+
 ## Project Overview
 
 Integrix Flow Bridge is a comprehensive integration middleware platform built with Spring Boot backend and React/TypeScript frontend. It provides visual flow composition, adapter management, field mapping, and orchestration capabilities for enterprise integration scenarios.
@@ -14,6 +19,8 @@ Integrix Flow Bridge is a comprehensive integration middleware platform built wi
 **CRITICAL**: Frontend has it's own repository.
 **CRITICAL**: Backend has it's own repository.
 **Critical**: Run below bash after each fix.
+
+**CRITICAL**: When working with Flow Structures in field mapping, NEVER convert WSDL/XML content to XML. Flow structures already contain XML/WSDL content in their `wsdlContent` field. Always use the original XML content directly instead of trying to convert JSON to XML. The `/structures/{id}/convert-to-xml` endpoint is only for data structures (JSON), not flow structures.
 ```bash
 # Full deployment (frontend + backend)
 ./deploy.sh

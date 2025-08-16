@@ -79,6 +79,14 @@ public class FlowStructureController {
         return ResponseEntity.ok(structures);
     }
     
+    @GetMapping("/by-message-structure/{messageStructureId}")
+    @Operation(summary = "Get all flow structures using a specific message structure")
+    public ResponseEntity<List<FlowStructureDTO>> findByMessageStructure(@PathVariable String messageStructureId) {
+        log.info("Getting flow structures using message structure: {}", messageStructureId);
+        List<FlowStructureDTO> structures = flowStructureService.findByMessageStructure(messageStructureId);
+        return ResponseEntity.ok(structures);
+    }
+    
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMINISTRATOR')")
     @Operation(summary = "Delete a flow structure")
