@@ -79,8 +79,12 @@ public class FlowStructureService {
             createFlowStructureMessages(flowStructure, request.getMessageStructureIds());
         }
         
-        // Generate WSDL
-        generateWsdl(flowStructure);
+        // Set WSDL content if provided (imported WSDL), otherwise generate
+        if (request.getWsdlContent() != null && !request.getWsdlContent().trim().isEmpty()) {
+            flowStructure.setWsdlContent(request.getWsdlContent());
+        } else {
+            generateWsdl(flowStructure);
+        }
         
         return toDTO(flowStructure);
         } catch (Exception e) {
@@ -122,8 +126,12 @@ public class FlowStructureService {
             createFlowStructureMessages(flowStructure, request.getMessageStructureIds());
         }
         
-        // Regenerate WSDL
-        generateWsdl(flowStructure);
+        // Update WSDL content if provided, otherwise regenerate
+        if (request.getWsdlContent() != null && !request.getWsdlContent().trim().isEmpty()) {
+            flowStructure.setWsdlContent(request.getWsdlContent());
+        } else {
+            generateWsdl(flowStructure);
+        }
         
         flowStructure = flowStructureRepository.save(flowStructure);
         return toDTO(flowStructure);

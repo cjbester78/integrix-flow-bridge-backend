@@ -37,4 +37,6 @@ public class FlowStructureCreateRequestDTO {
     private String businessComponentId;
     
     private Map<FlowStructureMessageDTO.MessageType, String> messageStructureIds;
+    
+    private String wsdlContent;
 }
