@@ -29,7 +29,7 @@ public class FlowStructureController {
     private final FlowStructureService flowStructureService;
     
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
+    @PreAuthorize("hasAnyRole('ADMINISTRATOR', 'DEVELOPER', 'INTEGRATOR')")
     @Operation(summary = "Create a new flow structure")
     public ResponseEntity<FlowStructureDTO> create(@Valid @RequestBody FlowStructureCreateRequestDTO request,
                                                  @CurrentUser User currentUser) {
@@ -39,7 +39,7 @@ public class FlowStructureController {
     }
     
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
+    @PreAuthorize("hasAnyRole('ADMINISTRATOR', 'DEVELOPER', 'INTEGRATOR')")
     @Operation(summary = "Update an existing flow structure")
     public ResponseEntity<FlowStructureDTO> update(@PathVariable String id,
                                                  @Valid @RequestBody FlowStructureCreateRequestDTO request,
@@ -80,7 +80,7 @@ public class FlowStructureController {
     }
     
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMINISTRATOR')")
     @Operation(summary = "Delete a flow structure")
     public ResponseEntity<Void> delete(@PathVariable String id) {
         log.info("Deleting flow structure: {}", id);

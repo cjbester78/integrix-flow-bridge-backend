@@ -32,13 +32,26 @@ public class FlowStructureService {
     private final MessageStructureRepository messageStructureRepository;
     private final FlowStructureMessageRepository flowStructureMessageRepository;
     private final BusinessComponentRepository businessComponentRepository;
+    private final EnvironmentPermissionService environmentPermissionService;
     private final ObjectMapper objectMapper = new ObjectMapper();
     
     @Transactional
     public FlowStructureDTO create(FlowStructureCreateRequestDTO request, User currentUser) {
         log.info("Creating flow structure: {}", request.getName());
+        log.info("Current environment: {}, canCreateFlows: {}", 
+            environmentPermissionService.getEnvironmentInfo().get("type"),
+            environmentPermissionService.isActionAllowed("flow.create"));
         
-        // Check if name already exists for business component
+        // Check environment permissions
+        try {
+            environmentPermissionService.checkPermission("flow.create");
+        } catch (Exception e) {
+            log.error("Environment permission check failed: ", e);
+            throw e;
+        }
+        
+        try {
+            // Check if name already exists for business component
         if (flowStructureRepository.existsByNameAndBusinessComponentIdAndIsActiveTrue(
                 request.getName(), request.getBusinessComponentId())) {
             throw new RuntimeException("Flow structure with name '" + request.getName() + 
@@ -70,6 +83,10 @@ public class FlowStructureService {
         generateWsdl(flowStructure);
         
         return toDTO(flowStructure);
+        } catch (Exception e) {
+            log.error("Error creating flow structure: ", e);
+            throw e;
+        }
     }
     
     @Transactional

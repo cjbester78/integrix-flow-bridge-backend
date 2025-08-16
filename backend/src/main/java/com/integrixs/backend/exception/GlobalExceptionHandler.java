@@ -19,6 +19,7 @@ import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.http.MediaType;
 import org.springframework.web.multipart.MultipartException;
+import com.integrixs.backend.exception.ForbiddenException;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -276,6 +277,31 @@ public class GlobalExceptionHandler {
                 .build();
         
         return ResponseEntity.badRequest().body(errorResponse);
+    }
+    
+    /**
+     * Handles ForbiddenException from environment restrictions.
+     * 
+     * @param ex the forbidden exception
+     * @param request the HTTP request
+     * @return error response with environment restriction details
+     */
+    @ExceptionHandler(ForbiddenException.class)
+    public ResponseEntity<ErrorResponse> handleForbiddenException(
+            ForbiddenException ex, HttpServletRequest request) {
+        
+        log.error("Environment permission denied: {}", ex.getMessage());
+        
+        ErrorResponse errorResponse = ErrorResponse.builder()
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.FORBIDDEN.value())
+                .error("ENVIRONMENT_RESTRICTION")
+                .errorCode("FORBIDDEN_IN_ENVIRONMENT")
+                .message(ex.getMessage())
+                .path(request.getRequestURI())
+                .build();
+        
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(errorResponse);
     }
     
     /**

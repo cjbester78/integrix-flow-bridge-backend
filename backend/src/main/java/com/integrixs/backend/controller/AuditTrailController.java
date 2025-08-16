@@ -49,7 +49,7 @@ public class AuditTrailController {
      * Get audit history by user
      */
     @GetMapping("/user/{userId}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMINISTRATOR')")
     @Operation(summary = "Get audit history by user", description = "Retrieve all audit entries for a specific user")
     public ResponseEntity<Page<AuditTrail>> getUserAuditHistory(
             @PathVariable String userId,
@@ -62,7 +62,7 @@ public class AuditTrailController {
      * Search audit trail with filters
      */
     @GetMapping("/search")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMINISTRATOR')")
     @Operation(summary = "Search audit trail", description = "Search audit entries with various filters")
     public ResponseEntity<Page<AuditTrail>> searchAuditTrail(
             @Parameter(description = "Entity type filter")

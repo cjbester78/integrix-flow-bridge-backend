@@ -50,7 +50,7 @@ public class FlowControllerV1 {
      * @return page of flows
      */
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'INTEGRATOR', 'VIEWER')")
+    @PreAuthorize("hasAnyRole('ADMINISTRATOR', 'DEVELOPER', 'INTEGRATOR', 'VIEWER')")
     @Timed(value = "api.flows.list", description = "Time taken to list flows")
     public ResponseEntity<Page<IntegrationFlowDTO>> getAllFlows(Pageable pageable) {
         log.debug("GET /api/v1/flows - page: {}, size: {}", 
@@ -81,7 +81,7 @@ public class FlowControllerV1 {
      * @return the flow
      */
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'INTEGRATOR', 'VIEWER')")
+    @PreAuthorize("hasAnyRole('ADMINISTRATOR', 'DEVELOPER', 'INTEGRATOR', 'VIEWER')")
     @Timed(value = "api.flows.get", description = "Time taken to get flow")
     public ResponseEntity<IntegrationFlowDTO> getFlow(@PathVariable String id) {
         log.debug("GET /api/v1/flows/{}", id);
@@ -100,7 +100,7 @@ public class FlowControllerV1 {
      * @return created flow
      */
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'INTEGRATOR')")
+    @PreAuthorize("hasAnyRole('ADMINISTRATOR', 'DEVELOPER', 'INTEGRATOR')")
     @Timed(value = "api.flows.create", description = "Time taken to create flow")
     public ResponseEntity<IntegrationFlowDTO> createFlow(
             @Valid @RequestBody FlowCreateRequestDTO request,
@@ -124,7 +124,7 @@ public class FlowControllerV1 {
      * @return activated flow
      */
     @PutMapping("/{id}/activate")
-    @PreAuthorize("hasAnyRole('ADMIN', 'INTEGRATOR')")
+    @PreAuthorize("hasAnyRole('ADMINISTRATOR', 'DEVELOPER', 'INTEGRATOR')")
     @Timed(value = "api.flows.activate", description = "Time taken to activate flow")
     public ResponseEntity<IntegrationFlowDTO> activateFlow(
             @PathVariable String id,
@@ -147,7 +147,7 @@ public class FlowControllerV1 {
      * @return deactivated flow
      */
     @PutMapping("/{id}/deactivate")
-    @PreAuthorize("hasAnyRole('ADMIN', 'INTEGRATOR')")
+    @PreAuthorize("hasAnyRole('ADMINISTRATOR', 'DEVELOPER', 'INTEGRATOR')")
     @Timed(value = "api.flows.deactivate", description = "Time taken to deactivate flow")
     public ResponseEntity<IntegrationFlowDTO> deactivateFlow(
             @PathVariable String id,
@@ -172,7 +172,7 @@ public class FlowControllerV1 {
      * @return no content
      */
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMINISTRATOR')")
     @Timed(value = "api.flows.delete", description = "Time taken to delete flow")
     public ResponseEntity<Void> deleteFlow(
             @PathVariable String id,
