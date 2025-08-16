@@ -22,6 +22,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.hibernate.Hibernate;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import org.w3c.dom.*;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -36,7 +38,6 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
-@RequiredArgsConstructor
 @Slf4j
 public class FlowStructureService {
     
@@ -46,6 +47,21 @@ public class FlowStructureService {
     private final BusinessComponentRepository businessComponentRepository;
     private final EnvironmentPermissionService environmentPermissionService;
     private final ObjectMapper objectMapper = new ObjectMapper();
+    private final EntityManager entityManager;
+    
+    public FlowStructureService(FlowStructureRepository flowStructureRepository,
+                              MessageStructureRepository messageStructureRepository,
+                              FlowStructureMessageRepository flowStructureMessageRepository,
+                              BusinessComponentRepository businessComponentRepository,
+                              EnvironmentPermissionService environmentPermissionService,
+                              EntityManager entityManager) {
+        this.flowStructureRepository = flowStructureRepository;
+        this.messageStructureRepository = messageStructureRepository;
+        this.flowStructureMessageRepository = flowStructureMessageRepository;
+        this.businessComponentRepository = businessComponentRepository;
+        this.environmentPermissionService = environmentPermissionService;
+        this.entityManager = entityManager;
+    }
     
     @Transactional
     public FlowStructureDTO create(FlowStructureCreateRequestDTO request, User currentUser) {
@@ -89,16 +105,29 @@ public class FlowStructureService {
         // Create flow structure messages
         if (request.getMessageStructureIds() != null) {
             createFlowStructureMessages(flowStructure, request.getMessageStructureIds());
-            // Flush to ensure associations are persisted
-            flowStructureRepository.flush();
+            log.info("Created flow structure messages for flow structure: {}", flowStructure.getId());
+            
+            // Clear the persistence context to ensure fresh load
+            entityManager.flush();
+            entityManager.clear();
+            log.info("Flushed and cleared entity manager");
+            
             // Reload the flow structure with associations
             flowStructure = flowStructureRepository.findById(flowStructure.getId())
                     .orElseThrow(() -> new RuntimeException("Flow structure not found after save"));
+            log.info("Reloaded flow structure: {}, associations count: {}", 
+                flowStructure.getId(), 
+                flowStructure.getFlowStructureMessages() != null ? flowStructure.getFlowStructureMessages().size() : 0);
+            
             // Initialize associations
             if (flowStructure.getFlowStructureMessages() != null) {
                 Hibernate.initialize(flowStructure.getFlowStructureMessages());
+                log.info("Initialized flow structure messages, count: {}", flowStructure.getFlowStructureMessages().size());
                 for (FlowStructureMessage fsm : flowStructure.getFlowStructureMessages()) {
                     Hibernate.initialize(fsm.getMessageStructure());
+                    log.info("Initialized message structure: {} for type: {}", 
+                        fsm.getMessageStructure() != null ? fsm.getMessageStructure().getName() : "null", 
+                        fsm.getMessageType());
                 }
             }
         }
@@ -111,6 +140,9 @@ public class FlowStructureService {
             generateWsdl(flowStructure);
             flowStructure.setSourceType("INTERNAL");
         }
+        
+        // Save the flow structure with WSDL content
+        flowStructure = flowStructureRepository.save(flowStructure);
         
         return toDTO(flowStructure);
         } catch (Exception e) {
@@ -150,8 +182,9 @@ public class FlowStructureService {
         flowStructureMessageRepository.deleteByFlowStructureId(id);
         if (request.getMessageStructureIds() != null) {
             createFlowStructureMessages(flowStructure, request.getMessageStructureIds());
-            // Flush to ensure associations are persisted
-            flowStructureRepository.flush();
+            // Clear the persistence context to ensure fresh load
+            entityManager.flush();
+            entityManager.clear();
             // Reload the flow structure with associations
             flowStructure = flowStructureRepository.findById(flowStructure.getId())
                     .orElseThrow(() -> new RuntimeException("Flow structure not found after update"));
