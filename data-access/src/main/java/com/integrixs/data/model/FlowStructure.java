@@ -40,6 +40,10 @@ public class FlowStructure {
     @Column(name = "wsdl_content", columnDefinition = "LONGTEXT")
     private String wsdlContent;
     
+    @Column(name = "source_type")
+    @Builder.Default
+    private String sourceType = "INTERNAL";
+    
     @Column(name = "namespace", columnDefinition = "JSON")
     private String namespace;
     

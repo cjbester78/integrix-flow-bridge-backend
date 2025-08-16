@@ -22,6 +22,7 @@ public class FlowStructureDTO {
     private ProcessingMode processingMode;
     private Direction direction;
     private String wsdlContent;
+    private String sourceType;
     private Map<String, Object> namespace;
     private Map<String, Object> metadata;
     private Set<String> tags;

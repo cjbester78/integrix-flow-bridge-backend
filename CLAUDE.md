@@ -8,6 +8,8 @@ Integrix Flow Bridge is a comprehensive integration middleware platform built wi
 
 ## CRITICAL: Instruction Verification Process
 
+**CRITICAL**: Before making changes, always read the codebase to check if the solution to the problem may already exist elsewhere.  
+
 **CRITICAL**: After every fix do a git commit.
 **CRITICAL**: Frontend has it's own repository.
 **CRITICAL**: Backend has it's own repository.
@@ -127,7 +129,7 @@ integrix-flow-bridge/
 
 3. **Security Layer**
    - JWT authentication with Spring Security
-   - Role-based access control (ADMIN, USER, VIEWER)
+   - Role-based access control (ADMINISTRATOR, DEVELOPER, INTEGRATOR, VIEWER)
    - Environment-based restrictions (Dev/QA/Prod)
 
 4. **Data Model**

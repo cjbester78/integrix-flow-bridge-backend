@@ -87,4 +87,13 @@ public class FlowStructureController {
         flowStructureService.delete(id);
         return ResponseEntity.noContent().build();
     }
+    
+    @PostMapping("/regenerate-wsdl")
+    @PreAuthorize("hasRole('ADMINISTRATOR')")
+    @Operation(summary = "Regenerate WSDL for all flow structures with placeholders")
+    public ResponseEntity<String> regenerateWsdl() {
+        log.info("Regenerating WSDL for all flow structures");
+        flowStructureService.regenerateWsdlForAll();
+        return ResponseEntity.ok("WSDL regeneration completed");
+    }
 }

@@ -6,6 +6,8 @@ import com.integrixs.data.model.FlowStructure;
 import com.integrixs.data.model.FlowStructureMessage;
 import com.integrixs.data.model.MessageStructure;
 import com.integrixs.data.model.User;
+import com.integrixs.data.model.FlowStructure.ProcessingMode;
+import com.integrixs.data.model.FlowStructureMessage.MessageType;
 import com.integrixs.data.repository.BusinessComponentRepository;
 import com.integrixs.data.repository.FlowStructureMessageRepository;
 import com.integrixs.data.repository.FlowStructureRepository;
@@ -82,8 +84,10 @@ public class FlowStructureService {
         // Set WSDL content if provided (imported WSDL), otherwise generate
         if (request.getWsdlContent() != null && !request.getWsdlContent().trim().isEmpty()) {
             flowStructure.setWsdlContent(request.getWsdlContent());
+            flowStructure.setSourceType("EXTERNAL");
         } else {
             generateWsdl(flowStructure);
+            flowStructure.setSourceType("INTERNAL");
         }
         
         return toDTO(flowStructure);
@@ -129,8 +133,13 @@ public class FlowStructureService {
         // Update WSDL content if provided, otherwise regenerate
         if (request.getWsdlContent() != null && !request.getWsdlContent().trim().isEmpty()) {
             flowStructure.setWsdlContent(request.getWsdlContent());
+            flowStructure.setSourceType("EXTERNAL");
         } else {
             generateWsdl(flowStructure);
+            // Keep existing source type if updating, otherwise set to INTERNAL
+            if (flowStructure.getSourceType() == null) {
+                flowStructure.setSourceType("INTERNAL");
+            }
         }
         
         flowStructure = flowStructureRepository.save(flowStructure);
@@ -195,9 +204,199 @@ public class FlowStructureService {
     }
     
     private void generateWsdl(FlowStructure flowStructure) {
-        // TODO: Implement WSDL generation based on processing mode and direction
-        // For now, set a placeholder
-        flowStructure.setWsdlContent("<!-- WSDL generation pending implementation -->");
+        String serviceName = flowStructure.getName().replaceAll("[^a-zA-Z0-9]", "");
+        String namespace = "http://integrixflowbridge.com/" + serviceName;
+        
+        StringBuilder wsdl = new StringBuilder();
+        wsdl.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
+        wsdl.append("<definitions name=\"").append(serviceName).append("Service\"\n");
+        wsdl.append("             targetNamespace=\"").append(namespace).append("\"\n");
+        wsdl.append("             xmlns=\"http://schemas.xmlsoap.org/wsdl/\"\n");
+        wsdl.append("             xmlns:soap=\"http://schemas.xmlsoap.org/wsdl/soap/\"\n");
+        wsdl.append("             xmlns:tns=\"").append(namespace).append("\"\n");
+        wsdl.append("             xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\">\n");
+        wsdl.append("\n");
+        
+        // Types section - define message structures based on linked message structures
+        wsdl.append("  <types>\n");
+        wsdl.append("    <xsd:schema targetNamespace=\"").append(namespace).append("\">\n");
+        
+        // Generate element definitions based on message structures
+        Set<FlowStructureMessage> messages = flowStructure.getFlowStructureMessages();
+        if (messages != null && !messages.isEmpty()) {
+            for (FlowStructureMessage msg : messages) {
+                String elementName = getElementNameForMessageType(msg.getMessageType());
+                MessageStructure msgStructure = msg.getMessageStructure();
+                
+                if (msgStructure != null && msgStructure.getXsdContent() != null) {
+                    // Extract type definition from XSD content
+                    wsdl.append("      <!-- ").append(elementName).append(" from ").append(msgStructure.getName()).append(" -->\n");
+                    wsdl.append("      <xsd:element name=\"").append(elementName).append("\" type=\"xsd:anyType\"/>\n");
+                } else {
+                    // Default to anyType if no structure defined
+                    wsdl.append("      <xsd:element name=\"").append(elementName).append("\" type=\"xsd:anyType\"/>\n");
+                }
+            }
+        } else {
+            // Default elements if no message structures defined
+            if (flowStructure.getProcessingMode() == ProcessingMode.SYNC) {
+                wsdl.append("      <xsd:element name=\"Request\" type=\"xsd:anyType\"/>\n");
+                wsdl.append("      <xsd:element name=\"Response\" type=\"xsd:anyType\"/>\n");
+                wsdl.append("      <xsd:element name=\"Fault\" type=\"xsd:anyType\"/>\n");
+            } else {
+                wsdl.append("      <xsd:element name=\"Message\" type=\"xsd:anyType\"/>\n");
+            }
+        }
+        
+        wsdl.append("    </xsd:schema>\n");
+        wsdl.append("  </types>\n");
+        wsdl.append("\n");
+        
+        // Messages section
+        if (messages != null && !messages.isEmpty()) {
+            for (FlowStructureMessage msg : messages) {
+                String messageName = getMessageNameForType(msg.getMessageType());
+                String elementName = getElementNameForMessageType(msg.getMessageType());
+                wsdl.append("  <message name=\"").append(messageName).append("\">\n");
+                wsdl.append("    <part name=\"body\" element=\"tns:").append(elementName).append("\"/>\n");
+                wsdl.append("  </message>\n");
+                wsdl.append("\n");
+            }
+        } else {
+            // Default messages
+            if (flowStructure.getProcessingMode() == ProcessingMode.SYNC) {
+                wsdl.append("  <message name=\"RequestMessage\">\n");
+                wsdl.append("    <part name=\"body\" element=\"tns:Request\"/>\n");
+                wsdl.append("  </message>\n");
+                wsdl.append("\n");
+                wsdl.append("  <message name=\"ResponseMessage\">\n");
+                wsdl.append("    <part name=\"body\" element=\"tns:Response\"/>\n");
+                wsdl.append("  </message>\n");
+                wsdl.append("\n");
+                wsdl.append("  <message name=\"FaultMessage\">\n");
+                wsdl.append("    <part name=\"body\" element=\"tns:Fault\"/>\n");
+                wsdl.append("  </message>\n");
+                wsdl.append("\n");
+            } else {
+                wsdl.append("  <message name=\"Message\">\n");
+                wsdl.append("    <part name=\"body\" element=\"tns:Message\"/>\n");
+                wsdl.append("  </message>\n");
+                wsdl.append("\n");
+            }
+        }
+        
+        // PortType section
+        wsdl.append("  <portType name=\"").append(serviceName).append("PortType\">\n");
+        wsdl.append("    <operation name=\"process\">\n");
+        
+        if (flowStructure.getProcessingMode() == ProcessingMode.SYNC) {
+            wsdl.append("      <input message=\"tns:RequestMessage\"/>\n");
+            wsdl.append("      <output message=\"tns:ResponseMessage\"/>\n");
+            wsdl.append("      <fault name=\"fault\" message=\"tns:FaultMessage\"/>\n");
+        } else {
+            wsdl.append("      <input message=\"tns:Message\"/>\n");
+        }
+        
+        wsdl.append("    </operation>\n");
+        wsdl.append("  </portType>\n");
+        wsdl.append("\n");
+        
+        // Binding section
+        wsdl.append("  <binding name=\"").append(serviceName).append("Binding\" type=\"tns:").append(serviceName).append("PortType\">\n");
+        wsdl.append("    <soap:binding style=\"document\" transport=\"http://schemas.xmlsoap.org/soap/http\"/>\n");
+        wsdl.append("    <operation name=\"process\">\n");
+        wsdl.append("      <soap:operation soapAction=\"process\"/>\n");
+        wsdl.append("      <input>\n");
+        wsdl.append("        <soap:body use=\"literal\"/>\n");
+        wsdl.append("      </input>\n");
+        
+        if (flowStructure.getProcessingMode() == ProcessingMode.SYNC) {
+            wsdl.append("      <output>\n");
+            wsdl.append("        <soap:body use=\"literal\"/>\n");
+            wsdl.append("      </output>\n");
+            wsdl.append("      <fault name=\"fault\">\n");
+            wsdl.append("        <soap:fault name=\"fault\" use=\"literal\"/>\n");
+            wsdl.append("      </fault>\n");
+        }
+        
+        wsdl.append("    </operation>\n");
+        wsdl.append("  </binding>\n");
+        wsdl.append("\n");
+        
+        // Service section
+        wsdl.append("  <service name=\"").append(serviceName).append("Service\">\n");
+        wsdl.append("    <port name=\"").append(serviceName).append("Port\" binding=\"tns:").append(serviceName).append("Binding\">\n");
+        wsdl.append("      <soap:address location=\"http://localhost:8080/api/flow/").append(serviceName).append("\"/>\n");
+        wsdl.append("    </port>\n");
+        wsdl.append("  </service>\n");
+        wsdl.append("</definitions>");
+        
+        flowStructure.setWsdlContent(wsdl.toString());
+        
+        // Store operation info in metadata
+        try {
+            Map<String, Object> metadata = flowStructure.getMetadata() != null ?
+                    objectMapper.readValue(flowStructure.getMetadata(), Map.class) : new HashMap<>();
+            
+            Map<String, Object> operationInfo = new HashMap<>();
+            operationInfo.put("hasInput", true);
+            operationInfo.put("hasOutput", flowStructure.getProcessingMode() == ProcessingMode.SYNC);
+            operationInfo.put("hasFault", flowStructure.getProcessingMode() == ProcessingMode.SYNC);
+            operationInfo.put("isSynchronous", flowStructure.getProcessingMode() == ProcessingMode.SYNC);
+            
+            List<String> messageTypes = new ArrayList<>();
+            messageTypes.add("input");
+            if (flowStructure.getProcessingMode() == ProcessingMode.SYNC) {
+                messageTypes.add("output");
+                messageTypes.add("fault");
+            }
+            operationInfo.put("messageTypes", messageTypes);
+            
+            metadata.put("operationInfo", operationInfo);
+            flowStructure.setMetadata(objectMapper.writeValueAsString(metadata));
+        } catch (Exception e) {
+            log.error("Error updating metadata with operation info", e);
+        }
+    }
+    
+    private String getElementNameForMessageType(MessageType type) {
+        switch (type) {
+            case INPUT:
+                return "Request";
+            case OUTPUT:
+                return "Response";
+            case FAULT:
+                return "Fault";
+            default:
+                return "Message";
+        }
+    }
+    
+    private String getMessageNameForType(MessageType type) {
+        switch (type) {
+            case INPUT:
+                return "RequestMessage";
+            case OUTPUT:
+                return "ResponseMessage";
+            case FAULT:
+                return "FaultMessage";
+            default:
+                return "Message";
+        }
+    }
+    
+    @Transactional
+    public void regenerateWsdlForAll() {
+        log.info("Regenerating WSDL for all flow structures");
+        List<FlowStructure> flowStructures = flowStructureRepository.findAll();
+        for (FlowStructure flowStructure : flowStructures) {
+            if (flowStructure.getWsdlContent() == null || 
+                flowStructure.getWsdlContent().contains("WSDL generation pending")) {
+                generateWsdl(flowStructure);
+                flowStructureRepository.save(flowStructure);
+                log.info("Regenerated WSDL for flow structure: {}", flowStructure.getName());
+            }
+        }
     }
     
     private FlowStructureDTO toDTO(FlowStructure entity) {
@@ -214,6 +413,7 @@ public class FlowStructureService {
                     .processingMode(FlowStructureDTO.ProcessingMode.valueOf(entity.getProcessingMode().name()))
                     .direction(FlowStructureDTO.Direction.valueOf(entity.getDirection().name()))
                     .wsdlContent(entity.getWsdlContent())
+                    .sourceType(entity.getSourceType())
                     .namespace(entity.getNamespace() != null ? 
                             objectMapper.readValue(entity.getNamespace(), new TypeReference<Map<String, Object>>() {}) : null)
                     .metadata(entity.getMetadata() != null ? 
