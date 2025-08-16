@@ -315,11 +315,12 @@ public class FlowStructureService {
                         wsdl.append("      <!-- ").append(msg.getMessageType()).append(" message from ").append(msgStructure.getName()).append(" (parse error) -->\n");
                         wsdl.append("      <xsd:element name=\"").append(elementName).append("\" type=\"xsd:anyType\"/>\n");
                     }
-                } else if (msgStructure != null) {
-                    // No XSD content, use anyType
-                    String elementName = msgStructure.getName();
-                    wsdl.append("      <!-- ").append(msg.getMessageType()).append(" message from ").append(msgStructure.getName()).append(" -->\n");
-                    wsdl.append("      <xsd:element name=\"").append(elementName).append("\" type=\"xsd:anyType\"/>\n");
+                    } else {
+                        // No XSD content, use anyType
+                        String elementName = msgStructure.getName();
+                        wsdl.append("      <!-- ").append(msg.getMessageType()).append(" message from ").append(msgStructure.getName()).append(" -->\n");
+                        wsdl.append("      <xsd:element name=\"").append(elementName).append("\" type=\"xsd:anyType\"/>\n");
+                    }
                 } else {
                     // Fallback to generic name if no structure defined
                     String elementName = getElementNameForMessageType(msg.getMessageType());
