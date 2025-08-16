@@ -241,6 +241,7 @@ public class FlowStructureService {
     }
     
     private void generateWsdl(FlowStructure flowStructure) {
+        log.info("=== GENERATING WSDL for flow structure: {} ===", flowStructure.getName());
         String serviceName = flowStructure.getName().replaceAll("[^a-zA-Z0-9]", "");
         String namespace = "http://integrixflowbridge.com/" + serviceName;
         
@@ -260,18 +261,30 @@ public class FlowStructureService {
         
         // Generate element definitions based on message structures
         Set<FlowStructureMessage> messages = flowStructure.getFlowStructureMessages();
+        log.info("Flow structure has {} message structure associations", messages != null ? messages.size() : 0);
+        
         if (messages != null && !messages.isEmpty()) {
             boolean hasInlineXsd = false;
             
             // First, check if all message structures have XSD content for inline inclusion
             for (FlowStructureMessage msg : messages) {
                 MessageStructure msgStructure = msg.getMessageStructure();
-                if (msgStructure != null && msgStructure.getXsdContent() != null && !msgStructure.getXsdContent().trim().isEmpty()) {
-                    hasInlineXsd = true;
-                    // Extract and inline the XSD content
-                    try {
-                        String xsdContent = msgStructure.getXsdContent();
-                        log.info("Processing XSD content for message structure: {} (type: {})", msgStructure.getName(), msg.getMessageType());
+                log.info("Processing message structure: {} (type: {})", 
+                    msgStructure != null ? msgStructure.getName() : "null", 
+                    msg.getMessageType());
+                if (msgStructure != null) {
+                    String xsdContent = msgStructure.getXsdContent();
+                    log.info("Message structure {} - XSD content present: {}, length: {}", 
+                        msgStructure.getName(), 
+                        xsdContent != null && !xsdContent.trim().isEmpty(),
+                        xsdContent != null ? xsdContent.length() : 0);
+                    
+                    if (xsdContent != null && !xsdContent.trim().isEmpty()) {
+                        hasInlineXsd = true;
+                        // Extract and inline the XSD content
+                        try {
+                            log.info("Processing XSD content for message structure: {} (type: {})", msgStructure.getName(), msg.getMessageType());
+                            log.info("XSD content preview: {}", xsdContent.substring(0, Math.min(200, xsdContent.length())));
                         
                         // Parse the XSD to extract element definitions
                         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
@@ -408,7 +421,12 @@ public class FlowStructureService {
         wsdl.append("  </service>\n");
         wsdl.append("</definitions>");
         
-        flowStructure.setWsdlContent(wsdl.toString());
+        String generatedWsdl = wsdl.toString();
+        log.info("=== GENERATED WSDL PREVIEW (first 500 chars) ===");
+        log.info(generatedWsdl.substring(0, Math.min(500, generatedWsdl.length())));
+        log.info("=== END WSDL GENERATION ===");
+        
+        flowStructure.setWsdlContent(generatedWsdl);
         
         // Store operation info in metadata
         try {
