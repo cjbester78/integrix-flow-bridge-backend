@@ -84,16 +84,7 @@ spring:
         # Enable lazy loading outside transactions (use with caution)
         enable_lazy_load_no_trans: false
 
-# ✅ Logging (used by all profiles unless overridden)
-logging:
-  level:
-    root: INFO
-    org.springframework.web: DEBUG
-    com.integrationlab.controller: DEBUG
-    com.integrationlab: DEBUG
-    com.integrationlab.monitoring: DEBUG
-    org.hibernate.SQL: DEBUG
-    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+# ✅ Logging configuration is in logback-spring.xml
 
 # ✅ Actuator settings
 management:

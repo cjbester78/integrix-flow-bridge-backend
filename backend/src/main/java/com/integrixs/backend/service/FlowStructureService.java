@@ -21,6 +21,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.hibernate.Hibernate;
 import org.w3c.dom.*;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -242,6 +243,15 @@ public class FlowStructureService {
     
     private void generateWsdl(FlowStructure flowStructure) {
         log.info("=== GENERATING WSDL for flow structure: {} ===", flowStructure.getName());
+        
+        // Ensure flow structure messages are initialized
+        if (flowStructure.getFlowStructureMessages() != null) {
+            Hibernate.initialize(flowStructure.getFlowStructureMessages());
+            for (FlowStructureMessage fsm : flowStructure.getFlowStructureMessages()) {
+                Hibernate.initialize(fsm.getMessageStructure());
+            }
+        }
+        
         String serviceName = flowStructure.getName().replaceAll("[^a-zA-Z0-9]", "");
         String namespace = "http://integrixflowbridge.com/" + serviceName;
         
