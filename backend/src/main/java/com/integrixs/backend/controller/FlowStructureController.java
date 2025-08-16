@@ -104,4 +104,13 @@ public class FlowStructureController {
         flowStructureService.regenerateWsdlForAll();
         return ResponseEntity.ok("WSDL regeneration completed");
     }
+    
+    @PostMapping("/{id}/regenerate-wsdl")
+    @PreAuthorize("hasAnyRole('ADMINISTRATOR', 'DEVELOPER')")
+    @Operation(summary = "Regenerate WSDL for a specific flow structure")
+    public ResponseEntity<FlowStructureDTO> regenerateWsdlForOne(@PathVariable String id) {
+        log.info("Regenerating WSDL for flow structure: {}", id);
+        FlowStructureDTO flowStructure = flowStructureService.regenerateWsdl(id);
+        return ResponseEntity.ok(flowStructure);
+    }
 }

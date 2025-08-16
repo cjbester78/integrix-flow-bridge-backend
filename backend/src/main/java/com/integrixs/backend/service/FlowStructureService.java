@@ -549,12 +549,49 @@ public class FlowStructureService {
     }
     
     @Transactional
+    public FlowStructureDTO regenerateWsdl(String id) {
+        log.info("Regenerating WSDL for flow structure: {}", id);
+        FlowStructure flowStructure = flowStructureRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Flow structure not found"));
+        
+        if (!"INTERNAL".equals(flowStructure.getSourceType())) {
+            throw new RuntimeException("Cannot regenerate WSDL for external flow structures");
+        }
+        
+        // Initialize associations
+        if (flowStructure.getFlowStructureMessages() != null) {
+            Hibernate.initialize(flowStructure.getFlowStructureMessages());
+            log.info("Loaded {} message associations", flowStructure.getFlowStructureMessages().size());
+            for (FlowStructureMessage fsm : flowStructure.getFlowStructureMessages()) {
+                Hibernate.initialize(fsm.getMessageStructure());
+                log.info("Message structure: {} (type: {})", 
+                    fsm.getMessageStructure().getName(), fsm.getMessageType());
+            }
+        }
+        
+        generateWsdl(flowStructure);
+        flowStructure = flowStructureRepository.save(flowStructure);
+        log.info("WSDL regenerated successfully for flow structure: {}", flowStructure.getName());
+        
+        return toDTO(flowStructure);
+    }
+    
+    @Transactional
     public void regenerateWsdlForAll() {
         log.info("Regenerating WSDL for all flow structures");
         List<FlowStructure> flowStructures = flowStructureRepository.findAll();
         for (FlowStructure flowStructure : flowStructures) {
-            if (flowStructure.getWsdlContent() == null || 
-                flowStructure.getWsdlContent().contains("WSDL generation pending")) {
+            if (flowStructure.getSourceType() != null && flowStructure.getSourceType().equals("INTERNAL")) {
+                log.info("Regenerating WSDL for flow structure: {}", flowStructure.getName());
+                
+                // Initialize associations
+                if (flowStructure.getFlowStructureMessages() != null) {
+                    Hibernate.initialize(flowStructure.getFlowStructureMessages());
+                    for (FlowStructureMessage fsm : flowStructure.getFlowStructureMessages()) {
+                        Hibernate.initialize(fsm.getMessageStructure());
+                    }
+                }
+                
                 generateWsdl(flowStructure);
                 flowStructureRepository.save(flowStructure);
                 log.info("Regenerated WSDL for flow structure: {}", flowStructure.getName());
