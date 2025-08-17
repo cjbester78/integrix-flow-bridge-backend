@@ -133,10 +133,7 @@ public class FlowExecutionSyncService {
             // Step 2: Apply transformation if flow has mapping
             String transformedMessage = validatedMessage;
             if ("WITH_MAPPING".equals(flow.getMappingMode().toString())) {
-                logger.info("====== FIELD MAPPING START ======");
-                logger.info("Flow: {} (ID: {})", flow.getName(), flow.getId());
-                logger.info("Mapping mode: {}", flow.getMappingMode());
-                logger.info("Source message: {}", validatedMessage);
+                logger.info("Applying field mapping transformation for flow: {}", flow.getName());
                 
                 messageService.logProcessingStep(correlationId, flow,
                     "Applying data transformations",
@@ -178,14 +175,14 @@ public class FlowExecutionSyncService {
                                 logger.warn("Flow has no target flow structure ID!");
                             }
                             
-                            logger.info("---- Field Mappings Details ----");
-                            for (int i = 0; i < fieldMappings.size(); i++) {
-                                FieldMapping fm = fieldMappings.get(i);
-                                logger.info("Mapping {}: source='{}', target='{}', sourceXPath='{}', targetXPath='{}'", 
-                                    i+1, fm.getSourceFields(), fm.getTargetField(), fm.getSourceXPath(), fm.getTargetXPath());
+                            logger.debug("Field mappings count: {}", fieldMappings.size());
+                            if (logger.isDebugEnabled()) {
+                                for (int i = 0; i < fieldMappings.size(); i++) {
+                                    FieldMapping fm = fieldMappings.get(i);
+                                    logger.debug("Mapping {}: source='{}', target='{}', sourceXPath='{}', targetXPath='{}'", 
+                                        i+1, fm.getSourceFields(), fm.getTargetField(), fm.getSourceXPath(), fm.getTargetXPath());
+                                }
                             }
-                            
-                            logger.info("---- Calling XML Field Mapper ----");
                             // Apply XML field mappings
                             transformedMessage = xmlFieldMapper.mapXmlFields(
                                 validatedMessage,  // source XML
@@ -194,8 +191,8 @@ public class FlowExecutionSyncService {
                                 null              // namespaces (TODO: get from flow structure)
                             );
                             
-                            logger.info("---- Transformation Result ----");
-                            logger.info("Transformed message: {}", transformedMessage);
+                            logger.debug("Transformed message: {}", transformedMessage);
+                            logger.info("Successfully applied {} field mappings", fieldMappings.size());
                             messageService.logProcessingStep(correlationId, flow,
                                 "Transformation completed successfully",
                                 "Applied " + fieldMappings.size() + " field mappings",
@@ -212,10 +209,8 @@ public class FlowExecutionSyncService {
                     }
                 } else {
                     logger.warn("Flow has WITH_MAPPING mode but no transformations!");
-                    logger.info("Transformations object: {}", flow.getTransformations());
                     transformedMessage = validatedMessage;
                 }
-                logger.info("====== FIELD MAPPING END ======");
             } else if ("PASS_THROUGH".equals(flow.getMappingMode().toString())) {
                 logger.info("Pass-through mode - no transformation applied");
                 messageService.logProcessingStep(correlationId, flow,
@@ -227,11 +222,13 @@ public class FlowExecutionSyncService {
             
             // Step 3: Execute target adapter
             logger.info("Executing target adapter: {} (ID: {})", targetAdapter.getName(), targetAdapter.getId());
-            logger.info("====== SENDING TO TARGET ADAPTER ======");
-            logger.info("Original message: {}", validatedMessage);
-            logger.info("Transformed message: {}", transformedMessage);
-            logger.info("Messages are equal: {}", validatedMessage.equals(transformedMessage));
-            logger.info("====== END SENDING TO TARGET ADAPTER ======");
+            logger.debug("Original message: {}", validatedMessage);
+            logger.debug("Transformed message: {}", transformedMessage);
+            if (!validatedMessage.equals(transformedMessage)) {
+                logger.info("Message was transformed successfully");
+            } else {
+                logger.warn("Message was not transformed - original and transformed messages are identical");
+            }
             
             messageService.logProcessingStep(correlationId, flow,
                 "Executing target adapter: " + targetAdapter.getName(),

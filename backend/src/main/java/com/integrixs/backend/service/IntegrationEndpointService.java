@@ -66,14 +66,10 @@ public class IntegrationEndpointService {
      */
     @Transactional
     public String processSoapRequest(String flowPath, String soapRequest, Map<String, String> headers) throws Exception {
-        logger.error("CRITICAL DEBUG: Processing SOAP request for flow path: {}", flowPath);
         logger.info("Processing SOAP request for flow path: {}", flowPath);
         
-        // Find the deployed flow
+        // Find the deployed flow with all relationships eagerly loaded
         IntegrationFlow flow = findDeployedFlow(flowPath);
-        logger.error("CRITICAL DEBUG: Found deployed flow: {} (ID: {})", flow.getName(), flow.getId());
-        logger.error("CRITICAL DEBUG: Flow mapping mode: {}", flow.getMappingMode());
-        logger.error("CRITICAL DEBUG: Flow has {} transformations", flow.getTransformations() != null ? flow.getTransformations().size() : 0);
         logger.info("Found deployed flow: {} (ID: {})", flow.getName(), flow.getId());
         logger.info("Flow mapping mode: {}", flow.getMappingMode());
         logger.info("Flow has {} transformations", flow.getTransformations() != null ? flow.getTransformations().size() : 0);
@@ -231,26 +227,26 @@ public class IntegrationEndpointService {
     }
     
     private IntegrationFlow findDeployedFlow(String flowPath) throws Exception {
-        // Find by deployment endpoint containing the flow path
-        Optional<IntegrationFlow> flow = flowRepository.findByDeploymentEndpointContaining(flowPath);
+        // Find deployed flow with all transformations and field mappings eagerly loaded in a single query
+        Optional<IntegrationFlow> flow = flowRepository.findByDeploymentEndpointContainingAndStatus(
+            flowPath, FlowStatus.DEPLOYED_ACTIVE);
         
         if (flow.isEmpty()) {
-            throw new IllegalArgumentException("No deployed flow found for path: " + flowPath);
+            throw new IllegalArgumentException("No deployed active flow found for path: " + flowPath);
         }
         
         IntegrationFlow integrationFlow = flow.get();
+        logger.info("Loaded flow '{}' with {} transformations", 
+            integrationFlow.getName(),
+            integrationFlow.getTransformations() != null ? integrationFlow.getTransformations().size() : 0);
         
-        // Verify flow is deployed and active
-        if (integrationFlow.getStatus() != FlowStatus.DEPLOYED_ACTIVE) {
-            throw new IllegalStateException("Flow is not deployed or active: " + flowPath);
-        }
-        
-        // Reload with transformations eagerly loaded
-        Optional<IntegrationFlow> flowWithTransformations = flowRepository.findWithTransformationsById(integrationFlow.getId());
-        if (flowWithTransformations.isPresent()) {
-            integrationFlow = flowWithTransformations.get();
-            logger.info("Loaded flow with {} transformations", 
-                integrationFlow.getTransformations() != null ? integrationFlow.getTransformations().size() : 0);
+        // Log field mapping details
+        if (integrationFlow.getTransformations() != null) {
+            for (FlowTransformation transformation : integrationFlow.getTransformations()) {
+                logger.info("Transformation '{}' has {} field mappings", 
+                    transformation.getName(),
+                    transformation.getFieldMappings() != null ? transformation.getFieldMappings().size() : 0);
+            }
         }
         
         return integrationFlow;
