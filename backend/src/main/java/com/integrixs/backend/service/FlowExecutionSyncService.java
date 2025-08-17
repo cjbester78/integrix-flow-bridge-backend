@@ -112,10 +112,14 @@ public class FlowExecutionSyncService {
         
         try {
             // Step 1: Validate incoming message against source data structure
-            messageService.logProcessingStep(correlationId, flow, 
-                "Validating message against source structure", 
-                "Checking message format and structure", 
-                com.integrixs.data.model.SystemLog.LogLevel.INFO);
+            try {
+                messageService.logProcessingStep(correlationId, flow, 
+                    "Validating message against source structure", 
+                    "Checking message format and structure", 
+                    com.integrixs.data.model.SystemLog.LogLevel.INFO);
+            } catch (Exception e) {
+                logger.warn("Failed to log validation step: {}", e.getMessage());
+            }
                 
             String validatedMessage = message;
             if (flow.getSourceStructureId() != null) {
@@ -123,10 +127,14 @@ public class FlowExecutionSyncService {
                     .orElse(null);
                 if (sourceStructure != null) {
                     validatedMessage = validateMessage(message, sourceStructure, context);
-                    messageService.logProcessingStep(correlationId, flow,
-                        "Message validation completed",
-                        "Structure: " + sourceStructure.getName() + " (" + sourceStructure.getType() + ")",
-                        com.integrixs.data.model.SystemLog.LogLevel.INFO);
+                    try {
+                        messageService.logProcessingStep(correlationId, flow,
+                            "Message validation completed",
+                            "Structure: " + sourceStructure.getName() + " (" + sourceStructure.getType() + ")",
+                            com.integrixs.data.model.SystemLog.LogLevel.INFO);
+                    } catch (Exception e) {
+                        logger.warn("Failed to log validation completion: {}", e.getMessage());
+                    }
                 }
             }
             
@@ -135,10 +143,14 @@ public class FlowExecutionSyncService {
             if ("WITH_MAPPING".equals(flow.getMappingMode().toString())) {
                 logger.info("Applying field mapping transformation for flow: {}", flow.getName());
                 
-                messageService.logProcessingStep(correlationId, flow,
-                    "Applying data transformations",
-                    "Mapping mode: WITH_MAPPING",
-                    com.integrixs.data.model.SystemLog.LogLevel.INFO);
+                try {
+                    messageService.logProcessingStep(correlationId, flow,
+                        "Applying data transformations",
+                        "Mapping mode: WITH_MAPPING",
+                        com.integrixs.data.model.SystemLog.LogLevel.INFO);
+                } catch (Exception e) {
+                    logger.warn("Failed to log transformation start: {}", e.getMessage());
+                }
                     
                 // Get the flow's transformation
                 if (flow.getTransformations() != null && !flow.getTransformations().isEmpty()) {
@@ -198,18 +210,26 @@ public class FlowExecutionSyncService {
                             
                             logger.debug("Transformed message: {}", transformedMessage);
                             logger.info("Successfully applied {} field mappings", fieldMappings.size());
-                            messageService.logProcessingStep(correlationId, flow,
-                                "Transformation completed successfully",
-                                "Applied " + fieldMappings.size() + " field mappings",
-                                com.integrixs.data.model.SystemLog.LogLevel.INFO);
+                            try {
+                                messageService.logProcessingStep(correlationId, flow,
+                                    "Transformation completed successfully",
+                                    "Applied " + fieldMappings.size() + " field mappings",
+                                    com.integrixs.data.model.SystemLog.LogLevel.INFO);
+                            } catch (Exception e) {
+                                logger.warn("Failed to log transformation completion: {}", e.getMessage());
+                            }
                         }
                     } catch (Exception e) {
                         logger.error("Error applying XML transformation: {}", e.getMessage(), e);
                         e.printStackTrace();
-                        messageService.logProcessingStep(correlationId, flow,
-                            "Transformation error",
-                            e.getMessage(),
-                            com.integrixs.data.model.SystemLog.LogLevel.ERROR);
+                        try {
+                            messageService.logProcessingStep(correlationId, flow,
+                                "Transformation error",
+                                e.getMessage(),
+                                com.integrixs.data.model.SystemLog.LogLevel.ERROR);
+                        } catch (Exception logEx) {
+                            logger.warn("Failed to log transformation error: {}", logEx.getMessage());
+                        }
                         throw new RuntimeException("Failed to apply XML transformation: " + e.getMessage(), e);
                     }
                 } else {
@@ -218,10 +238,14 @@ public class FlowExecutionSyncService {
                 }
             } else if ("PASS_THROUGH".equals(flow.getMappingMode().toString())) {
                 logger.info("Pass-through mode - no transformation applied");
-                messageService.logProcessingStep(correlationId, flow,
-                    "Pass-through mode",
-                    "No transformations applied - direct passthrough",
-                    com.integrixs.data.model.SystemLog.LogLevel.INFO);
+                try {
+                    messageService.logProcessingStep(correlationId, flow,
+                        "Pass-through mode",
+                        "No transformations applied - direct passthrough",
+                        com.integrixs.data.model.SystemLog.LogLevel.INFO);
+                } catch (Exception e) {
+                    logger.warn("Failed to log pass-through mode: {}", e.getMessage());
+                }
                 transformedMessage = validatedMessage;
             }
             
@@ -235,10 +259,14 @@ public class FlowExecutionSyncService {
                 logger.warn("Message was not transformed - original and transformed messages are identical");
             }
             
-            messageService.logProcessingStep(correlationId, flow,
-                "Executing target adapter: " + targetAdapter.getName(),
-                "Adapter type: " + targetAdapter.getType() + ", Mode: " + targetAdapter.getMode(),
-                com.integrixs.data.model.SystemLog.LogLevel.INFO);
+            try {
+                messageService.logProcessingStep(correlationId, flow,
+                    "Executing target adapter: " + targetAdapter.getName(),
+                    "Adapter type: " + targetAdapter.getType() + ", Mode: " + targetAdapter.getMode(),
+                    com.integrixs.data.model.SystemLog.LogLevel.INFO);
+            } catch (Exception e) {
+                logger.warn("Failed to log target adapter execution start: {}", e.getMessage());
+            }
             
             // Note: Source adapter payload logging is handled by IntegrationEndpointService for SOAP/REST flows
             // Only log here if not coming from IntegrationEndpointService (check protocol type)
@@ -255,10 +283,14 @@ public class FlowExecutionSyncService {
                 messageService.logAdapterPayload(correlationId, targetAdapter, "RESPONSE", response, "OUTBOUND");
             }
             
-            messageService.logProcessingStep(correlationId, flow,
-                "Target adapter execution completed",
-                "Response received from " + targetAdapter.getName(),
-                com.integrixs.data.model.SystemLog.LogLevel.INFO);
+            try {
+                messageService.logProcessingStep(correlationId, flow,
+                    "Target adapter execution completed",
+                    "Response received from " + targetAdapter.getName(),
+                    com.integrixs.data.model.SystemLog.LogLevel.INFO);
+            } catch (Exception e) {
+                logger.warn("Failed to log target adapter completion: {}", e.getMessage());
+            }
             logger.info("Target adapter execution completed");
             
             // Step 4: Process response if needed
@@ -267,7 +299,11 @@ public class FlowExecutionSyncService {
             logger.info("Successfully processed message through flow: {}", flow.getName());
             
             // Update message status to completed
-            messageService.updateMessageStatus(correlationId, "COMPLETED", response);
+            try {
+                messageService.updateMessageStatus(correlationId, "COMPLETED", response);
+            } catch (Exception e) {
+                logger.warn("Failed to update message status to completed: {}", e.getMessage());
+            }
             
             return response;
             
@@ -285,7 +321,11 @@ public class FlowExecutionSyncService {
             }
             
             // Update message status to failed
-            messageService.updateMessageStatus(correlationId, "FAILED", e.getMessage());
+            try {
+                messageService.updateMessageStatus(correlationId, "FAILED", e.getMessage());
+            } catch (Exception logEx) {
+                logger.warn("Failed to update message status to failed: {}", logEx.getMessage());
+            }
             
             throw new RuntimeException("Flow processing failed: " + e.getMessage(), e);
         }

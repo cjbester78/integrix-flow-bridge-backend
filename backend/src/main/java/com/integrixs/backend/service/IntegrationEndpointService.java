@@ -153,7 +153,11 @@ public class IntegrationEndpointService {
         clonedSourceAdapter.setType(sourceAdapter.getType());
         clonedSourceAdapter.setMode(sourceAdapter.getMode());
         
-        messageService.logAdapterPayload(correlationId, clonedSourceAdapter, "RESPONSE", soapResponse, "INBOUND");
+        try {
+            messageService.logAdapterPayload(correlationId, clonedSourceAdapter, "RESPONSE", soapResponse, "INBOUND");
+        } catch (Exception e) {
+            logger.warn("Failed to log response payload: {}", e.getMessage());
+        }
         logger.info("DEBUG: Finished logging source adapter response");
         
         return soapResponse;
