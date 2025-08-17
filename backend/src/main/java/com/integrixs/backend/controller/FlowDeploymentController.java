@@ -36,16 +36,29 @@ public class FlowDeploymentController {
             
             String userId = null;
             if (authentication != null) {
-                String username = authentication.getName();
-                logger.info("Username from authentication: {}", username);
+                logger.info("Authentication principal type: {}", authentication.getPrincipal().getClass().getName());
+                logger.info("Authentication principal: {}", authentication.getPrincipal());
                 
-                User user = userRepository.findByUsername(username);
-                if (user != null) {
+                // Check if principal is already a User entity
+                if (authentication.getPrincipal() instanceof User) {
+                    User user = (User) authentication.getPrincipal();
                     userId = user.getId();
-                    logger.info("Found user with ID: {}", userId);
+                    logger.info("Found user from principal with ID: {}", userId);
                 } else {
-                    logger.error("User not found for username: {}", username);
+                    // Principal is username string
+                    String username = authentication.getName();
+                    logger.info("Username from authentication: {}", username);
+                    
+                    User user = userRepository.findByUsername(username);
+                    if (user != null) {
+                        userId = user.getId();
+                        logger.info("Found user with ID: {}", userId);
+                    } else {
+                        logger.error("User not found for username: {}", username);
+                    }
                 }
+            } else {
+                logger.error("Authentication is null!");
             }
             
             if (userId == null) {
@@ -79,10 +92,17 @@ public class FlowDeploymentController {
         try {
             String userId = null;
             if (authentication != null) {
-                String username = authentication.getName();
-                User user = userRepository.findByUsername(username);
-                if (user != null) {
+                // Check if principal is already a User entity
+                if (authentication.getPrincipal() instanceof User) {
+                    User user = (User) authentication.getPrincipal();
                     userId = user.getId();
+                } else {
+                    // Principal is username string
+                    String username = authentication.getName();
+                    User user = userRepository.findByUsername(username);
+                    if (user != null) {
+                        userId = user.getId();
+                    }
                 }
             }
             
