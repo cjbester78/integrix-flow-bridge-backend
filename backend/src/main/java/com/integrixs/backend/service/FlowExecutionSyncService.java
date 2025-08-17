@@ -4,15 +4,21 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.integrixs.data.model.CommunicationAdapter;
 import com.integrixs.data.model.DataStructure;
 import com.integrixs.data.model.IntegrationFlow;
+import com.integrixs.data.model.FieldMapping;
+import com.integrixs.data.model.FlowTransformation;
 import com.integrixs.data.repository.CommunicationAdapterRepository;
 import com.integrixs.data.repository.DataStructureRepository;
+import com.integrixs.data.repository.FieldMappingRepository;
+import com.integrixs.engine.mapper.HierarchicalXmlFieldMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.List;
 
 /**
  * Service that handles synchronous flow execution for real-time request/response processing.
@@ -41,9 +47,16 @@ public class FlowExecutionSyncService {
     @Autowired
     private MessageService messageService;
     
+    @Autowired
+    private FieldMappingRepository fieldMappingRepository;
+    
+    @Autowired
+    private HierarchicalXmlFieldMapper xmlFieldMapper;
+    
     /**
      * Process a message through an integration flow
      */
+    @Transactional
     public String processMessage(IntegrationFlow flow, String message, Map<String, String> headers, String protocol) throws Exception {
         logger.info("Processing message through flow: {} with protocol: {}", flow.getName(), protocol);
         
@@ -110,8 +123,55 @@ public class FlowExecutionSyncService {
                     "Applying data transformations",
                     "Mapping mode: WITH_MAPPING",
                     com.integrixs.data.model.SystemLog.LogLevel.INFO);
-                // TODO: Apply transformations using flow.getTransformations()
-                transformedMessage = validatedMessage; // For now, pass through
+                    
+                // Get the flow's transformation
+                if (flow.getTransformations() != null && !flow.getTransformations().isEmpty()) {
+                    try {
+                        // Get the first transformation (usually flows have one transformation)
+                        String transformationId = flow.getTransformations().get(0).getId();
+                        logger.info("Executing XML transformation: {}", transformationId);
+                        
+                        // Get field mappings for this transformation
+                        List<FieldMapping> fieldMappings = fieldMappingRepository.findByTransformationId(transformationId);
+                        
+                        if (fieldMappings.isEmpty()) {
+                            logger.warn("No field mappings found for transformation: {}", transformationId);
+                            transformedMessage = validatedMessage;
+                        } else {
+                            // For field mappings, we always work with XML
+                            // Get the target template from the first mapping's target structure
+                            String targetTemplate = null;
+                            if (flow.getTargetFlowStructureId() != null) {
+                                // TODO: Get target template from flow structure
+                                targetTemplate = null; // Let the mapper create the structure
+                            }
+                            
+                            // Apply XML field mappings
+                            transformedMessage = xmlFieldMapper.mapXmlFields(
+                                validatedMessage,  // source XML
+                                targetTemplate,    // target template (can be null)
+                                fieldMappings,     // field mappings
+                                null              // namespaces (TODO: get from flow structure)
+                            );
+                            
+                            logger.info("XML transformation successful. Output: {}", transformedMessage);
+                            messageService.logProcessingStep(correlationId, flow,
+                                "Transformation completed successfully",
+                                "Applied " + fieldMappings.size() + " field mappings",
+                                com.integrixs.data.model.SystemLog.LogLevel.INFO);
+                        }
+                    } catch (Exception e) {
+                        logger.error("Error applying XML transformation: {}", e.getMessage(), e);
+                        messageService.logProcessingStep(correlationId, flow,
+                            "Transformation error",
+                            e.getMessage(),
+                            com.integrixs.data.model.SystemLog.LogLevel.ERROR);
+                        throw new RuntimeException("Failed to apply XML transformation: " + e.getMessage(), e);
+                    }
+                } else {
+                    logger.warn("Flow has WITH_MAPPING mode but no transformation ID set");
+                    transformedMessage = validatedMessage;
+                }
             } else if ("PASS_THROUGH".equals(flow.getMappingMode().toString())) {
                 logger.info("Pass-through mode - no transformation applied");
                 messageService.logProcessingStep(correlationId, flow,

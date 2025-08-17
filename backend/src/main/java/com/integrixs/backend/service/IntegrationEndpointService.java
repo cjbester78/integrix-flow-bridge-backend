@@ -10,6 +10,7 @@ import com.integrixs.data.repository.CommunicationAdapterRepository;
 import com.integrixs.data.repository.DataStructureRepository;
 import com.integrixs.data.repository.FlowStructureRepository;
 import com.integrixs.data.repository.IntegrationFlowRepository;
+import org.springframework.transaction.annotation.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -63,6 +64,7 @@ public class IntegrationEndpointService {
     /**
      * Process a SOAP request
      */
+    @Transactional
     public String processSoapRequest(String flowPath, String soapRequest, Map<String, String> headers) throws Exception {
         logger.info("Processing SOAP request for flow path: {}", flowPath);
         
@@ -109,16 +111,11 @@ public class IntegrationEndpointService {
             .orElseThrow(() -> new IllegalArgumentException("Target adapter not found"));
         
         String messageToProcess;
-        if (targetAdapter.getType() == com.integrixs.shared.enums.AdapterType.SOAP) {
-            // For SOAP-to-SOAP flows, preserve the full envelope
-            logger.info("SOAP-to-SOAP flow detected, preserving full SOAP envelope");
-            messageToProcess = soapRequest;
-        } else {
-            // For SOAP-to-other flows, extract just the body
-            logger.debug("Extracting SOAP body from request");
-            messageToProcess = extractSoapBody(soapRequest);
-            logger.debug("Extracted SOAP body: {}", messageToProcess);
-        }
+        // Always extract SOAP body for field mapping to work correctly
+        // The target adapter will wrap it back into SOAP if needed
+        logger.debug("Extracting SOAP body from request for processing");
+        messageToProcess = extractSoapBody(soapRequest);
+        logger.debug("Extracted SOAP body: {}", messageToProcess);
         
         // Process through the flow with correlation ID
         logger.info("Processing message through flow: {} with correlation ID: {}", flow.getName(), correlationId);

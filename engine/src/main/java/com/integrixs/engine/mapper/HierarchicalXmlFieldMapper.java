@@ -17,6 +17,7 @@ import javax.xml.xpath.*;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.util.*;
+import java.util.Arrays;
 
 /**
  * Service for hierarchical XML field mapping supporting XPath expressions and array structures
@@ -152,25 +153,44 @@ public class HierarchicalXmlFieldMapper {
                                      FieldMapping mapping, XPath xpath) throws Exception {
         
         // Handle legacy field-based mapping
-        List<String> sourceFields = mapping.getParsedSourceFields();
+        String sourceFieldsStr = mapping.getSourceFields();
         String targetField = mapping.getTargetField();
         
-        if (sourceFields.isEmpty() || targetField == null) {
+        if (sourceFieldsStr == null || sourceFieldsStr.isEmpty() || targetField == null) {
             return;
         }
         
-        // Convert field names to XPath expressions
-        String sourceXPath = "//" + sourceFields.get(0);
-        String targetXPath = "//" + targetField;
-        
-        // Use simple mapping logic
-        XPathExpression sourceExpr = xpath.compile(sourceXPath);
-        NodeList sourceNodes = (NodeList) sourceExpr.evaluate(sourceDoc, XPathConstants.NODESET);
-        
-        if (sourceNodes.getLength() > 0) {
-            String value = getNodeValue(sourceNodes.item(0));
-            setValueAtXPath(targetDoc, targetXPath, value, xpath);
+        // Check if sourceFields is a literal value or a field reference
+        String value;
+        if (sourceFieldsStr.startsWith("//") || sourceFieldsStr.contains("/")) {
+            // It's an XPath expression
+            XPathExpression sourceExpr = xpath.compile(sourceFieldsStr);
+            NodeList sourceNodes = (NodeList) sourceExpr.evaluate(sourceDoc, XPathConstants.NODESET);
+            
+            if (sourceNodes.getLength() > 0) {
+                value = getNodeValue(sourceNodes.item(0));
+            } else {
+                // No nodes found, skip this mapping
+                return;
+            }
+        } else {
+            // It's a literal value (like "12")
+            value = sourceFieldsStr;
         }
+        
+        // Handle targetField - ensure it's a proper XPath
+        String targetXPath = targetField;
+        if (!targetXPath.startsWith("/")) {
+            targetXPath = "//" + targetField;
+        }
+        
+        // Apply transformation if defined
+        if (mapping.getJavaFunction() != null) {
+            value = applyTransformation(value, mapping.getJavaFunction());
+        }
+        
+        // Set value at target XPath
+        setValueAtXPath(targetDoc, targetXPath, value, xpath);
     }
     
     private String getNodeValue(Node node) {
