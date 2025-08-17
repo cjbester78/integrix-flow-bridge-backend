@@ -250,7 +250,9 @@ public class MessageService {
                 log.setCorrelationId(correlationId);
                 log.setSourceName(adapter.getName());
                 log.setSource(adapter.getType() != null ? adapter.getType().name() : "UNKNOWN");
-                log.setDetails(String.format("Payload stored in adapter_payloads table with ID: %s", saved.getId()));
+                ObjectNode logDetails = objectMapper.createObjectNode();
+                logDetails.put("message", String.format("Payload stored in adapter_payloads table with ID: %s", saved.getId()));
+                log.setDetails(logDetails.toString());
                 logRepository.save(log);
             } catch (Exception ex) {
                 logger.warn("Failed to create system log entry for payload: ", ex);
