@@ -143,6 +143,7 @@ public class AdapterExecutionService {
         }
         
         // Check if message is already a SOAP envelope
+        logger.info("Received message for SOAP adapter: {}", message);
         String soapRequest;
         if (message.trim().startsWith("<?xml") && message.contains("Envelope")) {
             // Message is already a complete SOAP envelope
@@ -157,7 +158,7 @@ public class AdapterExecutionService {
             logger.info("Message is body content only, wrapping in SOAP envelope");
             soapRequest = wrapInSoapEnvelope(message);
         }
-        logger.debug("SOAP request envelope: {}", soapRequest);
+        logger.info("Final SOAP request being sent: {}", soapRequest);
         
         // Make HTTP call
         HttpHeaders headers = new HttpHeaders();

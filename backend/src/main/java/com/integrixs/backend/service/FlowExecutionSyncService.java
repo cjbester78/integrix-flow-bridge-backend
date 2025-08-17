@@ -5,10 +5,12 @@ import com.integrixs.data.model.CommunicationAdapter;
 import com.integrixs.data.model.DataStructure;
 import com.integrixs.data.model.IntegrationFlow;
 import com.integrixs.data.model.FieldMapping;
+import com.integrixs.data.model.FlowStructure;
 import com.integrixs.data.model.FlowTransformation;
 import com.integrixs.data.repository.CommunicationAdapterRepository;
 import com.integrixs.data.repository.DataStructureRepository;
 import com.integrixs.data.repository.FieldMappingRepository;
+import com.integrixs.data.repository.FlowStructureRepository;
 import com.integrixs.engine.mapper.HierarchicalXmlFieldMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * Service that handles synchronous flow execution for real-time request/response processing.
@@ -53,6 +56,9 @@ public class FlowExecutionSyncService {
     @Autowired
     private HierarchicalXmlFieldMapper xmlFieldMapper;
     
+    @Autowired
+    private FlowStructureRepository flowStructureRepository;
+    
     /**
      * Process a message through an integration flow
      */
@@ -82,10 +88,19 @@ public class FlowExecutionSyncService {
         String correlationId = headers.get("correlationId");
         if (correlationId == null) {
             // Create new correlation ID if not provided
-            correlationId = messageService.createMessage(flow, message, protocol);
+            try {
+                correlationId = messageService.createMessage(flow, message, protocol);
+            } catch (Exception e) {
+                logger.error("Error creating message log, continuing with generated ID: {}", e.getMessage());
+                correlationId = UUID.randomUUID().toString();
+            }
         } else {
             // Use existing correlation ID
-            correlationId = messageService.createMessage(flow, message, protocol, correlationId);
+            try {
+                correlationId = messageService.createMessage(flow, message, protocol, correlationId);
+            } catch (Exception e) {
+                logger.error("Error creating message log, continuing with existing ID: {}", e.getMessage());
+            }
         }
         context.put("correlationId", correlationId);
         context.put("flowId", flow.getId());
@@ -118,7 +133,11 @@ public class FlowExecutionSyncService {
             // Step 2: Apply transformation if flow has mapping
             String transformedMessage = validatedMessage;
             if ("WITH_MAPPING".equals(flow.getMappingMode().toString())) {
-                logger.info("Applying transformation for flow: {}", flow.getName());
+                logger.info("====== FIELD MAPPING START ======");
+                logger.info("Flow: {} (ID: {})", flow.getName(), flow.getId());
+                logger.info("Mapping mode: {}", flow.getMappingMode());
+                logger.info("Source message: {}", validatedMessage);
+                
                 messageService.logProcessingStep(correlationId, flow,
                     "Applying data transformations",
                     "Mapping mode: WITH_MAPPING",
@@ -129,23 +148,44 @@ public class FlowExecutionSyncService {
                     try {
                         // Get the first transformation (usually flows have one transformation)
                         String transformationId = flow.getTransformations().get(0).getId();
-                        logger.info("Executing XML transformation: {}", transformationId);
+                        logger.info("Transformation ID: {}", transformationId);
                         
                         // Get field mappings for this transformation
                         List<FieldMapping> fieldMappings = fieldMappingRepository.findByTransformationId(transformationId);
+                        logger.info("Found {} field mappings", fieldMappings.size());
                         
                         if (fieldMappings.isEmpty()) {
                             logger.warn("No field mappings found for transformation: {}", transformationId);
                             transformedMessage = validatedMessage;
                         } else {
                             // For field mappings, we always work with XML
-                            // Get the target template from the first mapping's target structure
+                            // Get the target template from the flow structure
                             String targetTemplate = null;
                             if (flow.getTargetFlowStructureId() != null) {
-                                // TODO: Get target template from flow structure
-                                targetTemplate = null; // Let the mapper create the structure
+                                logger.info("Target flow structure ID: {}", flow.getTargetFlowStructureId());
+                                FlowStructure targetFlowStructure = flowStructureRepository.findById(flow.getTargetFlowStructureId()).orElse(null);
+                                if (targetFlowStructure != null) {
+                                    logger.info("Target flow structure found: {}", targetFlowStructure.getName());
+                                    if (targetFlowStructure.getWsdlContent() != null) {
+                                        logger.info("Target flow structure has WSDL content");
+                                        // TODO: Extract sample XML from WSDL
+                                        targetTemplate = null; // Let the mapper create the structure for now
+                                    }
+                                } else {
+                                    logger.warn("Target flow structure not found!");
+                                }
+                            } else {
+                                logger.warn("Flow has no target flow structure ID!");
                             }
                             
+                            logger.info("---- Field Mappings Details ----");
+                            for (int i = 0; i < fieldMappings.size(); i++) {
+                                FieldMapping fm = fieldMappings.get(i);
+                                logger.info("Mapping {}: source='{}', target='{}', sourceXPath='{}', targetXPath='{}'", 
+                                    i+1, fm.getSourceFields(), fm.getTargetField(), fm.getSourceXPath(), fm.getTargetXPath());
+                            }
+                            
+                            logger.info("---- Calling XML Field Mapper ----");
                             // Apply XML field mappings
                             transformedMessage = xmlFieldMapper.mapXmlFields(
                                 validatedMessage,  // source XML
@@ -154,7 +194,8 @@ public class FlowExecutionSyncService {
                                 null              // namespaces (TODO: get from flow structure)
                             );
                             
-                            logger.info("XML transformation successful. Output: {}", transformedMessage);
+                            logger.info("---- Transformation Result ----");
+                            logger.info("Transformed message: {}", transformedMessage);
                             messageService.logProcessingStep(correlationId, flow,
                                 "Transformation completed successfully",
                                 "Applied " + fieldMappings.size() + " field mappings",
@@ -162,6 +203,7 @@ public class FlowExecutionSyncService {
                         }
                     } catch (Exception e) {
                         logger.error("Error applying XML transformation: {}", e.getMessage(), e);
+                        e.printStackTrace();
                         messageService.logProcessingStep(correlationId, flow,
                             "Transformation error",
                             e.getMessage(),
@@ -169,9 +211,11 @@ public class FlowExecutionSyncService {
                         throw new RuntimeException("Failed to apply XML transformation: " + e.getMessage(), e);
                     }
                 } else {
-                    logger.warn("Flow has WITH_MAPPING mode but no transformation ID set");
+                    logger.warn("Flow has WITH_MAPPING mode but no transformations!");
+                    logger.info("Transformations object: {}", flow.getTransformations());
                     transformedMessage = validatedMessage;
                 }
+                logger.info("====== FIELD MAPPING END ======");
             } else if ("PASS_THROUGH".equals(flow.getMappingMode().toString())) {
                 logger.info("Pass-through mode - no transformation applied");
                 messageService.logProcessingStep(correlationId, flow,

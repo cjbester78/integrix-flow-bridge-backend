@@ -113,9 +113,9 @@ public class IntegrationEndpointService {
         String messageToProcess;
         // Always extract SOAP body for field mapping to work correctly
         // The target adapter will wrap it back into SOAP if needed
-        logger.debug("Extracting SOAP body from request for processing");
+        logger.info("Extracting SOAP body from request for processing");
         messageToProcess = extractSoapBody(soapRequest);
-        logger.debug("Extracted SOAP body: {}", messageToProcess);
+        logger.info("Extracted SOAP body: {}", messageToProcess);
         
         // Process through the flow with correlation ID
         logger.info("Processing message through flow: {} with correlation ID: {}", flow.getName(), correlationId);
@@ -237,6 +237,14 @@ public class IntegrationEndpointService {
         // Verify flow is deployed and active
         if (integrationFlow.getStatus() != FlowStatus.DEPLOYED_ACTIVE) {
             throw new IllegalStateException("Flow is not deployed or active: " + flowPath);
+        }
+        
+        // Reload with transformations eagerly loaded
+        Optional<IntegrationFlow> flowWithTransformations = flowRepository.findWithTransformationsById(integrationFlow.getId());
+        if (flowWithTransformations.isPresent()) {
+            integrationFlow = flowWithTransformations.get();
+            logger.info("Loaded flow with {} transformations", 
+                integrationFlow.getTransformations() != null ? integrationFlow.getTransformations().size() : 0);
         }
         
         return integrationFlow;

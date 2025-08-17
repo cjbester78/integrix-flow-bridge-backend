@@ -1,6 +1,8 @@
 package com.integrixs.engine.mapper;
 
 import com.integrixs.data.model.FieldMapping;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.w3c.dom.*;
 import org.xml.sax.InputSource;
@@ -24,6 +26,8 @@ import java.util.Arrays;
  */
 @Service
 public class HierarchicalXmlFieldMapper {
+    
+    private static final Logger logger = LoggerFactory.getLogger(HierarchicalXmlFieldMapper.class);
     
     /**
      * Map source XML to target XML using field mappings
@@ -71,7 +75,9 @@ public class HierarchicalXmlFieldMapper {
         }
         
         // Convert result to string
-        return documentToString(targetDoc);
+        String result = documentToString(targetDoc);
+        logger.info("Field mapping result: {}", result);
+        return result;
     }
     
     private void processSimpleMapping(Document sourceDoc, Document targetDoc, 
@@ -152,11 +158,15 @@ public class HierarchicalXmlFieldMapper {
     private void processLegacyMapping(Document sourceDoc, Document targetDoc,
                                      FieldMapping mapping, XPath xpath) throws Exception {
         
+        logger.debug("Processing legacy mapping: sourceFields={}, targetField={}", 
+            mapping.getSourceFields(), mapping.getTargetField());
+        
         // Handle legacy field-based mapping
         String sourceFieldsStr = mapping.getSourceFields();
         String targetField = mapping.getTargetField();
         
         if (sourceFieldsStr == null || sourceFieldsStr.isEmpty() || targetField == null) {
+            logger.debug("Skipping mapping due to null/empty fields");
             return;
         }
         
@@ -164,18 +174,22 @@ public class HierarchicalXmlFieldMapper {
         String value;
         if (sourceFieldsStr != null && (sourceFieldsStr.startsWith("//") || sourceFieldsStr.contains("/"))) {
             // It's an XPath expression
+            logger.debug("Source is XPath expression: {}", sourceFieldsStr);
             XPathExpression sourceExpr = xpath.compile(sourceFieldsStr);
             NodeList sourceNodes = (NodeList) sourceExpr.evaluate(sourceDoc, XPathConstants.NODESET);
             
             if (sourceNodes.getLength() > 0) {
                 value = getNodeValue(sourceNodes.item(0));
+                logger.debug("Found value from XPath: {}", value);
             } else {
                 // No nodes found, skip this mapping
+                logger.debug("No nodes found for XPath: {}", sourceFieldsStr);
                 return;
             }
         } else {
             // It's a literal value (like "12")
             value = sourceFieldsStr;
+            logger.debug("Using literal value: {}", value);
         }
         
         // Handle targetField - ensure it's a proper XPath
@@ -183,13 +197,16 @@ public class HierarchicalXmlFieldMapper {
         if (!targetXPath.startsWith("/")) {
             targetXPath = "//" + targetField;
         }
+        logger.debug("Target XPath: {}", targetXPath);
         
         // Apply transformation if defined
         if (mapping.getJavaFunction() != null) {
             value = applyTransformation(value, mapping.getJavaFunction());
+            logger.debug("Applied transformation, new value: {}", value);
         }
         
         // Set value at target XPath
+        logger.debug("Setting value '{}' at XPath '{}'", value, targetXPath);
         setValueAtXPath(targetDoc, targetXPath, value, xpath);
     }
     
