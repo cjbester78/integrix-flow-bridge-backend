@@ -62,15 +62,15 @@ public class HierarchicalXmlFieldMapper {
             logger.info("No target template provided, creating basic structure");
             targetDoc = builder.newDocument();
             // Create a basic SOAP-like structure for SOAP flows
-            if (sourceXml.contains("TestSoap")) {
-                logger.info("Detected TestSoap flow, creating SOAP envelope structure");
+            if (sourceXml.contains("CelsiusToFahrenheit")) {
+                logger.info("Detected temperature conversion flow, creating SOAP envelope structure");
                 Element envelope = targetDoc.createElementNS("http://schemas.xmlsoap.org/soap/envelope/", "soapenv:Envelope");
                 envelope.setAttribute("xmlns:soapenv", "http://schemas.xmlsoap.org/soap/envelope/");
-                envelope.setAttribute("xmlns:tes", "http://integrixflowbridge.com/TestSoap");
+                envelope.setAttribute("xmlns:tem", "https://www.w3schools.com/xml/");
                 
                 Element body = targetDoc.createElementNS("http://schemas.xmlsoap.org/soap/envelope/", "soapenv:Body");
-                Element celsiusToFahrenheit = targetDoc.createElementNS("http://integrixflowbridge.com/TestSoap", "tes:CelsiusToFahrenheit");
-                Element celsius = targetDoc.createElementNS("http://integrixflowbridge.com/TestSoap", "tes:Celsius");
+                Element celsiusToFahrenheit = targetDoc.createElementNS("https://www.w3schools.com/xml/", "tem:CelsiusToFahrenheit");
+                Element celsius = targetDoc.createElementNS("https://www.w3schools.com/xml/", "tem:Celsius");
                 
                 celsiusToFahrenheit.appendChild(celsius);
                 body.appendChild(celsiusToFahrenheit);
@@ -89,6 +89,7 @@ public class HierarchicalXmlFieldMapper {
         Map<String, String> defaultNamespaces = new HashMap<>();
         defaultNamespaces.put("soapenv", "http://schemas.xmlsoap.org/soap/envelope/");
         defaultNamespaces.put("tes", "http://integrixflowbridge.com/TestSoap");
+        defaultNamespaces.put("tem", "https://www.w3schools.com/xml/");
         
         if (namespaces != null) {
             defaultNamespaces.putAll(namespaces);
@@ -242,7 +243,7 @@ public class HierarchicalXmlFieldMapper {
             }
         } else if (targetField.equals("Celsius")) {
             // Special handling for Celsius field - use proper namespace
-            targetXPath = "//tes:Celsius";
+            targetXPath = "//tem:Celsius";
         } else {
             // No namespace, add // if needed
             if (!targetXPath.startsWith("/")) {

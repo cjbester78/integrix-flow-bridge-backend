@@ -696,7 +696,16 @@ public class MessageService {
             ObjectNode newStep = objectMapper.createObjectNode();
             newStep.put("timestamp", LocalDateTime.now().toString());
             newStep.put("step", step);
-            newStep.put("details", stepDetails);
+            // Ensure stepDetails is properly escaped for JSON
+            if (stepDetails != null) {
+                String cleanDetails = stepDetails
+                    .replace("\n", "\\n")
+                    .replace("\r", "\\r")
+                    .replace("\t", "\\t");
+                newStep.put("details", cleanDetails);
+            } else {
+                newStep.put("details", "");
+            }
             newStep.put("level", level.toString());
             steps.add(newStep);
             
@@ -807,7 +816,15 @@ public class MessageService {
             details.put("timestamp", LocalDateTime.now().toString());
             details.put("adapterType", adapter.getType().toString());
             details.put("adapterMode", adapter.getMode().toString());
-            details.put("activityDetails", activityDetails);
+            // Ensure activityDetails is properly escaped for JSON
+            if (activityDetails != null) {
+                // Replace problematic characters that might break JSON
+                String cleanDetails = activityDetails
+                    .replace("\n", "\\n")
+                    .replace("\r", "\\r")
+                    .replace("\t", "\\t");
+                details.put("activityDetails", cleanDetails);
+            }
             
             log.setDetails(details.toString());
             
