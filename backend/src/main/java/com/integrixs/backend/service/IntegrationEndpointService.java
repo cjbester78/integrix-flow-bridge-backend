@@ -5,10 +5,12 @@ import com.integrixs.data.model.CommunicationAdapter;
 import com.integrixs.data.model.DataStructure;
 import com.integrixs.data.model.FlowStatus;
 import com.integrixs.data.model.FlowStructure;
+import com.integrixs.data.model.FlowTransformation;
 import com.integrixs.data.model.IntegrationFlow;
 import com.integrixs.data.repository.CommunicationAdapterRepository;
 import com.integrixs.data.repository.DataStructureRepository;
 import com.integrixs.data.repository.FlowStructureRepository;
+import com.integrixs.data.repository.FlowTransformationRepository;
 import com.integrixs.data.repository.IntegrationFlowRepository;
 import org.springframework.transaction.annotation.Transactional;
 import org.slf4j.Logger;
@@ -42,6 +44,9 @@ public class IntegrationEndpointService {
     
     @Autowired
     private IntegrationFlowRepository flowRepository;
+    
+    @Autowired
+    private FlowTransformationRepository transformationRepository;
     
     @Autowired
     private CommunicationAdapterRepository adapterRepository;
@@ -227,7 +232,7 @@ public class IntegrationEndpointService {
     }
     
     private IntegrationFlow findDeployedFlow(String flowPath) throws Exception {
-        // Find deployed flow with all transformations and field mappings eagerly loaded in a single query
+        // Find deployed flow with transformations eagerly loaded
         Optional<IntegrationFlow> flow = flowRepository.findByDeploymentEndpointContainingAndStatus(
             flowPath, FlowStatus.DEPLOYED_ACTIVE);
         
@@ -240,12 +245,22 @@ public class IntegrationEndpointService {
             integrationFlow.getName(),
             integrationFlow.getTransformations() != null ? integrationFlow.getTransformations().size() : 0);
         
-        // Log field mapping details
-        if (integrationFlow.getTransformations() != null) {
-            for (FlowTransformation transformation : integrationFlow.getTransformations()) {
-                logger.info("Transformation '{}' has {} field mappings", 
-                    transformation.getName(),
-                    transformation.getFieldMappings() != null ? transformation.getFieldMappings().size() : 0);
+        // Load field mappings for each transformation separately to avoid MultipleBagFetchException
+        if (integrationFlow.getTransformations() != null && !integrationFlow.getTransformations().isEmpty()) {
+            for (int i = 0; i < integrationFlow.getTransformations().size(); i++) {
+                FlowTransformation transformation = integrationFlow.getTransformations().get(i);
+                // Load the transformation with field mappings
+                Optional<FlowTransformation> transformationWithMappings = 
+                    transformationRepository.findWithFieldMappingsById(transformation.getId());
+                
+                if (transformationWithMappings.isPresent()) {
+                    // Replace with the fully loaded transformation
+                    integrationFlow.getTransformations().set(i, transformationWithMappings.get());
+                    logger.info("Transformation '{}' loaded with {} field mappings", 
+                        transformationWithMappings.get().getName(),
+                        transformationWithMappings.get().getFieldMappings() != null ? 
+                            transformationWithMappings.get().getFieldMappings().size() : 0);
+                }
             }
         }
         

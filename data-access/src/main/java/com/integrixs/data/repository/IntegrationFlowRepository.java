@@ -71,7 +71,7 @@ public interface IntegrationFlowRepository extends JpaRepository<IntegrationFlow
     // Find flow by deployment endpoint
     Optional<IntegrationFlow> findByDeploymentEndpointContaining(String path);
     
-    // Find deployed flow with all transformations and field mappings eagerly loaded using @EntityGraph
-    @EntityGraph(attributePaths = {"transformations", "transformations.fieldMappings"})
+    // Find deployed flow with transformations eagerly loaded
+    @EntityGraph(attributePaths = {"transformations"})
     Optional<IntegrationFlow> findByDeploymentEndpointContainingAndStatus(String path, FlowStatus status);
 }
