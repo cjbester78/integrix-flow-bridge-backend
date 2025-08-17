@@ -62,7 +62,6 @@ public class FlowExecutionSyncService {
     /**
      * Process a message through an integration flow
      */
-    @Transactional
     public String processMessage(IntegrationFlow flow, String message, Map<String, String> headers, String protocol) throws Exception {
         logger.info("Processing message through flow: {} with protocol: {}", flow.getName(), protocol);
         

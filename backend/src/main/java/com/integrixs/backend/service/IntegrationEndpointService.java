@@ -69,7 +69,6 @@ public class IntegrationEndpointService {
     /**
      * Process a SOAP request
      */
-    @Transactional
     public String processSoapRequest(String flowPath, String soapRequest, Map<String, String> headers) throws Exception {
         logger.info("Processing SOAP request for flow path: {}", flowPath);
         

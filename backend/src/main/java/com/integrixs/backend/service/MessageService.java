@@ -211,6 +211,7 @@ public class MessageService {
     /**
      * Log adapter payload (request or response) to dedicated payload table
      */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void logAdapterPayload(String correlationId, CommunicationAdapter adapter, 
                                   String payloadType, String payload, String direction) {
         logger.info("DEBUG: logAdapterPayload called - correlationId: {}, adapter: {}, direction: {}, payloadType: {}", 
@@ -665,7 +666,7 @@ public class MessageService {
     /**
      * Log a processing step - adds to existing message log
      */
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void logProcessingStep(String correlationId, IntegrationFlow flow, String step, String stepDetails, LogLevel level) {
         try {
             logger.debug("Adding processing step for correlation ID: {} - Step: {}", correlationId, step);
@@ -727,6 +728,7 @@ public class MessageService {
     /**
      * Update message status after processing
      */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void updateMessageStatus(String correlationId, String status, String statusDetails) {
         try {
             // Find the main message log by correlation ID
@@ -792,6 +794,7 @@ public class MessageService {
     /**
      * Log adapter-specific activity
      */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void logAdapterActivity(CommunicationAdapter adapter, String message, String activityDetails, LogLevel level, String correlationId) {
         try {
             SystemLog log = new SystemLog();
