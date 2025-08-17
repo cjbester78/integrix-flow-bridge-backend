@@ -143,9 +143,14 @@ public class FlowExecutionSyncService {
                 // Get the flow's transformation
                 if (flow.getTransformations() != null && !flow.getTransformations().isEmpty()) {
                     try {
-                        // Get the first transformation (usually flows have one transformation)
-                        String transformationId = flow.getTransformations().get(0).getId();
-                        logger.info("Transformation ID: {}", transformationId);
+                        // Get the transformation with the lowest execution order (for request mapping)
+                        FlowTransformation transformation = flow.getTransformations().stream()
+                            .min((t1, t2) -> Integer.compare(t1.getExecutionOrder(), t2.getExecutionOrder()))
+                            .orElse(flow.getTransformations().get(0));
+                        
+                        String transformationId = transformation.getId();
+                        logger.info("Using transformation: {} (ID: {}, execution order: {})", 
+                            transformation.getName(), transformationId, transformation.getExecutionOrder());
                         
                         // Get field mappings for this transformation
                         List<FieldMapping> fieldMappings = fieldMappingRepository.findByTransformationId(transformationId);
