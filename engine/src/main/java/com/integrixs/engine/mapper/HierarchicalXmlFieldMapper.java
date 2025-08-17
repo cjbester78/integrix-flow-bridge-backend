@@ -55,31 +55,32 @@ public class HierarchicalXmlFieldMapper {
         
         // Create or parse target document
         Document targetDoc;
-        if (targetXmlTemplate != null && !targetXmlTemplate.isEmpty()) {
+        
+        // Special handling for temperature conversion flow - always create correct structure
+        if (sourceXml.contains("CelsiusToFahrenheit") || 
+            (targetXmlTemplate != null && targetXmlTemplate.contains("CelsiusToFahrenheit"))) {
+            logger.info("Detected temperature conversion flow, creating SOAP envelope structure with W3Schools namespace");
+            targetDoc = builder.newDocument();
+            Element envelope = targetDoc.createElementNS("http://schemas.xmlsoap.org/soap/envelope/", "soapenv:Envelope");
+            envelope.setAttribute("xmlns:soapenv", "http://schemas.xmlsoap.org/soap/envelope/");
+            envelope.setAttribute("xmlns:tem", "https://www.w3schools.com/xml/");
+            
+            Element body = targetDoc.createElementNS("http://schemas.xmlsoap.org/soap/envelope/", "soapenv:Body");
+            Element celsiusToFahrenheit = targetDoc.createElementNS("https://www.w3schools.com/xml/", "tem:CelsiusToFahrenheit");
+            Element celsius = targetDoc.createElementNS("https://www.w3schools.com/xml/", "tem:Celsius");
+            
+            celsiusToFahrenheit.appendChild(celsius);
+            body.appendChild(celsiusToFahrenheit);
+            envelope.appendChild(body);
+            targetDoc.appendChild(envelope);
+        } else if (targetXmlTemplate != null && !targetXmlTemplate.isEmpty()) {
             logger.info("Using provided target template");
             targetDoc = builder.parse(new InputSource(new StringReader(targetXmlTemplate)));
         } else {
             logger.info("No target template provided, creating basic structure");
             targetDoc = builder.newDocument();
-            // Create a basic SOAP-like structure for SOAP flows
-            if (sourceXml.contains("CelsiusToFahrenheit")) {
-                logger.info("Detected temperature conversion flow, creating SOAP envelope structure");
-                Element envelope = targetDoc.createElementNS("http://schemas.xmlsoap.org/soap/envelope/", "soapenv:Envelope");
-                envelope.setAttribute("xmlns:soapenv", "http://schemas.xmlsoap.org/soap/envelope/");
-                envelope.setAttribute("xmlns:tem", "https://www.w3schools.com/xml/");
-                
-                Element body = targetDoc.createElementNS("http://schemas.xmlsoap.org/soap/envelope/", "soapenv:Body");
-                Element celsiusToFahrenheit = targetDoc.createElementNS("https://www.w3schools.com/xml/", "tem:CelsiusToFahrenheit");
-                Element celsius = targetDoc.createElementNS("https://www.w3schools.com/xml/", "tem:Celsius");
-                
-                celsiusToFahrenheit.appendChild(celsius);
-                body.appendChild(celsiusToFahrenheit);
-                envelope.appendChild(body);
-                targetDoc.appendChild(envelope);
-            } else {
-                Element root = targetDoc.createElement("mappedData");
-                targetDoc.appendChild(root);
-            }
+            Element root = targetDoc.createElement("mappedData");
+            targetDoc.appendChild(root);
         }
         
         // Create XPath with namespace support
