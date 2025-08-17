@@ -696,13 +696,9 @@ public class MessageService {
             ObjectNode newStep = objectMapper.createObjectNode();
             newStep.put("timestamp", LocalDateTime.now().toString());
             newStep.put("step", step);
-            // Ensure stepDetails is properly escaped for JSON
+            // Use ObjectMapper to properly handle JSON serialization
             if (stepDetails != null) {
-                String cleanDetails = stepDetails
-                    .replace("\n", "\\n")
-                    .replace("\r", "\\r")
-                    .replace("\t", "\\t");
-                newStep.put("details", cleanDetails);
+                newStep.put("details", stepDetails);
             } else {
                 newStep.put("details", "");
             }
@@ -816,14 +812,9 @@ public class MessageService {
             details.put("timestamp", LocalDateTime.now().toString());
             details.put("adapterType", adapter.getType().toString());
             details.put("adapterMode", adapter.getMode().toString());
-            // Ensure activityDetails is properly escaped for JSON
+            // Use ObjectMapper to properly handle JSON serialization
             if (activityDetails != null) {
-                // Replace problematic characters that might break JSON
-                String cleanDetails = activityDetails
-                    .replace("\n", "\\n")
-                    .replace("\r", "\\r")
-                    .replace("\t", "\\t");
-                details.put("activityDetails", cleanDetails);
+                details.put("activityDetails", activityDetails);
             }
             
             log.setDetails(details.toString());
