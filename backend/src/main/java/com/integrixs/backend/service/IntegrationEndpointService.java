@@ -71,6 +71,8 @@ public class IntegrationEndpointService {
         // Find the deployed flow
         IntegrationFlow flow = findDeployedFlow(flowPath);
         logger.info("Found deployed flow: {} (ID: {})", flow.getName(), flow.getId());
+        logger.info("Flow mapping mode: {}", flow.getMappingMode());
+        logger.info("Flow has {} transformations", flow.getTransformations() != null ? flow.getTransformations().size() : 0);
         
         // Generate correlation ID for this flow execution
         String correlationId = UUID.randomUUID().toString();
