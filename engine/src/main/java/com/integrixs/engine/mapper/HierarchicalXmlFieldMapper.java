@@ -162,7 +162,7 @@ public class HierarchicalXmlFieldMapper {
         
         // Check if sourceFields is a literal value or a field reference
         String value;
-        if (sourceFieldsStr.startsWith("//") || sourceFieldsStr.contains("/")) {
+        if (sourceFieldsStr != null && (sourceFieldsStr.startsWith("//") || sourceFieldsStr.contains("/"))) {
             // It's an XPath expression
             XPathExpression sourceExpr = xpath.compile(sourceFieldsStr);
             NodeList sourceNodes = (NodeList) sourceExpr.evaluate(sourceDoc, XPathConstants.NODESET);
