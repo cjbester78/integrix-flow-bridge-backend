@@ -4,9 +4,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.integrixs.data.model.CommunicationAdapter;
 import com.integrixs.data.model.DataStructure;
 import com.integrixs.data.model.FlowStatus;
+import com.integrixs.data.model.FlowStructure;
 import com.integrixs.data.model.IntegrationFlow;
 import com.integrixs.data.repository.CommunicationAdapterRepository;
 import com.integrixs.data.repository.DataStructureRepository;
+import com.integrixs.data.repository.FlowStructureRepository;
 import com.integrixs.data.repository.IntegrationFlowRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,6 +47,9 @@ public class IntegrationEndpointService {
     
     @Autowired
     private DataStructureRepository dataStructureRepository;
+    
+    @Autowired
+    private FlowStructureRepository flowStructureRepository;
     
     @Autowired
     private FlowExecutionSyncService flowExecutionSyncService;
@@ -160,13 +165,25 @@ public class IntegrationEndpointService {
         CommunicationAdapter sourceAdapter = adapterRepository.findById(flow.getSourceAdapterId())
             .orElseThrow(() -> new IllegalArgumentException("Source adapter not found"));
         
-        // First check if flow has a source structure with WSDL
+        // First check if flow has a source flow structure with WSDL
+        if (flow.getSourceFlowStructureId() != null) {
+            FlowStructure sourceFlowStructure = flowStructureRepository.findById(flow.getSourceFlowStructureId())
+                .orElse(null);
+            
+            if (sourceFlowStructure != null && sourceFlowStructure.getWsdlContent() != null) {
+                logger.info("Using WSDL from flow structure: {}", sourceFlowStructure.getName());
+                // Return the original WSDL with updated endpoint
+                return updateWsdlEndpoint(sourceFlowStructure.getWsdlContent(), flow.getDeploymentEndpoint());
+            }
+        }
+        
+        // Legacy: Check old data structure if no flow structure
         if (flow.getSourceStructureId() != null) {
             DataStructure sourceStructure = dataStructureRepository.findById(flow.getSourceStructureId())
                 .orElse(null);
             
             if (sourceStructure != null && sourceStructure.getOriginalContent() != null) {
-                logger.info("Using WSDL from data structure: {}", sourceStructure.getName());
+                logger.info("Using WSDL from legacy data structure: {}", sourceStructure.getName());
                 // Return the original WSDL with updated endpoint
                 return updateWsdlEndpoint(sourceStructure.getOriginalContent(), flow.getDeploymentEndpoint());
             }
