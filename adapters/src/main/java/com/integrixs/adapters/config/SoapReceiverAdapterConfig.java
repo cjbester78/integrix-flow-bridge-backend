@@ -307,6 +307,16 @@ public class SoapReceiverAdapterConfig {
     public boolean isLogMessages() { return logRequestResponse; }
     
     public String getEffectiveEndpoint() {
+        // Check in order: targetEndpointUrl (frontend uses this), serviceEndpointUrl, endpointUrl
+        if (targetEndpointUrl != null && !targetEndpointUrl.isEmpty()) {
+            return targetEndpointUrl;
+        }
         return serviceEndpointUrl != null ? serviceEndpointUrl : endpointUrl;
     }
+    
+    // Add getter/setter for targetEndpointUrl to match frontend
+    private String targetEndpointUrl;
+    
+    public String getTargetEndpointUrl() { return targetEndpointUrl; }
+    public void setTargetEndpointUrl(String targetEndpointUrl) { this.targetEndpointUrl = targetEndpointUrl; }
 }

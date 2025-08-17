@@ -36,7 +36,7 @@ public class SoapReceiverAdapter extends AbstractReceiverAdapter {
     
     @Override
     protected void doReceiverInitialize() throws Exception {
-        logger.info("Initializing SOAP receiver adapter (outbound) with endpoint: {}", config.getEndpointUrl());
+        logger.info("Initializing SOAP receiver adapter (outbound) with endpoint: {}", config.getEffectiveEndpoint());
         
         validateConfiguration();
         
@@ -66,7 +66,7 @@ public class SoapReceiverAdapter extends AbstractReceiverAdapter {
         // Test 1: Endpoint connectivity
         testResults.add(ConnectionTestUtil.executeBasicConnectivityTest(AdapterType.SOAP, () -> {
             try {
-                URL url = new URL(config.getEndpointUrl());
+                URL url = new URL(config.getEffectiveEndpoint());
                 url.openConnection().connect();
                 
                 return ConnectionTestUtil.createTestSuccess(AdapterType.SOAP, 
@@ -160,7 +160,7 @@ public class SoapReceiverAdapter extends AbstractReceiverAdapter {
             
             // Send SOAP message
             soapConnection = soapConnectionFactory.createConnection();
-            SOAPMessage soapResponse = soapConnection.call(soapRequest, config.getEndpointUrl());
+            SOAPMessage soapResponse = soapConnection.call(soapRequest, config.getEffectiveEndpoint());
             
             // Process response
             Map<String, Object> responseData = processSoapResponse(soapResponse);
@@ -354,7 +354,7 @@ public class SoapReceiverAdapter extends AbstractReceiverAdapter {
     }
     
     private void validateConfiguration() throws AdapterException.ConfigurationException {
-        if (config.getEndpointUrl() == null || config.getEndpointUrl().trim().isEmpty()) {
+        if (config.getEffectiveEndpoint() == null || config.getEffectiveEndpoint().trim().isEmpty()) {
             throw new AdapterException.ConfigurationException(AdapterType.SOAP, "Endpoint URL is required");
         }
         
@@ -372,7 +372,7 @@ public class SoapReceiverAdapter extends AbstractReceiverAdapter {
     @Override
     public String getConfigurationSummary() {
         return String.format("SOAP Receiver (Outbound): %s, Action: %s, SOAP Version: %s", 
-                config.getEndpointUrl(),
+                config.getEffectiveEndpoint(),
                 config.getSoapAction() != null ? config.getSoapAction() : "Not specified",
                 config.getSoapVersion());
     }
