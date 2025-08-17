@@ -183,6 +183,7 @@ public class AdapterExecutionService {
         
         HttpEntity<String> request = new HttpEntity<>(soapRequest, headers);
         logger.info("Making SOAP call to endpoint: {}", endpoint);
+        logger.info("SOAP Request being sent: {}", soapRequest);
         
         // Log SOAP call details
         if (flow != null && correlationId != null) {

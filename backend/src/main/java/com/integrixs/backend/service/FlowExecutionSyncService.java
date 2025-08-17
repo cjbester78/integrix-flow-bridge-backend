@@ -227,6 +227,12 @@ public class FlowExecutionSyncService {
             
             // Step 3: Execute target adapter
             logger.info("Executing target adapter: {} (ID: {})", targetAdapter.getName(), targetAdapter.getId());
+            logger.info("====== SENDING TO TARGET ADAPTER ======");
+            logger.info("Original message: {}", validatedMessage);
+            logger.info("Transformed message: {}", transformedMessage);
+            logger.info("Messages are equal: {}", validatedMessage.equals(transformedMessage));
+            logger.info("====== END SENDING TO TARGET ADAPTER ======");
+            
             messageService.logProcessingStep(correlationId, flow,
                 "Executing target adapter: " + targetAdapter.getName(),
                 "Adapter type: " + targetAdapter.getType() + ", Mode: " + targetAdapter.getMode(),
