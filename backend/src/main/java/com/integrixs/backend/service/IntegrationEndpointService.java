@@ -66,10 +66,14 @@ public class IntegrationEndpointService {
      */
     @Transactional
     public String processSoapRequest(String flowPath, String soapRequest, Map<String, String> headers) throws Exception {
+        logger.error("CRITICAL DEBUG: Processing SOAP request for flow path: {}", flowPath);
         logger.info("Processing SOAP request for flow path: {}", flowPath);
         
         // Find the deployed flow
         IntegrationFlow flow = findDeployedFlow(flowPath);
+        logger.error("CRITICAL DEBUG: Found deployed flow: {} (ID: {})", flow.getName(), flow.getId());
+        logger.error("CRITICAL DEBUG: Flow mapping mode: {}", flow.getMappingMode());
+        logger.error("CRITICAL DEBUG: Flow has {} transformations", flow.getTransformations() != null ? flow.getTransformations().size() : 0);
         logger.info("Found deployed flow: {} (ID: {})", flow.getName(), flow.getId());
         logger.info("Flow mapping mode: {}", flow.getMappingMode());
         logger.info("Flow has {} transformations", flow.getTransformations() != null ? flow.getTransformations().size() : 0);
