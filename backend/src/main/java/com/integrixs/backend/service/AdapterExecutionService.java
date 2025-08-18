@@ -79,7 +79,7 @@ public class AdapterExecutionService {
         String flowId = (String) context.get("flowId");
         IntegrationFlow flow = null;
         if (flowId != null && correlationId != null) {
-            flow = flowRepository.findById(flowId).orElse(null);
+            flow = flowRepository.findById(UUID.fromString(flowId)).orElse(null);
         }
         
         // Log the incoming payload (what the adapter receives)

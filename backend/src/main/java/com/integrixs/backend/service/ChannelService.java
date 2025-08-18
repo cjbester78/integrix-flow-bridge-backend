@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.UUID;
 
 @Service
 @Transactional(readOnly = true)
@@ -31,7 +32,7 @@ public class ChannelService {
             
             if (businessComponentId != null) {
                 logger.debug("Fetching adapters for business component: {}", businessComponentId);
-                adapters = adapterRepository.findByBusinessComponent_Id(businessComponentId);
+                adapters = adapterRepository.findByBusinessComponentId(UUID.fromString(businessComponentId));
             } else {
                 logger.debug("Fetching all adapters");
                 adapters = adapterRepository.findAll();
@@ -50,7 +51,7 @@ public class ChannelService {
                             // Safely get business component ID within transaction
                             String bcId = null;
                             if (adapter.getBusinessComponent() != null) {
-                                bcId = adapter.getBusinessComponent().getId();
+                                bcId = adapter.getBusinessComponent().getId().toString();
                             }
                             
                             ChannelStatusDTO dto = ChannelStatusDTO.builder()

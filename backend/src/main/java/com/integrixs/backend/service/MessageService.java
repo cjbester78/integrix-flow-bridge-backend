@@ -32,6 +32,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.Comparator;
+import java.util.UUID;
 
 @Service
 public class MessageService {
@@ -57,7 +58,7 @@ public class MessageService {
         PageRequest pageRequest = PageRequest.of(0, limit, Sort.by(Sort.Direction.DESC, "timestamp"));
         
         List<SystemLog> logs = businessComponentId != null
-            ? logRepository.findByComponentId(businessComponentId, pageRequest)
+            ? logRepository.findByComponentId(UUID.fromString(businessComponentId), pageRequest)
             : logRepository.findAll(pageRequest).getContent();
 
         return logs.stream()
@@ -114,7 +115,7 @@ public class MessageService {
      */
     @Transactional(readOnly = true)
     public MessageDTO getMessageById(String id) {
-        SystemLog log = logRepository.findById(id)
+        SystemLog log = logRepository.findById(UUID.fromString(id))
                 .orElseThrow(() -> new ResourceNotFoundException("Message not found with id: " + id));
         return convertToMessageDTO(log);
     }
@@ -200,7 +201,7 @@ public class MessageService {
      */
     @Transactional
     public MessageDTO reprocessMessage(String id) {
-        SystemLog log = logRepository.findById(id)
+        SystemLog log = logRepository.findById(UUID.fromString(id))
                 .orElseThrow(() -> new ResourceNotFoundException("Message not found with id: " + id));
         
         // TODO: Implement actual reprocessing logic
@@ -220,7 +221,7 @@ public class MessageService {
             // Use the new AdapterPayload entity
             AdapterPayload adapterPayload = AdapterPayload.builder()
                 .correlationId(correlationId)
-                .adapterId(adapter.getId())
+                .adapterId(adapter.getId().toString())
                 .adapterName(adapter.getName())
                 .adapterType(adapter.getType() != null ? adapter.getType().name() : "UNKNOWN")
                 .direction(direction)
@@ -246,7 +247,7 @@ public class MessageService {
                 log.setMessage(String.format("Adapter %s payload logged - %s", direction, payloadType));
                 log.setCategory("ADAPTER_PAYLOAD");
                 log.setDomainType("CommunicationAdapter");
-                log.setDomainReferenceId(adapter.getId());
+                log.setDomainReferenceId(adapter.getId().toString());
                 log.setCorrelationId(correlationId);
                 log.setSourceName(adapter.getName());
                 log.setSource(adapter.getType() != null ? adapter.getType().name() : "UNKNOWN");
