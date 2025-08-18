@@ -55,13 +55,17 @@ def migrate_users(mysql_conn, pg_conn):
     pg_cursor = pg_conn.cursor()
     
     mysql_cursor.execute("""
-        SELECT id, username, password, email, role_id, is_active, 
-               created_at, updated_at, last_login, login_attempts, locked_until
+        SELECT id, username, password_hash, email, role_id, status,
+               created_at, updated_at, last_login_at, login_attempts, locked_until
         FROM users
     """)
     
+    count = 0
     for row in mysql_cursor:
         try:
+            # Map status to is_active
+            is_active = row.get('status', 'active') == 'active'
+            
             pg_cursor.execute("""
                 INSERT INTO users (id, username, password, email, role_id, is_active,
                                   created_at, updated_at, last_login, login_attempts, locked_until)
@@ -69,18 +73,20 @@ def migrate_users(mysql_conn, pg_conn):
                 ON CONFLICT (id) DO UPDATE SET
                     username = EXCLUDED.username,
                     password = EXCLUDED.password,
-                    email = EXCLUDED.email
+                    email = EXCLUDED.email,
+                    is_active = EXCLUDED.is_active
             """, (
-                row['id'], row['username'], row['password'], row['email'],
-                row['role_id'], row.get('is_active', True),
-                row['created_at'], row['updated_at'], row['last_login'],
+                row['id'], row['username'], row['password_hash'], row['email'],
+                row['role_id'], is_active,
+                row['created_at'], row['updated_at'], row['last_login_at'],
                 row.get('login_attempts', 0), row['locked_until']
             ))
+            count += 1
         except Exception as e:
             print(f"Error migrating user {row['username']}: {e}")
     
     pg_conn.commit()
-    print(f"Migrated {mysql_cursor.rowcount} users")
+    print(f"Migrated {count} users")
 
 def migrate_transformation_custom_functions(mysql_conn, pg_conn):
     """Migrate transformation custom functions"""

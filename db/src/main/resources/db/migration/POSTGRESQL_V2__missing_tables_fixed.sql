@@ -31,11 +31,12 @@ CREATE TABLE IF NOT EXISTS user_management_errors (
     occurred_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     resolved BOOLEAN DEFAULT FALSE,
     resolved_at TIMESTAMP,
-    resolved_by UUID REFERENCES users(id) ON DELETE SET NULL,
-    INDEX idx_user_mgmt_errors_type (error_type),
-    INDEX idx_user_mgmt_errors_user (user_id),
-    INDEX idx_user_mgmt_errors_occurred (occurred_at)
+    resolved_by UUID REFERENCES users(id) ON DELETE SET NULL
 );
+
+CREATE INDEX IF NOT EXISTS idx_user_mgmt_errors_type ON user_management_errors(error_type);
+CREATE INDEX IF NOT EXISTS idx_user_mgmt_errors_user ON user_management_errors(user_id);
+CREATE INDEX IF NOT EXISTS idx_user_mgmt_errors_occurred ON user_management_errors(occurred_at);
 
 -- Transformation Custom Functions table (Migrate data)
 CREATE TABLE IF NOT EXISTS transformation_custom_functions (
@@ -54,11 +55,12 @@ CREATE TABLE IF NOT EXISTS transformation_custom_functions (
     version INTEGER NOT NULL DEFAULT 1,
     created_by VARCHAR(100),
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP,
-    INDEX idx_custom_func_name (name),
-    INDEX idx_custom_func_category (category),
-    INDEX idx_custom_func_language (language)
+    updated_at TIMESTAMP
 );
+
+CREATE INDEX IF NOT EXISTS idx_custom_func_name ON transformation_custom_functions(name);
+CREATE INDEX IF NOT EXISTS idx_custom_func_category ON transformation_custom_functions(category);
+CREATE INDEX IF NOT EXISTS idx_custom_func_language ON transformation_custom_functions(language);
 
 -- Function Dependencies table
 CREATE TABLE IF NOT EXISTS function_dependencies (
@@ -75,9 +77,10 @@ CREATE TABLE IF NOT EXISTS function_test_cases (
     test_name VARCHAR(100),
     input_data TEXT,
     expected_output TEXT,
-    test_description VARCHAR(500),
-    INDEX idx_test_cases_function (function_id)
+    test_description VARCHAR(500)
 );
+
+CREATE INDEX IF NOT EXISTS idx_test_cases_function ON function_test_cases(function_id);
 
 -- System Settings table (Migrate data)
 CREATE TABLE IF NOT EXISTS system_settings (
@@ -92,10 +95,11 @@ CREATE TABLE IF NOT EXISTS system_settings (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     created_by VARCHAR(100),
-    updated_by VARCHAR(100),
-    INDEX idx_system_settings_key (setting_key),
-    INDEX idx_system_settings_category (category)
+    updated_by VARCHAR(100)
 );
+
+CREATE INDEX IF NOT EXISTS idx_system_settings_key ON system_settings(setting_key);
+CREATE INDEX IF NOT EXISTS idx_system_settings_category ON system_settings(category);
 
 -- JAR Files table (Migrate data)
 CREATE TABLE IF NOT EXISTS jar_files (
@@ -111,10 +115,11 @@ CREATE TABLE IF NOT EXISTS jar_files (
     uploaded_by VARCHAR(100) NOT NULL,
     uploaded_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     is_active BOOLEAN DEFAULT TRUE,
-    metadata JSON,
-    INDEX idx_jar_files_name (file_name),
-    INDEX idx_jar_files_active (is_active)
+    metadata JSON
 );
+
+CREATE INDEX IF NOT EXISTS idx_jar_files_name ON jar_files(file_name);
+CREATE INDEX IF NOT EXISTS idx_jar_files_active ON jar_files(is_active);
 
 -- Certificates table (Migrate data)
 CREATE TABLE IF NOT EXISTS certificates (
@@ -126,9 +131,10 @@ CREATE TABLE IF NOT EXISTS certificates (
     password VARCHAR(500), -- Should be encrypted
     uploaded_by VARCHAR(100) NOT NULL,
     uploaded_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    content BYTEA NOT NULL,
-    INDEX idx_certificates_name (name)
+    content BYTEA NOT NULL
 );
+
+CREATE INDEX IF NOT EXISTS idx_certificates_name ON certificates(name);
 
 -- Audit Trail table (Migrate data)
 CREATE TABLE IF NOT EXISTS audit_trail (
@@ -141,13 +147,14 @@ CREATE TABLE IF NOT EXISTS audit_trail (
     user_ip VARCHAR(45),
     user_agent TEXT,
     business_component_id UUID REFERENCES business_components(id) ON DELETE SET NULL,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    INDEX idx_audit_entity (entity_type, entity_id),
-    INDEX idx_audit_user (user_id),
-    INDEX idx_audit_created (created_at),
-    INDEX idx_audit_action (action),
-    INDEX idx_audit_business_component (business_component_id)
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE INDEX IF NOT EXISTS idx_audit_entity ON audit_trail(entity_type, entity_id);
+CREATE INDEX IF NOT EXISTS idx_audit_user ON audit_trail(user_id);
+CREATE INDEX IF NOT EXISTS idx_audit_created ON audit_trail(created_at);
+CREATE INDEX IF NOT EXISTS idx_audit_action ON audit_trail(action);
+CREATE INDEX IF NOT EXISTS idx_audit_business_component ON audit_trail(business_component_id);
 
 -- Audit Logs table (if different from audit_trail)
 CREATE TABLE IF NOT EXISTS audit_logs (
@@ -159,12 +166,13 @@ CREATE TABLE IF NOT EXISTS audit_logs (
     source VARCHAR(100),
     user_id UUID REFERENCES users(id) ON DELETE SET NULL,
     correlation_id VARCHAR(100),
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    INDEX idx_audit_logs_type (log_type),
-    INDEX idx_audit_logs_level (log_level),
-    INDEX idx_audit_logs_created (created_at),
-    INDEX idx_audit_logs_correlation (correlation_id)
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE INDEX IF NOT EXISTS idx_audit_logs_type ON audit_logs(log_type);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_level ON audit_logs(log_level);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_created ON audit_logs(created_at);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_correlation ON audit_logs(correlation_id);
 
 -- Add any missing columns to users table if needed
 ALTER TABLE users ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT TRUE;
