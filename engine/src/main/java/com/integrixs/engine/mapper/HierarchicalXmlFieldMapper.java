@@ -145,9 +145,7 @@ public class HierarchicalXmlFieldMapper {
             effectiveNamespaces.putAll(namespaces);
             logger.info("Using {} namespaces from flow structures", namespaces.size());
         } else {
-            logger.warn("No namespaces provided, using defaults");
-            // Add some common defaults
-            effectiveNamespaces.put("tem", "https://www.w3schools.com/xml/");
+            logger.warn("No namespaces provided, no defaults will be added");
         }
         
         xpath.setNamespaceContext(new MapNamespaceContext(effectiveNamespaces));

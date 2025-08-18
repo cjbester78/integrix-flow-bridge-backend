@@ -131,23 +131,26 @@ public class WsdlOperationExtractor {
      * Find the prefix for a given namespace URI
      */
     private static String findPrefixForNamespace(Map<String, String> namespaces, String namespaceUri) {
-        // First look for exact match (excluding tns)
+        // First look for exact match
         for (Map.Entry<String, String> entry : namespaces.entrySet()) {
-            if (entry.getValue().equals(namespaceUri) && !entry.getKey().equals("tns")) {
+            if (entry.getValue().equals(namespaceUri)) {
                 return entry.getKey();
             }
         }
         
-        // If not found, create a sensible prefix
-        if (namespaceUri.contains("w3schools")) {
-            return "tem";
-        } else if (namespaceUri.contains("weather")) {
+        // If not found, look for tns prefix as last resort
+        if (namespaces.containsKey("tns") && namespaces.get("tns").equals(namespaceUri)) {
+            return "tns";
+        }
+        
+        // Default - use namespace specific prefix based on URI
+        if (namespaceUri.contains("weather")) {
             return "weat";
         } else if (namespaceUri.contains("integrix")) {
             return "int";
         }
         
-        // Default
+        // Generic namespace prefix
         return "ns";
     }
     
