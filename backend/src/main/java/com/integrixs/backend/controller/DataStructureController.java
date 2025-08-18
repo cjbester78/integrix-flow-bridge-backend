@@ -94,7 +94,7 @@ public class DataStructureController {
             DataStructure created = dataStructureService.createDataStructure(structure, userId);
             
             // Convert to map to avoid lazy loading issues
-            Map<String, Object> response = dataStructureService.getDataStructureAsMap(created.getId());
+            Map<String, Object> response = dataStructureService.getDataStructureAsMap(created.getId().toString());
             
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
         } catch (Exception e) {
@@ -113,7 +113,7 @@ public class DataStructureController {
             DataStructure updated = dataStructureService.updateDataStructure(id, updates);
             
             // Convert to map to avoid lazy loading issues
-            Map<String, Object> response = dataStructureService.getDataStructureAsMap(updated.getId());
+            Map<String, Object> response = dataStructureService.getDataStructureAsMap(updated.getId().toString());
             
             return ResponseEntity.ok(response);
             

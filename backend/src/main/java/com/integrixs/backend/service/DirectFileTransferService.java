@@ -82,7 +82,7 @@ public class DirectFileTransferService {
         logger.info("Using streaming transfer for flow: {}", flow.getName());
         
         // Get source file info from adapter
-        Object sourceDataObj = adapterExecutor.fetchDataAsObject(sourceAdapter.getId());
+        Object sourceDataObj = adapterExecutor.fetchDataAsObject(sourceAdapter.getId().toString());
         Map<String, Object> sourceData = null;
         
         // Try to cast to Map if possible
@@ -123,7 +123,7 @@ public class DirectFileTransferService {
                 "expectedSize", sourceChannel.size()
             );
             
-            WritableByteChannel targetChannel = adapterExecutor.getWritableChannel(targetAdapter.getId(), targetConfig);
+            WritableByteChannel targetChannel = adapterExecutor.getWritableChannel(targetAdapter.getId().toString(), targetConfig);
             
             // Transfer data using zero-copy when possible
             long position = 0;
@@ -148,7 +148,7 @@ public class DirectFileTransferService {
      */
     private void streamSmallFile(Path sourcePath, CommunicationAdapter targetAdapter) throws Exception {
         byte[] content = Files.readAllBytes(sourcePath);
-        adapterExecutor.sendData(targetAdapter.getId(), content);
+        adapterExecutor.sendData(targetAdapter.getId().toString(), content);
     }
     
     /**
@@ -158,7 +158,7 @@ public class DirectFileTransferService {
         try (InputStream input = source) {
             Map<String, Object> targetConfig = Map.of("streamingMode", true);
             
-            try (OutputStream output = adapterExecutor.getOutputStream(targetAdapter.getId(), targetConfig)) {
+            try (OutputStream output = adapterExecutor.getOutputStream(targetAdapter.getId().toString(), targetConfig)) {
                 byte[] buffer = new byte[BUFFER_SIZE];
                 int bytesRead;
                 long totalBytes = 0;
@@ -186,7 +186,7 @@ public class DirectFileTransferService {
         logger.info("Using buffered transfer for flow: {}", flow.getName());
         
         // Fetch data as-is without conversion
-        Object rawData = adapterExecutor.fetchData(sourceAdapter.getId());
+        Object rawData = adapterExecutor.fetchData(sourceAdapter.getId().toString());
         
         // Detect and preserve encoding
         String encoding = detectEncoding(rawData);
@@ -194,19 +194,19 @@ public class DirectFileTransferService {
         
         // Send data preserving original format
         if (rawData instanceof byte[]) {
-            adapterExecutor.sendData(targetAdapter.getId(), (Object) rawData);
+            adapterExecutor.sendData(targetAdapter.getId().toString(), (Object) rawData);
         } else if (rawData instanceof InputStream) {
             try (InputStream is = (InputStream) rawData) {
                 byte[] data = is.readAllBytes();
-                adapterExecutor.sendData(targetAdapter.getId(), data);
+                adapterExecutor.sendData(targetAdapter.getId().toString(), data);
             }
         } else if (rawData instanceof String) {
             // Preserve string encoding
             byte[] data = ((String) rawData).getBytes(Charset.forName(encoding));
-            adapterExecutor.sendData(targetAdapter.getId(), data);
+            adapterExecutor.sendData(targetAdapter.getId().toString(), data);
         } else {
             // For other types, send as object
-            adapterExecutor.sendData(targetAdapter.getId(), rawData);
+            adapterExecutor.sendData(targetAdapter.getId().toString(), rawData);
         }
     }
     

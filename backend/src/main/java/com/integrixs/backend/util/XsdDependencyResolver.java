@@ -157,7 +157,7 @@ public class XsdDependencyResolver {
         for (ImportInfo importInfo : metadata.getImports()) {
             DataStructure resolved = findMatchingStructure(importInfo.getNamespace(), importInfo.getSchemaLocation());
             if (resolved != null) {
-                importInfo.setDataStructureId(resolved.getId());
+                importInfo.setDataStructureId(resolved.getId().toString());
                 importInfo.setDataStructureName(resolved.getName());
             }
         }
@@ -166,7 +166,7 @@ public class XsdDependencyResolver {
         for (ImportInfo includeInfo : metadata.getIncludes()) {
             DataStructure resolved = findMatchingStructure(null, includeInfo.getSchemaLocation());
             if (resolved != null) {
-                includeInfo.setDataStructureId(resolved.getId());
+                includeInfo.setDataStructureId(resolved.getId().toString());
                 includeInfo.setDataStructureName(resolved.getName());
             }
         }

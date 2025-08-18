@@ -25,14 +25,14 @@ public class LogService {
     private ObjectMapper objectMapper;
 
     public void log(SystemLog log) {
-        if (log.getId() == null) log.setId(UUID.randomUUID().toString());
+        if (log.getId() == null) log.setId(UUID.randomUUID());
         if (log.getTimestamp() == null) log.setCreatedAt(LocalDateTime.ofInstant(Instant.now(), ZoneId.systemDefault()));
         logRepository.save(log);
     }
 
     public void logUserManagementError(String action, String message, String detailsJson, String userId, String controller) {
         SystemLog log = new SystemLog();
-        log.setId(UUID.randomUUID().toString());
+        log.setId(UUID.randomUUID());
         log.setCreatedAt(LocalDateTime.ofInstant(Instant.now(), ZoneId.systemDefault()));
         log.setLevel(SystemLog.LogLevel.ERROR);
         log.setMessage(message);
@@ -46,12 +46,12 @@ public class LogService {
 
     public void logFlowExecutionSuccess(IntegrationFlow flow, String inputData, String outputData) {
         SystemLog log = new SystemLog();
-        log.setId(UUID.randomUUID().toString());
+        log.setId(UUID.randomUUID());
         log.setCreatedAt(LocalDateTime.ofInstant(Instant.now(), ZoneId.systemDefault()));
         log.setLevel(SystemLog.LogLevel.INFO);
         log.setMessage("Flow executed successfully: " + flow.getName());
         log.setDomainType("INTEGRATION_FLOW");
-        log.setDomainReferenceId(flow.getId());
+        log.setDomainReferenceId(flow.getId().toString());
 
         Map<String, Object> details = new HashMap<>();
         details.put("input", inputData);
@@ -63,12 +63,12 @@ public class LogService {
 
     public void logFlowExecutionError(IntegrationFlow flow, Exception e) {
         SystemLog log = new SystemLog();
-        log.setId(UUID.randomUUID().toString());
+        log.setId(UUID.randomUUID());
         log.setCreatedAt(LocalDateTime.ofInstant(Instant.now(), ZoneId.systemDefault()));
         log.setLevel(SystemLog.LogLevel.ERROR);
         log.setMessage("Flow execution failed: " + flow.getName());
         log.setDomainType("INTEGRATION_FLOW");
-        log.setDomainReferenceId(flow.getId());
+        log.setDomainReferenceId(flow.getId().toString());
 
         Map<String, Object> details = new HashMap<>();
         details.put("exception", e.getMessage());

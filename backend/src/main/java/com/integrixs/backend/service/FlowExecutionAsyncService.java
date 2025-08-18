@@ -32,6 +32,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 
 /**
  * Service that handles asynchronous flow execution for scheduled jobs and batch processing.
@@ -89,7 +90,7 @@ public class FlowExecutionAsyncService {
     }
 
     public void executeFlow(String flowId) {
-        IntegrationFlow flow = flowRepository.findById(flowId)
+        IntegrationFlow flow = flowRepository.findById(UUID.fromString(flowId))
                 .orElseThrow(() -> new RuntimeException("Flow not found"));
 
         // Create correlation ID for this flow execution
@@ -125,7 +126,7 @@ public class FlowExecutionAsyncService {
             }
 
             // Step 1: Fetch source data
-            Object rawData = adapterExecutor.fetchDataAsObject(flow.getSourceAdapterId());
+            Object rawData = adapterExecutor.fetchDataAsObject(flow.getSourceAdapterId().toString());
             logger.info("Fetched data from source adapter: {}", sourceAdapter.getName());
             
             // Log source adapter payload (what the adapter received FROM external system)
@@ -180,7 +181,7 @@ public class FlowExecutionAsyncService {
             context.put("correlationId", correlationId);
             context.put("flowId", flow.getId());
             
-            adapterExecutor.sendData(flow.getTargetAdapterId(), processedData, context);
+            adapterExecutor.sendData(flow.getTargetAdapterId().toString(), processedData, context);
             logger.info("Sent data to target adapter: {}", targetAdapter.getName());
             
             // Log target adapter payload (what the adapter will send TO external system)

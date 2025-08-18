@@ -54,7 +54,7 @@ public class EventSourcingService {
             
             // Create event store entry
             EventStore eventStore = EventStore.builder()
-                .eventId(event.getEventId())
+                .eventId(UUID.fromString(event.getEventId()))
                 .aggregateType(getAggregateType(event))
                 .aggregateId(event.getAggregateId())
                 .aggregateVersion(latestVersion + 1)

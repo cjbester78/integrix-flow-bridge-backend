@@ -216,8 +216,8 @@ public class FlowControllerV1 {
             .id(flow.getId().toString())
             .name(flow.getName())
             .description(flow.getDescription())
-            .sourceAdapterId(flow.getSourceAdapterId())
-            .targetAdapterId(flow.getTargetAdapterId())
+            .sourceAdapterId(flow.getSourceAdapterId().toString())
+            .targetAdapterId(flow.getTargetAdapterId().toString())
             .sourceStructureId(flow.getSourceStructureId())
             .targetStructureId(flow.getTargetStructureId())
             .status(flow.getStatus().toString())
@@ -225,7 +225,7 @@ public class FlowControllerV1 {
             .isActive(flow.isActive())
             .createdAt(flow.getCreatedAt())
             .updatedAt(flow.getUpdatedAt())
-            .createdBy(flow.getCreatedBy())
+            .createdBy(flow.getCreatedBy() != null ? flow.getCreatedBy().getUsername() : null)
             .build();
     }
 }
