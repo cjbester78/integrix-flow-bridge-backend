@@ -8,9 +8,10 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @Repository
-public interface SystemSettingRepository extends JpaRepository<SystemSetting, String> {
+public interface SystemSettingRepository extends JpaRepository<SystemSetting, UUID> {
 
     /**
      * Find a system setting by its key

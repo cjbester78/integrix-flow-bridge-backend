@@ -11,13 +11,14 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @Repository
-public interface DataStructureRepository extends JpaRepository<DataStructure, String> {
+public interface DataStructureRepository extends JpaRepository<DataStructure, UUID> {
     
     @Override
     @EntityGraph(attributePaths = {"businessComponent"})
-    Optional<DataStructure> findById(String id);
+    Optional<DataStructure> findById(UUID id);
     
     Optional<DataStructure> findByName(String name);
     
@@ -27,7 +28,7 @@ public interface DataStructureRepository extends JpaRepository<DataStructure, St
     
     List<DataStructure> findByUsage(DataStructure.DataStructureUsage usage);
     
-    List<DataStructure> findByBusinessComponentId(String businessComponentId);
+    List<DataStructure> findByBusinessComponentId(UUID businessComponentId);
     
     List<DataStructure> findByIsActiveTrue();
     
@@ -41,7 +42,7 @@ public interface DataStructureRepository extends JpaRepository<DataStructure, St
     @EntityGraph(attributePaths = {"businessComponent"})
     Page<DataStructure> findWithFilters(@Param("type") String type,
                                        @Param("usage") DataStructure.DataStructureUsage usage,
-                                       @Param("businessComponentId") String businessComponentId,
+                                       @Param("businessComponentId") UUID businessComponentId,
                                        @Param("search") String search,
                                        Pageable pageable);
     
@@ -52,5 +53,5 @@ public interface DataStructureRepository extends JpaRepository<DataStructure, St
            "EXISTS (SELECT 1 FROM d.tags t WHERE t IN :tags)")
     List<DataStructure> findByTagsIn(@Param("tags") List<String> tags);
     
-    boolean existsByNameAndIdNot(String name, String id);
+    boolean existsByNameAndIdNot(String name, UUID id);
 }

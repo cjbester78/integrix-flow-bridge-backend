@@ -6,6 +6,7 @@ import org.hibernate.annotations.GenericGenerator;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * Entity representing custom transformation functions that can be used in visual flow and orchestration editors
@@ -22,9 +23,9 @@ public class TransformationCustomFunction {
     @Id
     @GeneratedValue(generator = "uuid2")
     @GenericGenerator(name = "uuid2", strategy = "org.hibernate.id.UUIDGenerator")
-    @Column(name = "function_id", columnDefinition = "char(36)")
+    @Column(name = "function_id", columnDefinition = "UUID")
     @EqualsAndHashCode.Include
-    private String functionId;
+    private UUID functionId;
 
     @Column(name = "name", nullable = false, unique = true, length = 100)
     private String name;

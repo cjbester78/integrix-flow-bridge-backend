@@ -2,6 +2,7 @@ package com.integrixs.data.model;
 
 import jakarta.persistence.*;
 import org.hibernate.annotations.GenericGenerator;
+import java.util.UUID;
 
 @Entity
 @Table(name = "roles")
@@ -14,9 +15,9 @@ public class Role {
     @Id
     @GeneratedValue(generator = "uuid2")
     @GenericGenerator(name = "uuid2", strategy = "org.hibernate.id.UUIDGenerator")
-    @Column(columnDefinition = "char(36)")
+    @Column(columnDefinition = "UUID")
     /** Unique identifier (UUID) for the entity */
-    private String id;
+    private UUID id;
 
     @Column(nullable = false, unique = true, length = 50)
     /** Name of the component */
@@ -26,8 +27,8 @@ public class Role {
     private String permissions;
 
     // Getters and Setters
-    public String getId() { return id; }
-    public void setId(String id) { this.id = id; }
+    public UUID getId() { return id; }
+    public void setId(UUID id) { this.id = id; }
 
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }

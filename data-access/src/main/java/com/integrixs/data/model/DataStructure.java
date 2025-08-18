@@ -7,6 +7,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 @Entity
 @Table(name = "data_structures")
@@ -19,9 +20,9 @@ import java.util.List;
 public class DataStructure {
     
     @Id
-    @Column(name = "id", length = 36)
+    @Column(name = "id", columnDefinition = "UUID")
     @EqualsAndHashCode.Include
-    private String id;
+    private UUID id;
     
     @Column(name = "name", nullable = false)
     private String name;
@@ -91,7 +92,7 @@ public class DataStructure {
     @PrePersist
     protected void onCreate() {
         if (id == null) {
-            id = java.util.UUID.randomUUID().toString();
+            id = UUID.randomUUID();
         }
         if (version == null) {
             version = 1;

@@ -13,6 +13,7 @@ import org.hibernate.annotations.BatchSize;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * Entity representing a flow transformation.
@@ -44,9 +45,9 @@ public class FlowTransformation {
     @Id
     @GeneratedValue(generator = "uuid2")
     @GenericGenerator(name = "uuid2", strategy = "org.hibernate.id.UUIDGenerator")
-    @Column(columnDefinition = "char(36)")
+    @Column(columnDefinition = "UUID")
     @EqualsAndHashCode.Include
-    private String id;
+    private UUID id;
 
     /**
      * The integration flow this transformation belongs to

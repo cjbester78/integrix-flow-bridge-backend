@@ -5,6 +5,7 @@ import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 /**
  * Entity representing system logs including frontend application logs.
@@ -28,9 +29,9 @@ public class SystemLog {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(name = "id", columnDefinition = "char(36)")
+    @Column(name = "id", columnDefinition = "UUID")
     @EqualsAndHashCode.Include
-    private String id;
+    private UUID id;
 
     @Column(name = "timestamp", nullable = false)
     private LocalDateTime timestamp;

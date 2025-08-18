@@ -3,6 +3,7 @@ package com.integrixs.data.model;
 import jakarta.persistence.*;
 import org.hibernate.annotations.GenericGenerator;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Entity
 @Table(name = "system_settings")
@@ -15,9 +16,9 @@ public class SystemSetting {
     @Id
     @GeneratedValue(generator = "uuid2")
     @GenericGenerator(name = "uuid2", strategy = "org.hibernate.id.UUIDGenerator")
-    @Column(columnDefinition = "char(36)")
+    @Column(columnDefinition = "UUID")
     /** Unique identifier (UUID) for the entity */
-    private String id;
+    private UUID id;
 
     @Column(nullable = false, unique = true, length = 100)
     /** Setting key/name (e.g., 'base_domain', 'default_timeout') */
@@ -76,11 +77,11 @@ public class SystemSetting {
 
     // === Getters and Setters ===
 
-    public String getId() {
+    public UUID getId() {
         return id;
     }
 
-    public void setId(String id) {
+    public void setId(UUID id) {
         this.id = id;
     }
 

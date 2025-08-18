@@ -9,22 +9,23 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @Repository
 /**
  * Repository interface for FlowTransformationRepository.
  * Provides CRUD operations and query methods for the corresponding entity.
  */
-public interface FlowTransformationRepository extends JpaRepository<FlowTransformation, String> {
-    List<FlowTransformation> findByFlowId(String flowId);
+public interface FlowTransformationRepository extends JpaRepository<FlowTransformation, UUID> {
+    List<FlowTransformation> findByFlowId(UUID flowId);
 
-	void deleteByFlowId(String flowId);
+	void deleteByFlowId(UUID flowId);
     
     // Find transformation with field mappings eagerly loaded
     @EntityGraph(attributePaths = {"fieldMappings"})
-    Optional<FlowTransformation> findWithFieldMappingsById(String id);
+    Optional<FlowTransformation> findWithFieldMappingsById(UUID id);
     
     // Find all transformations for a flow with field mappings eagerly loaded
     @EntityGraph(attributePaths = {"fieldMappings"})
-    List<FlowTransformation> findWithFieldMappingsByFlowId(String flowId);
+    List<FlowTransformation> findWithFieldMappingsByFlowId(UUID flowId);
 }

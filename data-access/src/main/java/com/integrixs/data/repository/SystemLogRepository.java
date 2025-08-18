@@ -6,25 +6,26 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * Repository for SystemLog entities
  */
 @Repository
-public interface SystemLogRepository extends JpaRepository<SystemLog, String>, JpaSpecificationExecutor<SystemLog> {
+public interface SystemLogRepository extends JpaRepository<SystemLog, UUID>, JpaSpecificationExecutor<SystemLog> {
     
     List<SystemLog> findBySourceAndLevelAndTimestampAfter(String source, SystemLog.LogLevel level, LocalDateTime timestamp);
     
     // Complex filtering will be handled by JPA Specifications in the service layer
     
     // Methods for DashboardService
-    long countByComponentIdAndTimestampAfter(String componentId, LocalDateTime date);
+    long countByComponentIdAndTimestampAfter(UUID componentId, LocalDateTime date);
     long countByTimestampAfter(LocalDateTime date);
-    long countByComponentIdAndLevelAndTimestampAfter(String componentId, SystemLog.LogLevel level, LocalDateTime date);
+    long countByComponentIdAndLevelAndTimestampAfter(UUID componentId, SystemLog.LogLevel level, LocalDateTime date);
     long countByLevelAndTimestampAfter(SystemLog.LogLevel level, LocalDateTime date);
     
     // Methods for MessageService
-    List<SystemLog> findByComponentId(String componentId, org.springframework.data.domain.Pageable pageable);
+    List<SystemLog> findByComponentId(UUID componentId, org.springframework.data.domain.Pageable pageable);
     
     // Find logs by correlation ID
     List<SystemLog> findByCorrelationId(String correlationId);

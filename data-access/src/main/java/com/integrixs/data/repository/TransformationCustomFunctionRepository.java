@@ -9,12 +9,13 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 /**
  * Repository for TransformationCustomFunction entities
  */
 @Repository
-public interface TransformationCustomFunctionRepository extends JpaRepository<TransformationCustomFunction, String>, JpaSpecificationExecutor<TransformationCustomFunction> {
+public interface TransformationCustomFunctionRepository extends JpaRepository<TransformationCustomFunction, UUID>, JpaSpecificationExecutor<TransformationCustomFunction> {
 
     /**
      * Find function by name
@@ -24,7 +25,7 @@ public interface TransformationCustomFunctionRepository extends JpaRepository<Tr
     /**
      * Check if a function exists with the given name but not the given ID
      */
-    boolean existsByNameAndFunctionIdNot(String name, String functionId);
+    boolean existsByNameAndFunctionIdNot(String name, UUID functionId);
 
     /**
      * Find all public functions

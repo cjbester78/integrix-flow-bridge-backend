@@ -3,6 +3,7 @@ package com.integrixs.data.model;
 import jakarta.persistence.*;
 import org.hibernate.annotations.GenericGenerator;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Entity
 @Table(name = "certificates")
@@ -15,9 +16,9 @@ public class Certificate {
     @Id
     @GeneratedValue(generator = "uuid2")
     @GenericGenerator(name = "uuid2", strategy = "org.hibernate.id.UUIDGenerator")
-    @Column(columnDefinition = "char(36)")
+    @Column(columnDefinition = "UUID")
     /** Unique identifier (UUID) for the entity */
-    private String id;
+    private UUID id;
 
     @Column(nullable = false)
     /** Name of the component */
@@ -55,11 +56,11 @@ public class Certificate {
 
     // Getters and setters
 
-    public String getId() {
+    public UUID getId() {
         return id;
     }
 
-    public void setId(String id) {
+    public void setId(UUID id) {
         this.id = id;
     }
 
