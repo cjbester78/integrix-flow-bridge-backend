@@ -11,6 +11,7 @@ import com.integrixs.shared.dto.flow.FlowTransformationDTO;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -23,7 +24,7 @@ public class FlowTransformationService {
     private IntegrationFlowRepository flowRepository;
 
     public List<FlowTransformationDTO> getByFlowId(String flowId) {
-        List<FlowTransformation> transformations = transformationRepository.findByFlowId(flowId);
+        List<FlowTransformation> transformations = transformationRepository.findByFlowId(UUID.fromString(flowId));
         System.out.println("Found " + transformations.size() + " transformations for flow " + flowId);
         
         return transformations.stream()
@@ -41,17 +42,17 @@ public class FlowTransformationService {
     }
 
     public Optional<FlowTransformationDTO> getById(String id) {
-        return transformationRepository.findById(id).map(this::toDTO);
+        return transformationRepository.findById(UUID.fromString(id)).map(this::toDTO);
     }
 
     public void delete(String id) {
-        transformationRepository.deleteById(id);
+        transformationRepository.deleteById(UUID.fromString(id));
     }
 
     private FlowTransformationDTO toDTO(FlowTransformation transformation) {
         FlowTransformationDTO dto = new FlowTransformationDTO();
-        dto.setId(transformation.getId());
-        dto.setFlowId(transformation.getFlow() != null ? transformation.getFlow().getId() : null);
+        dto.setId(transformation.getId().toString());
+        dto.setFlowId(transformation.getFlow() != null ? transformation.getFlow().getId().toString() : null);
         dto.setType(transformation.getType().toString());
         dto.setName(transformation.getName()); // Include the name field
         dto.setConfiguration(transformation.getConfiguration());
@@ -65,12 +66,12 @@ public class FlowTransformationService {
 
     private FlowTransformation fromDTO(FlowTransformationDTO dto) {
         FlowTransformation transformation = new FlowTransformation();
-        transformation.setId(dto.getId());
+        transformation.setId(dto.getId() != null ? UUID.fromString(dto.getId()) : null);
         
         // Set flow if flowId is provided
         Optional<IntegrationFlow> flow = Optional.empty();
         if (dto.getFlowId() != null) {
-            flow = flowRepository.findById(dto.getFlowId());
+            flow = flowRepository.findById(UUID.fromString(dto.getFlowId()));
             flow.ifPresent(transformation::setFlow);
         }
         

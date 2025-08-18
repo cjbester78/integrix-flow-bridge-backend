@@ -265,18 +265,18 @@ public class FlowCompositionService {
      * Update an existing flow with new configuration
      */
     public Optional<IntegrationFlow> updateFlowComposition(String flowId, UpdateFlowRequest request) {
-        return flowRepository.findById(flowId).map(flow -> {
+        return flowRepository.findById(UUID.fromString(flowId)).map(flow -> {
             flow.setName(request.getFlowName());
             flow.setDescription(request.getDescription());
             
             if (request.getSourceAdapterId() != null) {
                 validateAdapter(request.getSourceAdapterId());
-                flow.setSourceAdapterId(request.getSourceAdapterId());
+                flow.setSourceAdapterId(UUID.fromString(request.getSourceAdapterId()));
             }
             
             if (request.getTargetAdapterId() != null) {
                 validateAdapter(request.getTargetAdapterId());
-                flow.setTargetAdapterId(request.getTargetAdapterId());
+                flow.setTargetAdapterId(UUID.fromString(request.getTargetAdapterId()));
             }
             
             flow.setSourceFlowStructureId(request.getSourceFlowStructureId());
@@ -292,7 +292,7 @@ public class FlowCompositionService {
      * Get complete flow composition including all related components
      */
     public Optional<CompleteFlowComposition> getCompleteFlowComposition(String flowId) {
-        return flowRepository.findById(flowId).map(flow -> {
+        return flowRepository.findById(UUID.fromString(flowId)).map(flow -> {
             CompleteFlowComposition composition = new CompleteFlowComposition();
             composition.setFlow(flow);
             
@@ -302,10 +302,10 @@ public class FlowCompositionService {
                     if (flow.getConfiguration().contains("DIRECT_MAPPING")) {
                         FlowConfiguration config = objectMapper.readValue(flow.getConfiguration(), FlowConfiguration.class);
                         composition.setSourceBusinessComponent(
-                            businessComponentRepository.findById(config.getSourceBusinessComponentId()).orElse(null)
+                            businessComponentRepository.findById(UUID.fromString(config.getSourceBusinessComponentId())).orElse(null)
                         );
                         composition.setTargetBusinessComponent(
-                            businessComponentRepository.findById(config.getTargetBusinessComponentId()).orElse(null)
+                            businessComponentRepository.findById(UUID.fromString(config.getTargetBusinessComponentId())).orElse(null)
                         );
                     }
                 }
@@ -328,15 +328,15 @@ public class FlowCompositionService {
      * Delete a complete flow and all its related components
      */
     public boolean deleteFlowComposition(String flowId) {
-        return flowRepository.findById(flowId).map(flow -> {
+        return flowRepository.findById(UUID.fromString(flowId)).map(flow -> {
             // Delete field mappings first (cascade should handle this, but being explicit)
-            List<FlowTransformation> transformations = transformationRepository.findByFlowId(flowId);
+            List<FlowTransformation> transformations = transformationRepository.findByFlowId(flow.getId());
             for (FlowTransformation transformation : transformations) {
                 fieldMappingRepository.deleteByTransformationId(transformation.getId());
             }
             
             // Delete transformations
-            transformationRepository.deleteByFlowId(flowId);
+            transformationRepository.deleteByFlowId(flow.getId());
             
             // Delete the flow
             flowRepository.delete(flow);
@@ -346,13 +346,13 @@ public class FlowCompositionService {
     }
 
     private void validateBusinessComponent(String componentId) {
-        if (componentId != null && !businessComponentRepository.existsById(componentId)) {
+        if (componentId != null && !businessComponentRepository.existsById(UUID.fromString(componentId))) {
             throw new IllegalArgumentException("Business component not found: " + componentId);
         }
     }
 
     private void validateAdapter(String adapterId) {
-        if (adapterId != null && !adapterRepository.existsById(adapterId)) {
+        if (adapterId != null && !adapterRepository.existsById(UUID.fromString(adapterId))) {
             throw new IllegalArgumentException("Communication adapter not found: " + adapterId);
         }
     }

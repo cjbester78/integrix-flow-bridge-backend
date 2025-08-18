@@ -122,8 +122,8 @@ public class FlowCompositionController {
                     DirectMappingFlowRequest cloneRequest = new DirectMappingFlowRequest();
                     cloneRequest.setFlowName(newName + " (Copy)");
                     cloneRequest.setDescription("Cloned from: " + composition.getFlow().getName());
-                    cloneRequest.setSourceAdapterId(composition.getFlow().getSourceAdapterId());
-                    cloneRequest.setTargetAdapterId(composition.getFlow().getTargetAdapterId());
+                    cloneRequest.setSourceAdapterId(composition.getFlow().getSourceAdapterId() != null ? composition.getFlow().getSourceAdapterId().toString() : null);
+                    cloneRequest.setTargetAdapterId(composition.getFlow().getTargetAdapterId() != null ? composition.getFlow().getTargetAdapterId().toString() : null);
                     cloneRequest.setSourceStructureId(composition.getFlow().getSourceStructureId());
                     cloneRequest.setTargetStructureId(composition.getFlow().getTargetStructureId());
                     
