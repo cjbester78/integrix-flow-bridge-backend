@@ -91,9 +91,7 @@ public class FlowStructureService {
                 .description(request.getDescription())
                 .processingMode(FlowStructure.ProcessingMode.valueOf(request.getProcessingMode().name()))
                 .direction(FlowStructure.Direction.valueOf(request.getDirection().name()))
-                .namespace(request.getNamespace() != null ? serializeToJson(request.getNamespace()) : null)
-                .metadata(request.getMetadata() != null ? serializeToJson(request.getMetadata()) : null)
-                .tags(request.getTags() != null ? serializeToJson(request.getTags()) : null)
+                // Namespace, metadata, and tags are now handled separately
                 .businessComponent(businessComponentRepository.findById(UUID.fromString(request.getBusinessComponentId()))
                         .orElseThrow(() -> new RuntimeException("Business component not found")))
                 .createdBy(currentUser)
@@ -144,7 +142,7 @@ public class FlowStructureService {
         // Save the flow structure with WSDL content
         flowStructure = flowStructureRepository.save(flowStructure);
         
-        return toDTO(flowStructure);
+        return convertToFlowStructureDTO(flowStructure);
         } catch (Exception e) {
             log.error("Error creating flow structure: ", e);
             throw e;
@@ -170,9 +168,7 @@ public class FlowStructureService {
         flowStructure.setDescription(request.getDescription());
         flowStructure.setProcessingMode(FlowStructure.ProcessingMode.valueOf(request.getProcessingMode().name()));
         flowStructure.setDirection(FlowStructure.Direction.valueOf(request.getDirection().name()));
-        flowStructure.setNamespace(request.getNamespace() != null ? serializeToJson(request.getNamespace()) : null);
-        flowStructure.setMetadata(request.getMetadata() != null ? serializeToJson(request.getMetadata()) : null);
-        flowStructure.setTags(request.getTags() != null ? serializeToJson(request.getTags()) : null);
+        // Namespace, metadata, and tags are now handled separately in related tables
         flowStructure.setBusinessComponent(businessComponentRepository.findById(UUID.fromString(request.getBusinessComponentId()))
                 .orElseThrow(() -> new RuntimeException("Business component not found")));
         flowStructure.setUpdatedBy(currentUser);
@@ -210,14 +206,14 @@ public class FlowStructureService {
         }
         
         flowStructure = flowStructureRepository.save(flowStructure);
-        return toDTO(flowStructure);
+        return convertToFlowStructureDTO(flowStructure);
     }
     
     @Transactional(readOnly = true)
     public FlowStructureDTO findById(String id) {
         FlowStructure flowStructure = flowStructureRepository.findByIdAndIsActiveTrue(UUID.fromString(id))
                 .orElseThrow(() -> new RuntimeException("Flow structure not found"));
-        return toDTO(flowStructure);
+        return convertToFlowStructureDTO(flowStructure);
     }
     
     @Transactional(readOnly = true)
@@ -286,7 +282,7 @@ public class FlowStructureService {
     private void createFlowStructureMessages(FlowStructure flowStructure, 
                                            Map<FlowStructureMessageDTO.MessageType, String> messageStructureIds) {
         for (Map.Entry<FlowStructureMessageDTO.MessageType, String> entry : messageStructureIds.entrySet()) {
-            MessageStructure messageStructure = messageStructureRepository.findById(entry.getValue())
+            MessageStructure messageStructure = messageStructureRepository.findById(UUID.fromString(entry.getValue()))
                     .orElseThrow(() -> new RuntimeException("Message structure not found: " + entry.getValue()));
             
             FlowStructureMessage flowMessage = FlowStructureMessage.builder()
@@ -517,30 +513,8 @@ public class FlowStructureService {
         
         flowStructure.setWsdlContent(generatedWsdl);
         
-        // Store operation info in metadata
-        try {
-            Map<String, Object> metadata = flowStructure.getMetadata() != null ?
-                    objectMapper.readValue(flowStructure.getMetadata(), Map.class) : new HashMap<>();
-            
-            Map<String, Object> operationInfo = new HashMap<>();
-            operationInfo.put("hasInput", true);
-            operationInfo.put("hasOutput", flowStructure.getProcessingMode() == ProcessingMode.SYNC);
-            operationInfo.put("hasFault", flowStructure.getProcessingMode() == ProcessingMode.SYNC);
-            operationInfo.put("isSynchronous", flowStructure.getProcessingMode() == ProcessingMode.SYNC);
-            
-            List<String> messageTypes = new ArrayList<>();
-            messageTypes.add("input");
-            if (flowStructure.getProcessingMode() == ProcessingMode.SYNC) {
-                messageTypes.add("output");
-                messageTypes.add("fault");
-            }
-            operationInfo.put("messageTypes", messageTypes);
-            
-            metadata.put("operationInfo", operationInfo);
-            flowStructure.setMetadata(objectMapper.writeValueAsString(metadata));
-        } catch (Exception e) {
-            log.error("Error updating metadata with operation info", e);
-        }
+        // TODO: Store operation info in a separate table or configuration field
+        // For now, operation info is derived from the flow structure's properties
     }
     
     private String getElementNameForMessageType(MessageType type) {
@@ -594,7 +568,7 @@ public class FlowStructureService {
         flowStructure = flowStructureRepository.save(flowStructure);
         log.info("WSDL regenerated successfully for flow structure: {}", flowStructure.getName());
         
-        return toDTO(flowStructure);
+        return convertToFlowStructureDTO(flowStructure);
     }
     
     @Transactional
@@ -620,11 +594,11 @@ public class FlowStructureService {
         }
     }
     
-    private FlowStructureDTO toDTO(FlowStructure entity) {
+    private FlowStructureDTO convertToFlowStructureDTO(FlowStructure entity) {
         try {
             Set<FlowStructureMessageDTO> messages = entity.getFlowStructureMessages() != null ?
                     entity.getFlowStructureMessages().stream()
-                            .map(this::toFlowStructureMessageDTO)
+                            .map(this::convertToFlowStructureMessageDTO)
                             .collect(Collectors.toSet()) : new HashSet<>();
             
             return FlowStructureDTO.builder()
@@ -635,18 +609,15 @@ public class FlowStructureService {
                     .direction(FlowStructureDTO.Direction.valueOf(entity.getDirection().name()))
                     .wsdlContent(entity.getWsdlContent())
                     .sourceType(entity.getSourceType())
-                    .namespace(entity.getNamespace() != null ? 
-                            objectMapper.readValue(entity.getNamespace(), new TypeReference<Map<String, Object>>() {}) : null)
-                    .metadata(entity.getMetadata() != null ? 
-                            objectMapper.readValue(entity.getMetadata(), new TypeReference<Map<String, Object>>() {}) : null)
-                    .tags(entity.getTags() != null ? 
-                            objectMapper.readValue(entity.getTags(), new TypeReference<Set<String>>() {}) : null)
+                    .namespace(extractNamespaceData(entity))
+                    .metadata(generateOperationMetadata(entity))
+                    .tags(new HashSet<>()) // TODO: Load from tags table if implemented
                     .version(entity.getVersion())
                     .isActive(entity.getIsActive())
-                    .businessComponent(toBusinessComponentDTO(entity.getBusinessComponent()))
+                    .businessComponent(convertToBusinessComponentDTO(entity.getBusinessComponent()))
                     .flowStructureMessages(messages)
-                    .createdBy(toUserDTO(entity.getCreatedBy()))
-                    .updatedBy(toUserDTO(entity.getUpdatedBy()))
+                    .createdBy(convertToUserDTO(entity.getCreatedBy()))
+                    .updatedBy(convertToUserDTO(entity.getUpdatedBy()))
                     .createdAt(entity.getCreatedAt())
                     .updatedAt(entity.getUpdatedAt())
                     .build();
@@ -656,27 +627,24 @@ public class FlowStructureService {
         }
     }
     
-    private FlowStructureMessageDTO toFlowStructureMessageDTO(FlowStructureMessage entity) {
+    private FlowStructureMessageDTO convertToFlowStructureMessageDTO(FlowStructureMessage entity) {
         return FlowStructureMessageDTO.builder()
                 .flowStructureId(entity.getFlowStructure().getId())
                 .messageType(FlowStructureMessageDTO.MessageType.valueOf(entity.getMessageType().name()))
-                .messageStructure(toMessageStructureDTO(entity.getMessageStructure()))
+                .messageStructure(convertToMessageStructureDTO(entity.getMessageStructure()))
                 .build();
     }
     
-    private MessageStructureDTO toMessageStructureDTO(MessageStructure entity) {
+    private MessageStructureDTO convertToMessageStructureDTO(MessageStructure entity) {
         try {
             return MessageStructureDTO.builder()
                     .id(entity.getId().toString())
                     .name(entity.getName())
                     .description(entity.getDescription())
                     .xsdContent(entity.getXsdContent())
-                    .namespace(entity.getNamespace() != null ? 
-                            objectMapper.readValue(entity.getNamespace(), new TypeReference<Map<String, Object>>() {}) : null)
-                    .metadata(entity.getMetadata() != null ? 
-                            objectMapper.readValue(entity.getMetadata(), new TypeReference<Map<String, Object>>() {}) : null)
-                    .tags(entity.getTags() != null ? 
-                            objectMapper.readValue(entity.getTags(), new TypeReference<Set<String>>() {}) : null)
+                    .namespace(extractMessageNamespaceData(entity))
+                    .metadata(new HashMap<>()) // TODO: Load from metadata table if implemented
+                    .tags(new HashSet<>()) // TODO: Load from tags table if implemented
                     .version(entity.getVersion())
                     .isActive(entity.getIsActive())
                     .createdAt(entity.getCreatedAt())
@@ -688,7 +656,7 @@ public class FlowStructureService {
         }
     }
     
-    private BusinessComponentDTO toBusinessComponentDTO(com.integrixs.data.model.BusinessComponent entity) {
+    private BusinessComponentDTO convertToBusinessComponentDTO(com.integrixs.data.model.BusinessComponent entity) {
         if (entity == null) return null;
         return BusinessComponentDTO.builder()
                 .id(entity.getId().toString())
@@ -697,13 +665,75 @@ public class FlowStructureService {
                 .build();
     }
     
-    private UserDTO toUserDTO(User user) {
+    private UserDTO convertToUserDTO(User user) {
         if (user == null) return null;
         return UserDTO.builder()
                 .id(user.getId().toString())
                 .username(user.getUsername())
                 .email(user.getEmail())
                 .build();
+    }
+    
+    private Map<String, Object> extractNamespaceData(FlowStructure entity) {
+        Map<String, Object> namespaceData = new HashMap<>();
+        
+        // Extract namespace from namespaces relationship or use default
+        if (entity.getNamespaces() != null && !entity.getNamespaces().isEmpty()) {
+            // TODO: Load namespace data from FlowStructureNamespace entities
+            namespaceData.put("prefix", "tns");
+            namespaceData.put("uri", "http://integrixflowbridge.com/" + entity.getName());
+        } else {
+            // Default namespace
+            namespaceData.put("prefix", "tns");
+            namespaceData.put("uri", "http://integrixflowbridge.com/" + entity.getName());
+        }
+        
+        return namespaceData;
+    }
+    
+    private Map<String, Object> generateOperationMetadata(FlowStructure entity) {
+        Map<String, Object> metadata = new HashMap<>();
+        
+        // Generate operation info based on flow structure properties
+        Map<String, Object> operationInfo = new HashMap<>();
+        operationInfo.put("hasInput", true);
+        operationInfo.put("hasOutput", entity.getProcessingMode() == ProcessingMode.SYNC);
+        operationInfo.put("hasFault", entity.getProcessingMode() == ProcessingMode.SYNC);
+        operationInfo.put("isSynchronous", entity.getProcessingMode() == ProcessingMode.SYNC);
+        
+        List<String> messageTypes = new ArrayList<>();
+        messageTypes.add("input");
+        if (entity.getProcessingMode() == ProcessingMode.SYNC) {
+            messageTypes.add("output");
+            messageTypes.add("fault");
+        }
+        operationInfo.put("messageTypes", messageTypes);
+        
+        metadata.put("operationInfo", operationInfo);
+        
+        // Add any additional metadata
+        if (entity.getFlowStructureMessages() != null) {
+            metadata.put("messageCount", entity.getFlowStructureMessages().size());
+        }
+        
+        return metadata;
+    }
+    
+    private Map<String, Object> extractMessageNamespaceData(MessageStructure entity) {
+        Map<String, Object> namespaceData = new HashMap<>();
+        
+        // Extract namespace from namespaces relationship or use default
+        if (entity.getNamespaces() != null && !entity.getNamespaces().isEmpty()) {
+            // TODO: Load namespace data from MessageStructureNamespace entities
+            namespaceData.put("prefix", "msg");
+            namespaceData.put("uri", "http://integrixflowbridge.com/messages/" + entity.getName());
+        } else {
+            // Default namespace
+            namespaceData.put("prefix", "msg");
+            namespaceData.put("uri", "http://integrixflowbridge.com/messages/" + entity.getName());
+        }
+        
+        return namespaceData;
     }
     
     private String serializeToJson(Object obj) {

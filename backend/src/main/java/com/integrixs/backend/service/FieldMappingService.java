@@ -14,6 +14,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.UUID;
 
 @Service
 public class FieldMappingService {
@@ -27,7 +28,7 @@ public class FieldMappingService {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     public List<FieldMappingDTO> getByTransformationId(String transformationId) {
-        return mappingRepository.findByTransformationId(transformationId)
+        return mappingRepository.findByTransformationId(UUID.fromString(transformationId))
                 .stream()
                 .sorted((a, b) -> {
                     // Sort by mappingOrder, then by id as fallback
@@ -50,17 +51,17 @@ public class FieldMappingService {
     }
 
     public Optional<FieldMappingDTO> getById(String id) {
-        return mappingRepository.findById(id).map(this::toDTO);
+        return mappingRepository.findById(UUID.fromString(id)).map(this::toDTO);
     }
 
     public void delete(String id) {
-        mappingRepository.deleteById(id);
+        mappingRepository.deleteById(UUID.fromString(id));
     }
 
     private FieldMappingDTO toDTO(FieldMapping mapping) {
         FieldMappingDTO dto = new FieldMappingDTO();
-        dto.setId(mapping.getId());
-        dto.setTransformationId(mapping.getTransformation() != null ? mapping.getTransformation().getId() : null);
+        dto.setId(mapping.getId().toString());
+        dto.setTransformationId(mapping.getTransformation() != null ? mapping.getTransformation().getId().toString() : null);
         // Convert sourceFields from JSON string to List<String>
         dto.setSourceFields(mapping.getSourceFieldsList());
         dto.setTargetField(mapping.getTargetField());
@@ -90,11 +91,11 @@ public class FieldMappingService {
 
     private FieldMapping fromDTO(FieldMappingDTO dto) {
         FieldMapping mapping = new FieldMapping();
-        mapping.setId(dto.getId());
+        mapping.setId(dto.getId() != null ? UUID.fromString(dto.getId()) : null);
         
         // Set transformation if transformationId is provided
         if (dto.getTransformationId() != null) {
-            Optional<FlowTransformation> transformation = transformationRepository.findById(dto.getTransformationId());
+            Optional<FlowTransformation> transformation = transformationRepository.findById(UUID.fromString(dto.getTransformationId()));
             transformation.ifPresent(mapping::setTransformation);
         }
         

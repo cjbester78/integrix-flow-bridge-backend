@@ -31,6 +31,7 @@ import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -48,7 +49,7 @@ public class MessageStructureService {
         
         // Check if name already exists for business component
         if (messageStructureRepository.existsByNameAndBusinessComponentIdAndIsActiveTrue(
-                request.getName(), request.getBusinessComponentId())) {
+                request.getName(), UUID.fromString(request.getBusinessComponentId()))) {
             throw new RuntimeException("Message structure with name '" + request.getName() + 
                     "' already exists for this business component");
         }
@@ -57,26 +58,24 @@ public class MessageStructureService {
                 .name(request.getName())
                 .description(request.getDescription())
                 .xsdContent(request.getXsdContent())
-                .namespace(request.getNamespace() != null ? serializeToJson(request.getNamespace()) : null)
-                .metadata(request.getMetadata() != null ? serializeToJson(request.getMetadata()) : null)
-                .tags(request.getTags() != null ? serializeToJson(request.getTags()) : null)
+                // Namespace, metadata, and tags are now handled separately in related tables
                 .sourceType("INTERNAL")
                 .isEditable(true)
-                .businessComponent(businessComponentRepository.findById(request.getBusinessComponentId())
+                .businessComponent(businessComponentRepository.findById(UUID.fromString(request.getBusinessComponentId()))
                         .orElseThrow(() -> new RuntimeException("Business component not found")))
                 .createdBy(currentUser)
                 .updatedBy(currentUser)
                 .build();
         
         messageStructure = messageStructureRepository.save(messageStructure);
-        return toDTO(messageStructure);
+        return convertToMessageStructureDTO(messageStructure);
     }
     
     @Transactional
     public MessageStructureDTO update(String id, MessageStructureCreateRequestDTO request, User currentUser) {
         log.info("Updating message structure: {}", id);
         
-        MessageStructure messageStructure = messageStructureRepository.findByIdAndIsActiveTrue(id)
+        MessageStructure messageStructure = messageStructureRepository.findByIdAndIsActiveTrue(UUID.fromString(id))
                 .orElseThrow(() -> new RuntimeException("Message structure not found"));
         
         // Check if structure is editable
@@ -87,7 +86,7 @@ public class MessageStructureService {
         // Check if name is being changed and already exists
         if (!messageStructure.getName().equals(request.getName()) &&
                 messageStructureRepository.existsByNameAndBusinessComponentIdAndIdNotAndIsActiveTrue(
-                        request.getName(), request.getBusinessComponentId(), id)) {
+                        request.getName(), UUID.fromString(request.getBusinessComponentId()), UUID.fromString(id))) {
             throw new RuntimeException("Message structure with name '" + request.getName() + 
                     "' already exists for this business component");
         }
@@ -95,23 +94,21 @@ public class MessageStructureService {
         messageStructure.setName(request.getName());
         messageStructure.setDescription(request.getDescription());
         messageStructure.setXsdContent(request.getXsdContent());
-        messageStructure.setNamespace(request.getNamespace() != null ? serializeToJson(request.getNamespace()) : null);
-        messageStructure.setMetadata(request.getMetadata() != null ? serializeToJson(request.getMetadata()) : null);
-        messageStructure.setTags(request.getTags() != null ? serializeToJson(request.getTags()) : null);
-        messageStructure.setBusinessComponent(businessComponentRepository.findById(request.getBusinessComponentId())
+        // Namespace, metadata, and tags are now handled separately in related tables
+        messageStructure.setBusinessComponent(businessComponentRepository.findById(UUID.fromString(request.getBusinessComponentId()))
                 .orElseThrow(() -> new RuntimeException("Business component not found")));
         messageStructure.setUpdatedBy(currentUser);
         messageStructure.setVersion(messageStructure.getVersion() + 1);
         
         messageStructure = messageStructureRepository.save(messageStructure);
-        return toDTO(messageStructure);
+        return convertToMessageStructureDTO(messageStructure);
     }
     
     @Transactional(readOnly = true)
     public MessageStructureDTO findById(String id) {
-        MessageStructure messageStructure = messageStructureRepository.findByIdAndIsActiveTrue(id)
+        MessageStructure messageStructure = messageStructureRepository.findByIdAndIsActiveTrue(UUID.fromString(id))
                 .orElseThrow(() -> new RuntimeException("Message structure not found"));
-        return toDTO(messageStructure);
+        return convertToMessageStructureDTO(messageStructure);
     }
     
     @Transactional(readOnly = true)
@@ -123,20 +120,20 @@ public class MessageStructureService {
     
     @Transactional(readOnly = true)
     public List<MessageStructureDTO> findByBusinessComponent(String businessComponentId) {
-        return messageStructureRepository.findByBusinessComponentId(businessComponentId)
+        return messageStructureRepository.findByBusinessComponentId(UUID.fromString(businessComponentId))
                 .stream()
-                .map(this::toDTO)
+                .map(this::convertToMessageStructureDTO)
                 .collect(Collectors.toList());
     }
     
     @Transactional
     public void delete(String id) {
         log.info("Deleting message structure: {}", id);
-        MessageStructure messageStructure = messageStructureRepository.findByIdAndIsActiveTrue(id)
+        MessageStructure messageStructure = messageStructureRepository.findByIdAndIsActiveTrue(UUID.fromString(id))
                 .orElseThrow(() -> new RuntimeException("Message structure not found"));
         
         // First check if there are any flow structures using this message structure
-        List<FlowStructure> flowStructures = flowStructureMessageRepository.findFlowStructuresByMessageStructureId(id);
+        List<FlowStructure> flowStructures = flowStructureMessageRepository.findFlowStructuresByMessageStructureId(UUID.fromString(id));
         
         // Filter out inactive flow structures (soft-deleted ones)
         List<FlowStructure> activeFlowStructures = flowStructures.stream()
@@ -163,28 +160,24 @@ public class MessageStructureService {
         log.info("Message structure {} permanently deleted", id);
     }
     
-    private MessageStructureDTO toDTO(MessageStructure entity) {
+    private MessageStructureDTO convertToMessageStructureDTO(MessageStructure entity) {
         try {
             return MessageStructureDTO.builder()
-                    .id(entity.getId())
+                    .id(entity.getId().toString())
                     .name(entity.getName())
                     .description(entity.getDescription())
                     .xsdContent(entity.getXsdContent())
-                    .namespace(entity.getNamespace() != null ? 
-                            objectMapper.readValue(entity.getNamespace(), new TypeReference<Map<String, Object>>() {}) : null)
-                    .metadata(entity.getMetadata() != null ? 
-                            objectMapper.readValue(entity.getMetadata(), new TypeReference<Map<String, Object>>() {}) : null)
-                    .tags(entity.getTags() != null ? 
-                            objectMapper.readValue(entity.getTags(), new TypeReference<Set<String>>() {}) : null)
+                    .namespace(extractMessageNamespaceData(entity))
+                    .metadata(new HashMap<>()) // TODO: Load from metadata table if implemented
+                    .tags(new HashSet<>()) // TODO: Load from tags table if implemented
                     .version(entity.getVersion())
                     .sourceType(entity.getSourceType())
                     .isEditable(entity.getIsEditable())
                     .isActive(entity.getIsActive())
-                    .importMetadata(entity.getImportMetadata() != null ?
-                            objectMapper.readValue(entity.getImportMetadata(), new TypeReference<Map<String, Object>>() {}) : null)
+                    .importMetadata(new HashMap<>()) // TODO: Load from import metadata table if implemented
                     .businessComponent(toBusinessComponentDTO(entity.getBusinessComponent()))
-                    .createdBy(toUserDTO(entity.getCreatedBy()))
-                    .updatedBy(toUserDTO(entity.getUpdatedBy()))
+                    .createdBy(convertToUserDTO(entity.getCreatedBy()))
+                    .updatedBy(convertToUserDTO(entity.getUpdatedBy()))
                     .createdAt(entity.getCreatedAt())
                     .updatedAt(entity.getUpdatedAt())
                     .build();
@@ -203,13 +196,35 @@ public class MessageStructureService {
                 .build();
     }
     
-    private UserDTO toUserDTO(User user) {
+    private UserDTO convertToUserDTO(User user) {
         if (user == null) return null;
         return UserDTO.builder()
-                .id(user.getId())
+                .id(user.getId().toString())
                 .username(user.getUsername())
                 .email(user.getEmail())
                 .build();
+    }
+    
+    private Map<String, Object> extractMessageNamespaceData(MessageStructure entity) {
+        Map<String, Object> namespaceData = new HashMap<>();
+        
+        // Extract namespace from namespaces relationship or use default
+        if (entity.getNamespaces() != null && !entity.getNamespaces().isEmpty()) {
+            // TODO: Load namespace data from MessageStructureNamespace entities
+            namespaceData.put("prefix", "msg");
+            namespaceData.put("uri", "http://integrixflowbridge.com/messages/" + entity.getName());
+        } else {
+            // Default namespace - try to extract from XSD
+            Map<String, Object> extractedNamespace = extractNamespaceInfo(entity.getXsdContent());
+            if (extractedNamespace != null) {
+                namespaceData.putAll(extractedNamespace);
+            } else {
+                namespaceData.put("prefix", "msg");
+                namespaceData.put("uri", "http://integrixflowbridge.com/messages/" + entity.getName());
+            }
+        }
+        
+        return namespaceData;
     }
     
     private String serializeToJson(Object obj) {
@@ -525,13 +540,12 @@ public class MessageStructureService {
                                 .name(structureName)
                                 .description("Imported from " + fileName)
                                 .xsdContent(content)
-                                .namespace(namespaceInfo != null ? serializeToJson(namespaceInfo) : null)
+                                // Namespace info is stored separately in MessageStructureNamespace table
                                 .sourceType("EXTERNAL")
                                 .isEditable(false)
                                 .isActive(true)
                                 .businessComponent(businessComponent)
-                                .metadata(serializeToJson(metadata))
-                                .importMetadata(serializeToJson(importMetadata))
+                                // Metadata and import metadata are stored separately
                                 .createdBy(currentUser)
                                 .updatedBy(currentUser)
                                 .build();

@@ -51,7 +51,7 @@ public class FlowDeploymentService {
     public DeploymentInfoDTO deployFlow(String flowId, String userId) throws Exception {
         logger.info("Deploying flow: {} by user: {}", flowId, userId);
         
-        IntegrationFlow flow = flowRepository.findById(flowId)
+        IntegrationFlow flow = flowRepository.findById(UUID.fromString(flowId))
             .orElseThrow(() -> new IllegalArgumentException("Flow not found: " + flowId));
         
         // Validate flow is ready for deployment
@@ -110,7 +110,7 @@ public class FlowDeploymentService {
     public void undeployFlow(String flowId, String userId) throws Exception {
         logger.info("Undeploying flow: {} by user: {}", flowId, userId);
         
-        IntegrationFlow flow = flowRepository.findById(flowId)
+        IntegrationFlow flow = flowRepository.findById(UUID.fromString(flowId))
             .orElseThrow(() -> new IllegalArgumentException("Flow not found: " + flowId));
         
         // Validate flow is deployed
@@ -133,7 +133,7 @@ public class FlowDeploymentService {
      * Get deployment information for a flow
      */
     public DeploymentInfoDTO getDeploymentInfo(String flowId) throws Exception {
-        IntegrationFlow flow = flowRepository.findById(flowId)
+        IntegrationFlow flow = flowRepository.findById(UUID.fromString(flowId))
             .orElseThrow(() -> new IllegalArgumentException("Flow not found: " + flowId));
         
         if (flow.getStatus() != FlowStatus.DEPLOYED_ACTIVE) {
