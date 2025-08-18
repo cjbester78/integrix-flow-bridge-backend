@@ -42,7 +42,7 @@ public class FlowDeploymentController {
                 // Check if principal is already a User entity
                 if (authentication.getPrincipal() instanceof User) {
                     User user = (User) authentication.getPrincipal();
-                    userId = user.getId();
+                    userId = user.getId().toString();
                     logger.info("Found user from principal with ID: {}", userId);
                 } else {
                     // Principal is username string
@@ -51,7 +51,7 @@ public class FlowDeploymentController {
                     
                     User user = userRepository.findByUsername(username);
                     if (user != null) {
-                        userId = user.getId();
+                        userId = user.getId().toString();
                         logger.info("Found user with ID: {}", userId);
                     } else {
                         logger.error("User not found for username: {}", username);
@@ -95,13 +95,13 @@ public class FlowDeploymentController {
                 // Check if principal is already a User entity
                 if (authentication.getPrincipal() instanceof User) {
                     User user = (User) authentication.getPrincipal();
-                    userId = user.getId();
+                    userId = user.getId().toString();
                 } else {
                     // Principal is username string
                     String username = authentication.getName();
                     User user = userRepository.findByUsername(username);
                     if (user != null) {
-                        userId = user.getId();
+                        userId = user.getId().toString();
                     }
                 }
             }

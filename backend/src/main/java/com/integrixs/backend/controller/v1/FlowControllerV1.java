@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.data.domain.PageImpl;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.UUID;
 
 /**
  * REST controller for integration flows - API Version 1.
@@ -110,7 +111,8 @@ public class FlowControllerV1 {
                  request.getName(), userDetails.getUsername());
         
         IntegrationFlow flow = mapToEntity(request);
-        IntegrationFlow created = flowDomainService.createFlow(flow, userDetails.getUsername());
+        flow.setCreatedBy(userDetails.getUsername());
+        IntegrationFlow created = integrationFlowService.createFlow(flow);
         IntegrationFlowDTO dto = mapToDTO(created);
         
         return ResponseEntity.status(HttpStatus.CREATED).body(dto);
@@ -194,8 +196,8 @@ public class FlowControllerV1 {
         IntegrationFlow flow = new IntegrationFlow();
         flow.setName(dto.getName());
         flow.setDescription(dto.getDescription());
-        flow.setSourceAdapterId(dto.getSourceAdapterId());
-        flow.setTargetAdapterId(dto.getTargetAdapterId());
+        flow.setSourceAdapterId(UUID.fromString(dto.getSourceAdapterId()));
+        flow.setTargetAdapterId(UUID.fromString(dto.getTargetAdapterId()));
         flow.setConfiguration(dto.getConfiguration() != null ? 
             dto.getConfiguration().toString() : "{}");
         return flow;
@@ -209,7 +211,7 @@ public class FlowControllerV1 {
      */
     private IntegrationFlowDTO mapToDTO(IntegrationFlow flow) {
         return IntegrationFlowDTO.builder()
-            .id(flow.getId())
+            .id(flow.getId().toString())
             .name(flow.getName())
             .description(flow.getDescription())
             .sourceAdapterId(flow.getSourceAdapterId())

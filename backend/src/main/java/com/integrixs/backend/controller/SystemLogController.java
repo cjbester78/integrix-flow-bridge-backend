@@ -67,7 +67,7 @@ public class SystemLogController {
 
         List<SystemLogDTO> dtos = logs.stream().map(log -> {
             SystemLogDTO dto = new SystemLogDTO();
-            dto.setId(log.getId());
+            dto.setId(log.getId().toString());
             dto.setLevel(log.getLevel().name());
             dto.setMessage(log.getMessage());
             dto.setDetails(log.getDetails());

@@ -24,7 +24,7 @@ public class FlowTransformationService {
     private IntegrationFlowRepository flowRepository;
 
     public List<FlowTransformationDTO> getByFlowId(String flowId) {
-        List<FlowTransformation> transformations = transformationRepository.findByFlowId(UUID.fromString(flowId));
+        List<FlowTransformation> transformations = transformationRepository.findByFlowId(flowId);
         System.out.println("Found " + transformations.size() + " transformations for flow " + flowId);
         
         return transformations.stream()
@@ -66,7 +66,9 @@ public class FlowTransformationService {
 
     private FlowTransformation fromDTO(FlowTransformationDTO dto) {
         FlowTransformation transformation = new FlowTransformation();
-        transformation.setId(dto.getId() != null ? UUID.fromString(dto.getId()) : null);
+        if (dto.getId() != null) {
+            transformation.setId(UUID.fromString(dto.getId()));
+        }
         
         // Set flow if flowId is provided
         Optional<IntegrationFlow> flow = Optional.empty();

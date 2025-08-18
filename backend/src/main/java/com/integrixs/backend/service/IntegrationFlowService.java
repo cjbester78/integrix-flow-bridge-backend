@@ -14,6 +14,7 @@ import com.integrixs.shared.dto.IntegrationFlowDTO;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.UUID;
 
 @Service
 public class IntegrationFlowService {
@@ -29,7 +30,7 @@ public class IntegrationFlowService {
     }
 
     public Optional<IntegrationFlow> getFlowById(String id) {
-        return integrationFlowRepository.findById(id);
+        return integrationFlowRepository.findById(UUID.fromString(id));
     }
 
     @AuditCreate
@@ -45,11 +46,11 @@ public class IntegrationFlowService {
     @AuditUpdate
     @Transactional
     public IntegrationFlow updateFlow(String id, IntegrationFlow updatedFlow) {
-        return integrationFlowRepository.findById(id)
+        return integrationFlowRepository.findById(UUID.fromString(id))
             .map(existing -> {
                 // Check if new name conflicts with another flow (excluding current flow)
                 if (!existing.getName().equals(updatedFlow.getName()) && 
-                    integrationFlowRepository.existsByNameAndIdNot(updatedFlow.getName(), id)) {
+                    integrationFlowRepository.existsByNameAndIdNot(updatedFlow.getName(), UUID.fromString(id))) {
                     throw new IllegalArgumentException("A flow with the name '" + updatedFlow.getName() + "' already exists");
                 }
                 existing.setName(updatedFlow.getName());
@@ -76,7 +77,7 @@ public class IntegrationFlowService {
     @AuditDelete
     @Transactional
     public void deleteFlow(String id) {
-        integrationFlowRepository.deleteById(id);
+        integrationFlowRepository.deleteById(UUID.fromString(id));
     }
     
     @Transactional(readOnly = true)
@@ -88,17 +89,17 @@ public class IntegrationFlowService {
     
     @Transactional(readOnly = true)
     public Optional<IntegrationFlowDTO> getFlowByIdAsDTO(String id) {
-        return integrationFlowRepository.findById(id)
+        return integrationFlowRepository.findById(UUID.fromString(id))
                 .map(this::convertToDTO);
     }
     
     private IntegrationFlowDTO convertToDTO(IntegrationFlow flow) {
         IntegrationFlowDTO.IntegrationFlowDTOBuilder builder = IntegrationFlowDTO.builder()
-                .id(flow.getId())
+                .id(flow.getId().toString())
                 .name(flow.getName())
                 .description(flow.getDescription())
-                .sourceAdapterId(flow.getSourceAdapterId())
-                .targetAdapterId(flow.getTargetAdapterId())
+                .sourceAdapterId(flow.getSourceAdapterId() != null ? flow.getSourceAdapterId().toString() : null)
+                .targetAdapterId(flow.getTargetAdapterId() != null ? flow.getTargetAdapterId().toString() : null)
                 .sourceFlowStructureId(flow.getSourceFlowStructureId())
                 .targetFlowStructureId(flow.getTargetFlowStructureId())
                 .sourceStructureId(flow.getSourceStructureId())
@@ -114,7 +115,7 @@ public class IntegrationFlowService {
                 .executionCount(flow.getExecutionCount())
                 .successCount(flow.getSuccessCount())
                 .errorCount(flow.getErrorCount())
-                .businessComponentId(flow.getBusinessComponent() != null ? flow.getBusinessComponent().getId() : null);
+                .businessComponentId(flow.getBusinessComponent() != null ? flow.getBusinessComponent().getId().toString() : null);
                 
         // Fetch adapter details
         if (flow.getSourceAdapterId() != null) {

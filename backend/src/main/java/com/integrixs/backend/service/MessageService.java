@@ -58,7 +58,7 @@ public class MessageService {
         PageRequest pageRequest = PageRequest.of(0, limit, Sort.by(Sort.Direction.DESC, "timestamp"));
         
         List<SystemLog> logs = businessComponentId != null
-            ? logRepository.findByComponentId(UUID.fromString(businessComponentId), pageRequest)
+            ? logRepository.findByComponentId(businessComponentId, pageRequest)
             : logRepository.findAll(pageRequest).getContent();
 
         return logs.stream()

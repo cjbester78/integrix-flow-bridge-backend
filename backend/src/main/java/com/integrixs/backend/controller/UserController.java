@@ -39,7 +39,7 @@ public class UserController {
         }
 
         User user = userService.createUser(request);
-        return ResponseEntity.ok(new RegisterResponseDTO("User registered successfully", user.getId()));
+        return ResponseEntity.ok(new RegisterResponseDTO("User registered successfully", user.getId().toString()));
     }
 
     @GetMapping
@@ -65,7 +65,7 @@ public class UserController {
 
     @GetMapping("/{id}")
     public ResponseEntity<UserDTO> getUser(@PathVariable String id) {
-        Optional<User> userOpt = userRepository.findById(id);
+        Optional<User> userOpt = userRepository.findById(UUID.fromString(id));
         return userOpt
                 .map(user -> ResponseEntity.ok(userService.mapToDTO(user)))
                 .orElseGet(() -> ResponseEntity.notFound().build());
@@ -76,7 +76,7 @@ public class UserController {
             @PathVariable String id,
             @RequestBody UpdateUserRequestDTO request
     ) {
-        Optional<User> userOpt = userRepository.findById(id);
+        Optional<User> userOpt = userRepository.findById(UUID.fromString(id));
         if (userOpt.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
@@ -86,10 +86,10 @@ public class UserController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteUser(@PathVariable String id) {
-        if (!userRepository.existsById(id)) {
+        if (!userRepository.existsById(UUID.fromString(id))) {
             return ResponseEntity.notFound().build();
         }
-        userRepository.deleteById(id);
+        userRepository.deleteById(UUID.fromString(id));
         return ResponseEntity.ok().build();
     }
 }

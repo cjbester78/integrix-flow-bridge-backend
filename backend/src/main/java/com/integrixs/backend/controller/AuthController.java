@@ -80,11 +80,11 @@ public class AuthController {
                 log.setTimestamp(LocalDateTime.now());
                 log.setLevel(SystemLog.LogLevel.INFO);
                 log.setMessage("User logged in successfully: " + username);
-                log.setUserId(user.getId());
+                log.setUserId(user.getId().toString());
                 log.setSource("AuthController");
                 log.setComponent("Login");
                 log.setDomainType("UserManagement");
-                log.setDomainReferenceId(user.getId());
+                log.setDomainReferenceId(user.getId().toString());
                 log.setCreatedAt(LocalDateTime.now());
                 systemLogService.log(log);
             } catch (Exception logError) {
@@ -100,7 +100,7 @@ public class AuthController {
                 e.printStackTrace();
                 // Create a basic DTO without caching
                 userDTO = new UserDTO();
-                userDTO.setId(user.getId());
+                userDTO.setId(user.getId().toString());
                 userDTO.setUsername(user.getUsername());
                 userDTO.setEmail(user.getEmail());
                 userDTO.setFirstName(user.getFirstName());
@@ -146,15 +146,15 @@ public class AuthController {
             log.setTimestamp(LocalDateTime.now());
             log.setLevel(SystemLog.LogLevel.INFO);
             log.setMessage("New user registered: " + user.getUsername());
-            log.setUserId(user.getId());
+            log.setUserId(user.getId().toString());
             log.setSource("AuthController");
             log.setComponent("Register");
             log.setDomainType("UserManagement");
-            log.setDomainReferenceId(user.getId());
+            log.setDomainReferenceId(user.getId().toString());
             log.setCreatedAt(LocalDateTime.now());
             systemLogService.log(log);
 
-            return ResponseEntity.ok(new RegisterResponseDTO("User registered successfully", user.getId()));
+            return ResponseEntity.ok(new RegisterResponseDTO("User registered successfully", user.getId().toString()));
         } catch (Exception ex) {
             try {
                 String payloadJson = new ObjectMapper().writeValueAsString(request);
@@ -189,11 +189,11 @@ public class AuthController {
             log.setTimestamp(LocalDateTime.now());
             log.setLevel(SystemLog.LogLevel.INFO);
             log.setMessage("Token refreshed for user: " + username);
-            log.setUserId(session.getUser().getId());
+            log.setUserId(session.getUser().getId().toString());
             log.setSource("AuthController");
             log.setComponent("Refresh");
             log.setDomainType("UserManagement");
-            log.setDomainReferenceId(session.getUser().getId());
+            log.setDomainReferenceId(session.getUser().getId().toString());
             log.setCreatedAt(LocalDateTime.now());
             systemLogService.log(log);
 
@@ -253,11 +253,11 @@ public class AuthController {
             log.setTimestamp(LocalDateTime.now());
             log.setLevel(SystemLog.LogLevel.INFO);
             log.setMessage("User logged out");
-            log.setUserId(session.getUser().getId());
+            log.setUserId(session.getUser().getId().toString());
             log.setSource("AuthController");
             log.setComponent("Logout");
             log.setDomainType("UserManagement");
-            log.setDomainReferenceId(session.getUser().getId());
+            log.setDomainReferenceId(session.getUser().getId().toString());
             log.setCreatedAt(LocalDateTime.now());
             systemLogService.log(log);
 

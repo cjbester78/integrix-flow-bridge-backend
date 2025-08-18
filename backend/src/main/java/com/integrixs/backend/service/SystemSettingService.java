@@ -165,7 +165,7 @@ public class SystemSettingService {
      */
     private SystemSettingDTO toDTO(SystemSetting entity) {
         SystemSettingDTO dto = new SystemSettingDTO();
-        dto.setId(entity.getId());
+        dto.setId(entity.getId().toString());
         dto.setSettingKey(entity.getSettingKey());
         dto.setSettingValue(entity.getSettingValue());
         dto.setDescription(entity.getDescription());

@@ -37,7 +37,7 @@ public class MessageProcessingEngine {
      */
     public ProcessingResult processMessage(String flowId, Object messageData) {
         try {
-            Optional<IntegrationFlow> flowOpt = integrationFlowRepository.findById(flowId);
+            Optional<IntegrationFlow> flowOpt = integrationFlowRepository.findById(UUID.fromString(flowId));
             if (!flowOpt.isPresent()) {
                 return ProcessingResult.error("Integration flow not found: " + flowId);
             }
@@ -64,7 +64,7 @@ public class MessageProcessingEngine {
      */
     public BatchProcessingResult processBatchMessages(String flowId, List<Object> messages) {
         try {
-            Optional<IntegrationFlow> flowOpt = integrationFlowRepository.findById(flowId);
+            Optional<IntegrationFlow> flowOpt = integrationFlowRepository.findById(UUID.fromString(flowId));
             if (!flowOpt.isPresent()) {
                 return BatchProcessingResult.error("Integration flow not found: " + flowId);
             }
@@ -172,7 +172,7 @@ public class MessageProcessingEngine {
         ValidationResult result = new ValidationResult();
         
         try {
-            Optional<IntegrationFlow> flowOpt = integrationFlowRepository.findById(flowId);
+            Optional<IntegrationFlow> flowOpt = integrationFlowRepository.findById(UUID.fromString(flowId));
             if (!flowOpt.isPresent()) {
                 result.addError("Integration flow not found: " + flowId);
                 return result;
@@ -181,11 +181,11 @@ public class MessageProcessingEngine {
             IntegrationFlow flow = flowOpt.get();
             
             // Validate flow configuration
-            if (flow.getSourceAdapterId() == null || flow.getSourceAdapterId().trim().isEmpty()) {
+            if (flow.getSourceAdapterId() == null) {
                 result.addError("Source adapter is required for message processing");
             }
             
-            if (flow.getTargetAdapterId() == null || flow.getTargetAdapterId().trim().isEmpty()) {
+            if (flow.getTargetAdapterId() == null) {
                 result.addError("Target adapter is required for message processing");
             }
             
@@ -203,7 +203,7 @@ public class MessageProcessingEngine {
     private ProcessingExecution createExecution(IntegrationFlow flow, Object messageData) {
         ProcessingExecution execution = new ProcessingExecution();
         execution.setExecutionId(UUID.randomUUID().toString());
-        execution.setFlowId(flow.getId());
+        execution.setFlowId(flow.getId().toString());
         execution.setFlowName(flow.getName());
         execution.setFlowType(determineFlowType(flow));
         execution.setStatus(ProcessingStatus.RUNNING);
