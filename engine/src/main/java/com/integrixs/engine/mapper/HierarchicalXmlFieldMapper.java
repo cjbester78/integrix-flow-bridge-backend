@@ -59,11 +59,24 @@ public class HierarchicalXmlFieldMapper {
         // Check if we need to create a SOAP envelope structure
         boolean needsSoapEnvelope = false;
         
-        // Check if source is SOAP and we don't have a target template
+        // Check if we need SOAP envelope based on target namespace
         if (targetXmlTemplate == null || targetXmlTemplate.isEmpty()) {
-            if (sourceXml.contains("http://schemas.xmlsoap.org/soap/envelope/") || 
+            // Check if we have a SOAP/WSDL namespace that indicates we need a SOAP envelope
+            if (namespaces != null && !namespaces.isEmpty()) {
+                for (String uri : namespaces.values()) {
+                    if (uri.contains("w3schools.com") || uri.contains("webserviceX") || 
+                        uri.contains("tempuri.org") || uri.contains("/soap/")) {
+                        needsSoapEnvelope = true;
+                        logger.info("Detected SOAP web service namespace, will create SOAP envelope");
+                        break;
+                    }
+                }
+            }
+            
+            // Also check if source is already SOAP
+            if (!needsSoapEnvelope && (sourceXml.contains("http://schemas.xmlsoap.org/soap/envelope/") || 
                 sourceXml.contains("soap:Envelope") || 
-                sourceXml.contains("soapenv:Envelope")) {
+                sourceXml.contains("soapenv:Envelope"))) {
                 needsSoapEnvelope = true;
             }
         }
