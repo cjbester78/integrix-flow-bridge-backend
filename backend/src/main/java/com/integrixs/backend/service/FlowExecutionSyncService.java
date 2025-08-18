@@ -12,6 +12,7 @@ import com.integrixs.data.repository.DataStructureRepository;
 import com.integrixs.data.repository.FieldMappingRepository;
 import com.integrixs.data.repository.FlowStructureRepository;
 import com.integrixs.engine.mapper.HierarchicalXmlFieldMapper;
+import com.integrixs.backend.utils.WsdlNamespaceExtractor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -174,6 +175,19 @@ public class FlowExecutionSyncService {
                             // For field mappings, we always work with XML
                             // Get the target template from the flow structure
                             String targetTemplate = null;
+                            Map<String, String> namespaces = new HashMap<>();
+                            
+                            // Extract namespaces from source flow structure
+                            if (flow.getSourceFlowStructureId() != null) {
+                                FlowStructure sourceFlowStructure = flowStructureRepository.findById(flow.getSourceFlowStructureId()).orElse(null);
+                                if (sourceFlowStructure != null && sourceFlowStructure.getWsdlContent() != null) {
+                                    logger.info("Extracting namespaces from source flow structure: {}", sourceFlowStructure.getName());
+                                    Map<String, String> sourceNamespaces = WsdlNamespaceExtractor.extractNamespaces(sourceFlowStructure.getWsdlContent());
+                                    namespaces.putAll(sourceNamespaces);
+                                }
+                            }
+                            
+                            // Extract namespaces from target flow structure
                             if (flow.getTargetFlowStructureId() != null) {
                                 logger.info("Target flow structure ID: {}", flow.getTargetFlowStructureId());
                                 FlowStructure targetFlowStructure = flowStructureRepository.findById(flow.getTargetFlowStructureId()).orElse(null);
@@ -181,6 +195,35 @@ public class FlowExecutionSyncService {
                                     logger.info("Target flow structure found: {}", targetFlowStructure.getName());
                                     if (targetFlowStructure.getWsdlContent() != null) {
                                         logger.info("Target flow structure has WSDL content");
+                                        Map<String, String> targetNamespaces = WsdlNamespaceExtractor.extractNamespaces(targetFlowStructure.getWsdlContent());
+                                        
+                                        // For target namespaces, we want to ensure they take precedence
+                                        // Extract the target namespace specifically
+                                        String targetNamespace = targetNamespaces.get("tns");
+                                        if (targetNamespace != null) {
+                                            // Find the appropriate prefix or use a default
+                                            String targetPrefix = null;
+                                            for (Map.Entry<String, String> entry : targetNamespaces.entrySet()) {
+                                                if (entry.getValue().equals(targetNamespace) && !entry.getKey().equals("tns")) {
+                                                    targetPrefix = entry.getKey();
+                                                    break;
+                                                }
+                                            }
+                                            if (targetPrefix == null) {
+                                                // Check for common prefixes like "tem" for temperature
+                                                if (targetNamespace.contains("w3schools")) {
+                                                    targetPrefix = "tem";
+                                                } else if (targetNamespace.contains("acme/weather")) {
+                                                    targetPrefix = "weat";
+                                                } else {
+                                                    targetPrefix = "ns";
+                                                }
+                                            }
+                                            namespaces.put(targetPrefix, targetNamespace);
+                                            logger.info("Using target namespace: {} = {}", targetPrefix, targetNamespace);
+                                        }
+                                        
+                                        namespaces.putAll(targetNamespaces);
                                         // TODO: Extract sample XML from WSDL
                                         targetTemplate = null; // Let the mapper create the structure for now
                                     }
@@ -189,6 +232,11 @@ public class FlowExecutionSyncService {
                                 }
                             } else {
                                 logger.warn("Flow has no target flow structure ID!");
+                            }
+                            
+                            logger.info("Total namespaces extracted: {}", namespaces.size());
+                            for (Map.Entry<String, String> ns : namespaces.entrySet()) {
+                                logger.debug("Namespace: {} = {}", ns.getKey(), ns.getValue());
                             }
                             
                             logger.debug("Field mappings count: {}", fieldMappings.size());
@@ -204,7 +252,7 @@ public class FlowExecutionSyncService {
                                 validatedMessage,  // source XML
                                 targetTemplate,    // target template (can be null)
                                 fieldMappings,     // field mappings
-                                null              // namespaces (TODO: get from flow structure)
+                                namespaces        // namespaces extracted from flow structures
                             );
                             
                             logger.debug("Transformed message: {}", transformedMessage);

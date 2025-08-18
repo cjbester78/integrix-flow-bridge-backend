@@ -7,7 +7,9 @@ import com.integrixs.data.model.FieldMapping;
 import com.integrixs.data.model.FlowTransformation;
 import com.integrixs.data.repository.FieldMappingRepository;
 import com.integrixs.data.repository.FlowTransformationRepository;
-import com.integrixs.shared.dto.mapping.FieldMappingDTO;
+import com.integrixs.shared.dto.FieldMappingDTO;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.core.JsonProcessingException;
 
 import java.util.List;
 import java.util.Optional;
@@ -21,6 +23,8 @@ public class FieldMappingService {
     
     @Autowired
     private FlowTransformationRepository transformationRepository;
+    
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     public List<FieldMappingDTO> getByTransformationId(String transformationId) {
         return mappingRepository.findByTransformationId(transformationId)
@@ -57,7 +61,8 @@ public class FieldMappingService {
         FieldMappingDTO dto = new FieldMappingDTO();
         dto.setId(mapping.getId());
         dto.setTransformationId(mapping.getTransformation() != null ? mapping.getTransformation().getId() : null);
-        dto.setSourceFields(mapping.getSourceFields());
+        // Convert sourceFields from JSON string to List<String>
+        dto.setSourceFields(mapping.getSourceFieldsList());
         dto.setTargetField(mapping.getTargetField());
         dto.setJavaFunction(mapping.getJavaFunction());
         dto.setMappingRule(mapping.getMappingRule());
@@ -71,8 +76,26 @@ public class FieldMappingService {
         dto.setArrayContextPath(mapping.getArrayContextPath());
         dto.setSourceXPath(mapping.getSourceXPath());
         dto.setTargetXPath(mapping.getTargetXPath());
-        dto.setVisualFlowData(mapping.getVisualFlowData());
-        dto.setFunctionNode(mapping.getFunctionNode());
+        
+        // Parse JSON strings to objects
+        if (mapping.getVisualFlowData() != null && !mapping.getVisualFlowData().isEmpty()) {
+            try {
+                dto.setVisualFlowData(objectMapper.readValue(mapping.getVisualFlowData(), Object.class));
+            } catch (JsonProcessingException e) {
+                // If parsing fails, set as null
+                dto.setVisualFlowData(null);
+            }
+        }
+        
+        if (mapping.getFunctionNode() != null && !mapping.getFunctionNode().isEmpty()) {
+            try {
+                dto.setFunctionNode(objectMapper.readValue(mapping.getFunctionNode(), Object.class));
+            } catch (JsonProcessingException e) {
+                // If parsing fails, set as null
+                dto.setFunctionNode(null);
+            }
+        }
+        
         dto.setMappingOrder(mapping.getMappingOrder());
         dto.setCreatedAt(mapping.getCreatedAt());
         dto.setUpdatedAt(mapping.getUpdatedAt());
@@ -89,7 +112,8 @@ public class FieldMappingService {
             transformation.ifPresent(mapping::setTransformation);
         }
         
-        mapping.setSourceFields(dto.getSourceFields());
+        // Convert sourceFields from List<String> to JSON string
+        mapping.setSourceFieldsList(dto.getSourceFields());
         mapping.setTargetField(dto.getTargetField());
         mapping.setJavaFunction(dto.getJavaFunction());
         mapping.setMappingRule(dto.getMappingRule());
@@ -103,8 +127,24 @@ public class FieldMappingService {
         mapping.setArrayContextPath(dto.getArrayContextPath());
         mapping.setSourceXPath(dto.getSourceXPath());
         mapping.setTargetXPath(dto.getTargetXPath());
-        mapping.setVisualFlowData(dto.getVisualFlowData());
-        mapping.setFunctionNode(dto.getFunctionNode());
+        
+        // Convert objects to JSON strings
+        if (dto.getVisualFlowData() != null) {
+            try {
+                mapping.setVisualFlowData(objectMapper.writeValueAsString(dto.getVisualFlowData()));
+            } catch (JsonProcessingException e) {
+                mapping.setVisualFlowData(null);
+            }
+        }
+        
+        if (dto.getFunctionNode() != null) {
+            try {
+                mapping.setFunctionNode(objectMapper.writeValueAsString(dto.getFunctionNode()));
+            } catch (JsonProcessingException e) {
+                mapping.setFunctionNode(null);
+            }
+        }
+        
         mapping.setMappingOrder(dto.getMappingOrder());
         return mapping;
     }

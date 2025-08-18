@@ -56,18 +56,44 @@ public class HierarchicalXmlFieldMapper {
         // Create or parse target document
         Document targetDoc;
         
-        // Special handling for temperature conversion flow - always create correct structure
+        // Special handling for SOAP flows - create SOAP envelope structure
         if (sourceXml.contains("CelsiusToFahrenheit") || 
             (targetXmlTemplate != null && targetXmlTemplate.contains("CelsiusToFahrenheit"))) {
-            logger.info("Detected temperature conversion flow, creating SOAP envelope structure with W3Schools namespace");
+            logger.info("Detected temperature conversion flow, creating SOAP envelope structure");
             targetDoc = builder.newDocument();
+            
+            // Get the target namespace from passed namespaces
+            String targetNamespace = null;
+            String targetPrefix = null;
+            
+            // Find the target namespace and prefix from passed namespaces
+            if (namespaces != null) {
+                for (Map.Entry<String, String> entry : namespaces.entrySet()) {
+                    String ns = entry.getValue();
+                    // Look for the non-SOAP namespace that will be our target
+                    if (!ns.contains("schemas.xmlsoap.org") && !entry.getKey().equals("tns")) {
+                        targetNamespace = ns;
+                        targetPrefix = entry.getKey();
+                        logger.info("Found target namespace from flow structure: {} = {}", targetPrefix, targetNamespace);
+                        break;
+                    }
+                }
+            }
+            
+            // Fallback to W3Schools if no namespace provided
+            if (targetNamespace == null) {
+                targetNamespace = "https://www.w3schools.com/xml/";
+                targetPrefix = "tem";
+                logger.warn("No target namespace provided, using default: {} = {}", targetPrefix, targetNamespace);
+            }
+            
             Element envelope = targetDoc.createElementNS("http://schemas.xmlsoap.org/soap/envelope/", "soapenv:Envelope");
             envelope.setAttribute("xmlns:soapenv", "http://schemas.xmlsoap.org/soap/envelope/");
-            envelope.setAttribute("xmlns:tem", "https://www.w3schools.com/xml/");
+            envelope.setAttribute("xmlns:" + targetPrefix, targetNamespace);
             
             Element body = targetDoc.createElementNS("http://schemas.xmlsoap.org/soap/envelope/", "soapenv:Body");
-            Element celsiusToFahrenheit = targetDoc.createElementNS("https://www.w3schools.com/xml/", "tem:CelsiusToFahrenheit");
-            Element celsius = targetDoc.createElementNS("https://www.w3schools.com/xml/", "tem:Celsius");
+            Element celsiusToFahrenheit = targetDoc.createElementNS(targetNamespace, targetPrefix + ":CelsiusToFahrenheit");
+            Element celsius = targetDoc.createElementNS(targetNamespace, targetPrefix + ":Celsius");
             
             celsiusToFahrenheit.appendChild(celsius);
             body.appendChild(celsiusToFahrenheit);
@@ -86,17 +112,23 @@ public class HierarchicalXmlFieldMapper {
         // Create XPath with namespace support
         XPath xpath = XPathFactory.newInstance().newXPath();
         
-        // Add default namespaces for SOAP
-        Map<String, String> defaultNamespaces = new HashMap<>();
-        defaultNamespaces.put("soapenv", "http://schemas.xmlsoap.org/soap/envelope/");
-        defaultNamespaces.put("tes", "http://integrixflowbridge.com/TestSoap");
-        defaultNamespaces.put("tem", "https://www.w3schools.com/xml/");
+        // Use provided namespaces or defaults
+        Map<String, String> effectiveNamespaces = new HashMap<>();
         
-        if (namespaces != null) {
-            defaultNamespaces.putAll(namespaces);
+        // Add default SOAP namespace
+        effectiveNamespaces.put("soapenv", "http://schemas.xmlsoap.org/soap/envelope/");
+        
+        // Add all provided namespaces
+        if (namespaces != null && !namespaces.isEmpty()) {
+            effectiveNamespaces.putAll(namespaces);
+            logger.info("Using {} namespaces from flow structures", namespaces.size());
+        } else {
+            logger.warn("No namespaces provided, using defaults");
+            // Add some common defaults
+            effectiveNamespaces.put("tem", "https://www.w3schools.com/xml/");
         }
         
-        xpath.setNamespaceContext(new MapNamespaceContext(defaultNamespaces));
+        xpath.setNamespaceContext(new MapNamespaceContext(effectiveNamespaces));
         
         // Process each field mapping
         for (int i = 0; i < fieldMappings.size(); i++) {
