@@ -123,7 +123,7 @@ public class FlowExecutionSyncService {
                 
             String validatedMessage = message;
             if (flow.getSourceStructureId() != null) {
-                DataStructure sourceStructure = dataStructureRepository.findById(flow.getSourceStructureId())
+                DataStructure sourceStructure = dataStructureRepository.findById(UUID.fromString(flow.getSourceStructureId()))
                     .orElse(null);
                 if (sourceStructure != null) {
                     validatedMessage = validateMessage(message, sourceStructure, context);
@@ -160,12 +160,12 @@ public class FlowExecutionSyncService {
                             .min((t1, t2) -> Integer.compare(t1.getExecutionOrder(), t2.getExecutionOrder()))
                             .orElse(flow.getTransformations().get(0));
                         
-                        String transformationId = transformation.getId();
+                        String transformationId = transformation.getId().toString();
                         logger.info("Using transformation: {} (ID: {}, execution order: {})", 
                             transformation.getName(), transformationId, transformation.getExecutionOrder());
                         
                         // Get field mappings for this transformation
-                        List<FieldMapping> fieldMappings = fieldMappingRepository.findByTransformationId(transformationId);
+                        List<FieldMapping> fieldMappings = fieldMappingRepository.findByTransformationId(UUID.fromString(transformationId));
                         logger.info("Found {} field mappings", fieldMappings.size());
                         
                         if (fieldMappings.isEmpty()) {
@@ -179,7 +179,7 @@ public class FlowExecutionSyncService {
                             
                             // Extract namespaces from source flow structure
                             if (flow.getSourceFlowStructureId() != null) {
-                                FlowStructure sourceFlowStructure = flowStructureRepository.findById(flow.getSourceFlowStructureId()).orElse(null);
+                                FlowStructure sourceFlowStructure = flowStructureRepository.findById(UUID.fromString(flow.getSourceFlowStructureId())).orElse(null);
                                 if (sourceFlowStructure != null && sourceFlowStructure.getWsdlContent() != null) {
                                     logger.info("Extracting namespaces from source flow structure: {}", sourceFlowStructure.getName());
                                     Map<String, String> sourceNamespaces = WsdlNamespaceExtractor.extractNamespaces(sourceFlowStructure.getWsdlContent());
@@ -190,7 +190,7 @@ public class FlowExecutionSyncService {
                             // Extract namespaces from target flow structure
                             if (flow.getTargetFlowStructureId() != null) {
                                 logger.info("Target flow structure ID: {}", flow.getTargetFlowStructureId());
-                                FlowStructure targetFlowStructure = flowStructureRepository.findById(flow.getTargetFlowStructureId()).orElse(null);
+                                FlowStructure targetFlowStructure = flowStructureRepository.findById(UUID.fromString(flow.getTargetFlowStructureId())).orElse(null);
                                 if (targetFlowStructure != null) {
                                     logger.info("Target flow structure found: {}", targetFlowStructure.getName());
                                     if (targetFlowStructure.getWsdlContent() != null) {

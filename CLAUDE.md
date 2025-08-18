@@ -15,16 +15,10 @@ Integrix Flow Bridge is a comprehensive integration middleware platform built wi
 
 **CRITICAL**: Before making changes, always read the codebase to check if the solution to the problem may already exist elsewhere.  
 
-**CRITICAL**: After every fix do a git commit.
-**CRITICAL**: Frontend has it's own repository.
-**CRITICAL**: Backend has it's own repository.
-**Critical**: Run below bash after each fix.
+
 
 **CRITICAL**: When working with Flow Structures in field mapping, NEVER convert WSDL/XML content to XML. Flow structures already contain XML/WSDL content in their `wsdlContent` field. Always use the original XML content directly instead of trying to convert JSON to XML. The `/structures/{id}/convert-to-xml` endpoint is only for data structures (JSON), not flow structures.
-```bash
-# Full deployment (frontend + backend)
-./deploy.sh
-```
+
 **IMPORTANT**: Before implementing any user request, follow this process:
 
 1. **Read** the user's instruction carefully

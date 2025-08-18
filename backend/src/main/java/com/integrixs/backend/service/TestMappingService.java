@@ -343,7 +343,7 @@ public class TestMappingService {
                             }
                             
                             DevelopmentFunctionService.FunctionTestResult testResult = 
-                                developmentFunctionService.testFunction(function.getFunctionId(), functionInputs);
+                                developmentFunctionService.testFunction(function.getFunctionId().toString(), functionInputs);
                             
                             if (testResult.isSuccess()) {
                                 resultValue = testResult.getOutput() != null ? testResult.getOutput().toString() : "";
@@ -768,7 +768,7 @@ public class TestMappingService {
                                     
                                     log.info("Executing function {} with inputs: {}", functionName, functionInputs);
                                     DevelopmentFunctionService.FunctionTestResult testResult = 
-                                        developmentFunctionService.testFunction(function.getFunctionId(), functionInputs);
+                                        developmentFunctionService.testFunction(function.getFunctionId().toString(), functionInputs);
                                     
                                     if (testResult.isSuccess()) {
                                         result = testResult.getOutput() != null ? testResult.getOutput().toString() : "";

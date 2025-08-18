@@ -38,6 +38,7 @@ public class FlowImportService {
     private final CertificateRepository certificateRepository;
     private final SystemLogRepository systemLogRepository;
     private final ObjectMapper objectMapper;
+    private final UserRepository userRepository;
 
     @Value("${app.version:1.0.0}")
     private String applicationVersion;
@@ -367,7 +368,7 @@ public class FlowImportService {
                     .configuration(dto.getConfiguration())
                     .isActive(false) // Start inactive
                     .mappingMode(com.integrixs.data.model.MappingMode.valueOf(dto.getMappingMode()))
-                    .createdBy(SecurityUtils.getCurrentUserId())
+                    .createdBy(userRepository.findByUsername(SecurityUtils.getCurrentUsernameStatic()))
                     .build();
             
             if (businessComponentId != null) {
