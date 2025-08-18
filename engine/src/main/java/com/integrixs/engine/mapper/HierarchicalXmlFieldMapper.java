@@ -59,30 +59,32 @@ public class HierarchicalXmlFieldMapper {
         // Check if we need to create a SOAP envelope structure
         boolean needsSoapEnvelope = false;
         
-        // Check if we need SOAP envelope based on target namespace
-        if (targetXmlTemplate == null || targetXmlTemplate.isEmpty()) {
-            // Check if we have a SOAP/WSDL namespace that indicates we need a SOAP envelope
-            if (namespaces != null && !namespaces.isEmpty()) {
-                for (String uri : namespaces.values()) {
-                    if (uri.contains("w3schools.com") || uri.contains("www.w3schools.com") || 
-                        uri.contains("webserviceX") || uri.contains("tempuri.org") || 
-                        uri.contains("/soap/")) {
-                        needsSoapEnvelope = true;
-                        logger.info("Detected SOAP web service namespace '{}', will create SOAP envelope", uri);
-                        break;
-                    }
+        // Check if we have a SOAP/WSDL namespace that indicates we need a SOAP envelope
+        if (namespaces != null && !namespaces.isEmpty()) {
+            for (String uri : namespaces.values()) {
+                if (uri.contains("w3schools.com") || uri.contains("www.w3schools.com") || 
+                    uri.contains("webserviceX") || uri.contains("tempuri.org") || 
+                    uri.contains("/soap/")) {
+                    needsSoapEnvelope = true;
+                    logger.info("Detected SOAP web service namespace '{}', will create SOAP envelope", uri);
+                    break;
                 }
-            }
-            
-            // Also check if source is already SOAP
-            if (!needsSoapEnvelope && (sourceXml.contains("http://schemas.xmlsoap.org/soap/envelope/") || 
-                sourceXml.contains("soap:Envelope") || 
-                sourceXml.contains("soapenv:Envelope"))) {
-                needsSoapEnvelope = true;
             }
         }
         
-        if (needsSoapEnvelope) {
+        // Also check if source is already SOAP
+        if (!needsSoapEnvelope && (sourceXml.contains("http://schemas.xmlsoap.org/soap/envelope/") || 
+            sourceXml.contains("soap:Envelope") || 
+            sourceXml.contains("soapenv:Envelope"))) {
+            needsSoapEnvelope = true;
+            logger.info("Detected SOAP in source XML, will create SOAP envelope");
+        }
+        
+        // Now decide how to create the target document
+        if (targetXmlTemplate != null && !targetXmlTemplate.isEmpty()) {
+            logger.info("Using provided target template");
+            targetDoc = builder.parse(new InputSource(new StringReader(targetXmlTemplate)));
+        } else if (needsSoapEnvelope) {
             logger.info("Creating SOAP envelope structure for target");
             targetDoc = builder.newDocument();
             
@@ -135,9 +137,6 @@ public class HierarchicalXmlFieldMapper {
             targetDoc.appendChild(envelope);
             
             logger.info("Created SOAP envelope structure");
-        } else if (targetXmlTemplate != null && !targetXmlTemplate.isEmpty()) {
-            logger.info("Using provided target template");
-            targetDoc = builder.parse(new InputSource(new StringReader(targetXmlTemplate)));
         } else {
             logger.info("No target template provided, creating basic structure");
             targetDoc = builder.newDocument();
