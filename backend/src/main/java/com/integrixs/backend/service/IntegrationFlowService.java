@@ -110,7 +110,7 @@ public class IntegrationFlowService {
                 .mappingMode(flow.getMappingMode() != null ? flow.getMappingMode().toString() : null)
                 .createdAt(flow.getCreatedAt())
                 .updatedAt(flow.getUpdatedAt())
-                .createdBy(flow.getCreatedBy())
+                .createdBy(flow.getCreatedBy() != null ? flow.getCreatedBy().getUsername() : null)
                 .lastExecutionAt(flow.getLastExecutionAt())
                 .executionCount(flow.getExecutionCount())
                 .successCount(flow.getSuccessCount())

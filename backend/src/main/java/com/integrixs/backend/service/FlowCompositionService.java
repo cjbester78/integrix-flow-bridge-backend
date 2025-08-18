@@ -330,13 +330,13 @@ public class FlowCompositionService {
     public boolean deleteFlowComposition(String flowId) {
         return flowRepository.findById(UUID.fromString(flowId)).map(flow -> {
             // Delete field mappings first (cascade should handle this, but being explicit)
-            List<FlowTransformation> transformations = transformationRepository.findByFlowId(flowId);
+            List<FlowTransformation> transformations = transformationRepository.findByFlowId(UUID.fromString(flowId));
             for (FlowTransformation transformation : transformations) {
-                fieldMappingRepository.deleteByTransformationId(transformation.getId());
+                fieldMappingRepository.deleteByTransformationId(transformation.getId().toString());
             }
             
             // Delete transformations
-            transformationRepository.deleteByFlowId(flowId);
+            transformationRepository.deleteByFlowId(UUID.fromString(flowId));
             
             // Delete the flow
             flowRepository.delete(flow);

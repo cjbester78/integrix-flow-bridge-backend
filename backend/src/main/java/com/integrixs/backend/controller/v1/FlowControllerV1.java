@@ -23,6 +23,7 @@ import org.springframework.data.domain.PageImpl;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.UUID;
+import com.integrixs.data.repository.UserRepository;
 
 /**
  * REST controller for integration flows - API Version 1.
@@ -43,6 +44,7 @@ public class FlowControllerV1 {
     private final FlowCompositionService flowCompositionService;
     private final IntegrationFlowService integrationFlowService;
     private final FlowDomainService flowDomainService;
+    private final UserRepository userRepository;
     
     /**
      * Gets all integration flows with pagination.
@@ -111,7 +113,7 @@ public class FlowControllerV1 {
                  request.getName(), userDetails.getUsername());
         
         IntegrationFlow flow = mapToEntity(request);
-        flow.setCreatedBy(userDetails.getUsername());
+        flow.setCreatedBy(userRepository.findByUsername(userDetails.getUsername()));
         IntegrationFlow created = integrationFlowService.createFlow(flow);
         IntegrationFlowDTO dto = mapToDTO(created);
         

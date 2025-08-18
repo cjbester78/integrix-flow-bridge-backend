@@ -54,7 +54,7 @@ public class FlowExportService {
         log.info("Exporting flow: {}", request.getFlowId());
         
         // Load the flow
-        IntegrationFlow flow = integrationFlowRepository.findById(request.getFlowId())
+        IntegrationFlow flow = integrationFlowRepository.findById(UUID.fromString(request.getFlowId()))
                 .orElseThrow(() -> new ResourceNotFoundException("Flow not found: " + request.getFlowId()));
         
         // Build export
@@ -68,8 +68,8 @@ public class FlowExportService {
         
         // Load and include adapters
         if (options.isIncludeAdapterConfigs()) {
-            export.setSourceAdapter(loadAdapter(flow.getSourceAdapterId()));
-            export.setTargetAdapter(loadAdapter(flow.getTargetAdapterId()));
+            export.setSourceAdapter(loadAdapter(flow.getSourceAdapterId() != null ? flow.getSourceAdapterId().toString() : null));
+            export.setTargetAdapter(loadAdapter(flow.getTargetAdapterId() != null ? flow.getTargetAdapterId().toString() : null));
             
             // Include certificate references
             if (options.isIncludeCertificateReferences()) {
@@ -123,7 +123,7 @@ public class FlowExportService {
         Map<String, Object> validation = new HashMap<>();
         
         try {
-            IntegrationFlow flow = integrationFlowRepository.findById(flowId)
+            IntegrationFlow flow = integrationFlowRepository.findById(UUID.fromString(flowId))
                     .orElseThrow(() -> new ResourceNotFoundException("Flow not found"));
             
             validation.put("canExport", true);
@@ -174,7 +174,7 @@ public class FlowExportService {
     }
 
     private CommunicationAdapterDTO loadAdapter(String adapterId) {
-        return communicationAdapterRepository.findById(adapterId)
+        return communicationAdapterRepository.findById(UUID.fromString(adapterId))
                 .map(this::convertToAdapterDTO)
                 .orElse(null);
     }
