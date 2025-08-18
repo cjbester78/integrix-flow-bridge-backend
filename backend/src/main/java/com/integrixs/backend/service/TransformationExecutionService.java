@@ -46,7 +46,7 @@ public class TransformationExecutionService {
      */
     public TransformationResult executeTransformation(String transformationId, Object inputData) {
         try {
-            List<FieldMapping> mappings = fieldMappingRepository.findByTransformationId(transformationId);
+            List<FieldMapping> mappings = fieldMappingRepository.findByTransformationId(UUID.fromString(transformationId));
             
             if (mappings.isEmpty()) {
                 return TransformationResult.success(inputData, "No field mappings found");
@@ -220,7 +220,7 @@ public class TransformationExecutionService {
         ValidationResult result = new ValidationResult();
         
         try {
-            List<FieldMapping> mappings = fieldMappingRepository.findByTransformationId(transformationId);
+            List<FieldMapping> mappings = fieldMappingRepository.findByTransformationId(UUID.fromString(transformationId));
             
             if (mappings.isEmpty()) {
                 result.addWarning("No field mappings defined for transformation");

@@ -91,7 +91,9 @@ public class FieldMappingService {
 
     private FieldMapping fromDTO(FieldMappingDTO dto) {
         FieldMapping mapping = new FieldMapping();
-        mapping.setId(dto.getId() != null ? UUID.fromString(dto.getId()) : null);
+        if (dto.getId() != null) {
+            mapping.setId(dto.getId());
+        }
         
         // Set transformation if transformationId is provided
         if (dto.getTransformationId() != null) {

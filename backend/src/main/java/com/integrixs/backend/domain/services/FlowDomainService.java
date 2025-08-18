@@ -63,8 +63,8 @@ public class FlowDomainService {
         eventPublisher.publish(new FlowCreatedEvent(
             savedFlow.getId().toString(),
             savedFlow.getName(),
-            savedFlow.getSourceAdapterId(),
-            savedFlow.getTargetAdapterId(),
+            savedFlow.getSourceAdapterId() != null ? savedFlow.getSourceAdapterId().toString() : null,
+            savedFlow.getTargetAdapterId() != null ? savedFlow.getTargetAdapterId().toString() : null,
             createdBy.getUsername()
         ));
         

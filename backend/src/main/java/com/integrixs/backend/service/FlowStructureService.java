@@ -175,7 +175,7 @@ public class FlowStructureService {
         flowStructure.setVersion(flowStructure.getVersion() + 1);
         
         // Update flow structure messages
-        flowStructureMessageRepository.deleteByFlowStructureId(UUID.fromString(id));
+        flowStructureMessageRepository.deleteByFlowStructureId(flowStructure.getId().toString());
         if (request.getMessageStructureIds() != null) {
             createFlowStructureMessages(flowStructure, request.getMessageStructureIds());
             // Clear the persistence context to ensure fresh load
@@ -254,7 +254,7 @@ public class FlowStructureService {
                     // Add information about which message types use this message structure
                     List<String> messageTypes = flowStructureMessageRepository.findByFlowStructureId(flowStructure.getId())
                             .stream()
-                            .filter(fsm -> fsm.getMessageStructure().getId().equals(messageStructureId))
+                            .filter(fsm -> fsm.getMessageStructure().getId().toString().equals(messageStructureId))
                             .map(fsm -> fsm.getMessageType().toString())
                             .collect(Collectors.toList());
                     
@@ -629,7 +629,7 @@ public class FlowStructureService {
     
     private FlowStructureMessageDTO convertToFlowStructureMessageDTO(FlowStructureMessage entity) {
         return FlowStructureMessageDTO.builder()
-                .flowStructureId(entity.getFlowStructure().getId())
+                .flowStructureId(entity.getFlowStructure().getId().toString())
                 .messageType(FlowStructureMessageDTO.MessageType.valueOf(entity.getMessageType().name()))
                 .messageStructure(convertToMessageStructureDTO(entity.getMessageStructure()))
                 .build();

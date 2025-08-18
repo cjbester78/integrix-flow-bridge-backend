@@ -198,7 +198,7 @@ public class SystemLogService {
         }
         
         try {
-            Optional<User> user = userRepository.findById(userId);
+            Optional<User> user = userRepository.findById(UUID.fromString(userId));
             return user.map(User::getUsername).orElse(null);
         } catch (Exception e) {
             log.debug("Failed to get username for ID: {}", userId);
@@ -363,7 +363,7 @@ public class SystemLogService {
      */
     private SystemLogDTO convertToDTO(SystemLog log) {
         return SystemLogDTO.builder()
-                .id(log.getId())
+                .id(log.getId().toString())
                 .timestamp(log.getTimestamp())
                 .level(log.getLevel().toString())
                 .message(log.getMessage())

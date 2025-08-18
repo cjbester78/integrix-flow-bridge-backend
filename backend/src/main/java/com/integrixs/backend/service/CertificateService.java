@@ -17,6 +17,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.UUID;
 
 @Service
 public class CertificateService {
@@ -42,7 +43,7 @@ public class CertificateService {
 
         Certificate saved = certificateRepository.save(cert);
 
-        writeFileToDisk(saved.getId(), file);
+        writeFileToDisk(saved.getId().toString(), file);
 
         return toDTO(saved);
     }
@@ -54,11 +55,11 @@ public class CertificateService {
     }
 
     public Optional<Certificate> getCertificateById(String id) {
-        return certificateRepository.findById(id);
+        return certificateRepository.findById(UUID.fromString(id));
     }
 
     public void deleteCertificate(String id) throws Exception {
-        certificateRepository.deleteById(id);
+        certificateRepository.deleteById(UUID.fromString(id));
         File f = new File(certStoragePath + "/" + id + ".crt");
         if (f.exists()) {
             Files.delete(f.toPath());
@@ -78,7 +79,7 @@ public class CertificateService {
 
     private CertificateDTO toDTO(Certificate cert) {
         CertificateDTO dto = new CertificateDTO();
-        dto.setId(cert.getId());
+        dto.setId(cert.getId().toString());
         dto.setName(cert.getName());
         dto.setFormat(cert.getFormat());
         dto.setType(cert.getType());

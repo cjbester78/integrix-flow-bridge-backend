@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.UUID;
 
 @Service
 @Transactional
@@ -66,7 +67,7 @@ public class CommunicationAdapterService {
         adapter.setDirection(adapterMode == AdapterMode.SENDER ? "OUTBOUND" : "INBOUND");
         
         // Properly set the business component entity, not just the ID
-        BusinessComponent businessComponent = businessComponentRepository.findById(dto.getBusinessComponentId())
+        BusinessComponent businessComponent = businessComponentRepository.findById(UUID.fromString(dto.getBusinessComponentId()))
                 .orElseThrow(() -> new IllegalArgumentException("Business component not found: " + dto.getBusinessComponentId()));
         adapter.setBusinessComponent(businessComponent);
         
@@ -127,7 +128,7 @@ public class CommunicationAdapterService {
                     .map(adapter -> {
                         // Access the business component within the transaction
                         AdapterConfigDTO dto = new AdapterConfigDTO();
-                        dto.setId(adapter.getId());
+                        dto.setId(adapter.getId().toString());
                         dto.setName(adapter.getName());
                         dto.setType(adapter.getType().name());
                         dto.setMode(adapter.getMode().name());
@@ -137,7 +138,7 @@ public class CommunicationAdapterService {
                         
                         // Safely access the business component ID and name within transaction
                         if (adapter.getBusinessComponent() != null) {
-                            dto.setBusinessComponentId(adapter.getBusinessComponent().getId());
+                            dto.setBusinessComponentId(adapter.getBusinessComponent().getId().toString());
                             dto.setBusinessComponentName(adapter.getBusinessComponent().getName());
                         }
                         
@@ -154,11 +155,11 @@ public class CommunicationAdapterService {
     }
 
     public Optional<AdapterConfigDTO> getAdapterById(String id) {
-        return repository.findById(id).map(this::toDTO);
+        return repository.findById(UUID.fromString(id)).map(this::toDTO);
     }
 
     public Optional<AdapterConfigDTO> updateAdapter(String id, AdapterConfigDTO dto) {
-        return repository.findById(id).map(adapter -> {
+        return repository.findById(UUID.fromString(id)).map(adapter -> {
             adapter.setName(dto.getName());
             adapter.setType(AdapterType.valueOf(dto.getType().toUpperCase()));
             
@@ -172,7 +173,7 @@ public class CommunicationAdapterService {
             adapter.setDescription(dto.getDescription());
             
             // Properly set the business component entity, not just the ID
-            BusinessComponent businessComponent = businessComponentRepository.findById(dto.getBusinessComponentId())
+            BusinessComponent businessComponent = businessComponentRepository.findById(UUID.fromString(dto.getBusinessComponentId()))
                     .orElseThrow(() -> new IllegalArgumentException("Business component not found: " + dto.getBusinessComponentId()));
             adapter.setBusinessComponent(businessComponent);
             
@@ -182,18 +183,18 @@ public class CommunicationAdapterService {
     }
 
     public void deleteAdapter(String id) {
-        repository.deleteById(id);
+        repository.deleteById(UUID.fromString(id));
     }
 
     public Optional<AdapterConfigDTO> activateAdapter(String id) {
-        return repository.findById(id).map(adapter -> {
+        return repository.findById(UUID.fromString(id)).map(adapter -> {
             adapter.setActive(true);
             return toDTO(repository.save(adapter));
         });
     }
 
     public Optional<AdapterConfigDTO> deactivateAdapter(String id) {
-        return repository.findById(id).map(adapter -> {
+        return repository.findById(UUID.fromString(id)).map(adapter -> {
             adapter.setActive(false);
             return toDTO(repository.save(adapter));
         });
@@ -203,7 +204,7 @@ public class CommunicationAdapterService {
      * Test an adapter configuration by creating and testing the actual adapter instance
      */
     public AdapterTestResultDTO testAdapter(String id, String testPayload) {
-        Optional<CommunicationAdapter> adapterOpt = repository.findById(id);
+        Optional<CommunicationAdapter> adapterOpt = repository.findById(UUID.fromString(id));
         if (adapterOpt.isEmpty()) {
             return createFailureResult("Adapter not found with id: " + id);
         }
@@ -281,7 +282,7 @@ public class CommunicationAdapterService {
     @Transactional(readOnly = true)
     private AdapterConfigDTO toDTO(CommunicationAdapter adapter) {
         AdapterConfigDTO dto = new AdapterConfigDTO();
-        dto.setId(adapter.getId());
+        dto.setId(adapter.getId().toString());
         dto.setName(adapter.getName());
         dto.setType(adapter.getType().name());
         dto.setMode(adapter.getMode().name());
@@ -292,7 +293,7 @@ public class CommunicationAdapterService {
         // Safely access business component ID and name
         // This method might be called outside transaction, so use the safer approach
         if (adapter.getBusinessComponent() != null) {
-            dto.setBusinessComponentId(adapter.getBusinessComponent().getId());
+            dto.setBusinessComponentId(adapter.getBusinessComponent().getId().toString());
             dto.setBusinessComponentName(adapter.getBusinessComponent().getName());
         }
         

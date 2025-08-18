@@ -90,7 +90,7 @@ public class ChannelService {
             // Safely get business component ID
             String bcId = null;
             if (adapter.getBusinessComponent() != null) {
-                bcId = adapter.getBusinessComponent().getId();
+                bcId = adapter.getBusinessComponent().getId().toString();
             }
 
             return ChannelStatusDTO.builder()

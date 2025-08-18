@@ -141,7 +141,7 @@ public class MessageService {
                 "IntegrationFlow".equals(log.getDomainType())) {
                 
                 // Avoid counting the same flow multiple times
-                String flowKey = log.getCorrelationId() != null ? log.getCorrelationId() : log.getId();
+                String flowKey = log.getCorrelationId() != null ? log.getCorrelationId() : log.getId().toString();
                 if (!countedFlows.contains(flowKey)) {
                     countedFlows.add(flowKey);
                     total++;

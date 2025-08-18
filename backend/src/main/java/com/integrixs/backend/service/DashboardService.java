@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Service
 public class DashboardService {
@@ -33,10 +34,10 @@ public class DashboardService {
             activeIntegrations = (int) flowRepository.findByIsActive(true).stream()
                     .filter(flow -> {
                         boolean sourceMatch = adapterRepository.findById(flow.getSourceAdapterId())
-                                .map(adapter -> businessComponentId.equals(adapter.getBusinessComponentId()))
+                                .map(adapter -> businessComponentId.equals(adapter.getBusinessComponent() != null ? adapter.getBusinessComponent().getId().toString() : null))
                                 .orElse(false);
                         boolean targetMatch = adapterRepository.findById(flow.getTargetAdapterId())
-                                .map(adapter -> businessComponentId.equals(adapter.getBusinessComponentId()))
+                                .map(adapter -> businessComponentId.equals(adapter.getBusinessComponent() != null ? adapter.getBusinessComponent().getId().toString() : null))
                                 .orElse(false);
                         return sourceMatch || targetMatch;
                     })
@@ -48,12 +49,12 @@ public class DashboardService {
         // Calculate messages today
         LocalDateTime startOfDay = LocalDateTime.now().toLocalDate().atStartOfDay();
         long messagesToday = businessComponentId != null
-            ? logRepository.countByComponentIdAndTimestampAfter(businessComponentId, startOfDay)
+            ? logRepository.countByComponentIdAndTimestampAfter(UUID.fromString(businessComponentId), startOfDay)
             : logRepository.countByTimestampAfter(startOfDay);
 
         // Calculate success rate
         long successfulMessages = businessComponentId != null
-            ? logRepository.countByComponentIdAndLevelAndTimestampAfter(businessComponentId, SystemLog.LogLevel.INFO, startOfDay)
+            ? logRepository.countByComponentIdAndLevelAndTimestampAfter(UUID.fromString(businessComponentId), SystemLog.LogLevel.INFO, startOfDay)
             : logRepository.countByLevelAndTimestampAfter(SystemLog.LogLevel.INFO, startOfDay);
         
         double successRate = messagesToday > 0 ? (successfulMessages * 100.0 / messagesToday) : 100.0;

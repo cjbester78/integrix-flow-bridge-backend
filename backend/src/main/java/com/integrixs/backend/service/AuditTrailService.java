@@ -23,6 +23,7 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * Service for managing audit trail entries.
@@ -207,7 +208,7 @@ public class AuditTrailService {
      * Retrieve audit history by user
      */
     public Page<AuditTrail> getUserAuditHistory(String userId, Pageable pageable) {
-        return auditTrailRepository.findByUserIdOrderByCreatedAtDesc(userId, pageable);
+        return auditTrailRepository.findByUserIdOrderByCreatedAtDesc(UUID.fromString(userId), pageable);
     }
     
     /**
@@ -216,6 +217,6 @@ public class AuditTrailService {
     public Page<AuditTrail> searchAuditTrail(String entityType, AuditTrail.AuditAction action, 
                                             String userId, LocalDateTime startDate, 
                                             LocalDateTime endDate, Pageable pageable) {
-        return auditTrailRepository.searchAuditTrail(entityType, action, userId, startDate, endDate, pageable);
+        return auditTrailRepository.searchAuditTrail(entityType, action, userId != null ? UUID.fromString(userId) : null, startDate, endDate, pageable);
     }
 }

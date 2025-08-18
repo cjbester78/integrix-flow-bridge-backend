@@ -36,7 +36,7 @@ public class AdapterMonitoringService {
         if (businessComponentId != null && !businessComponentId.isEmpty()) {
             // Since we don't have a direct findByBusinessComponentId method, we'll filter in memory
             adapters = adapterRepository.findAll().stream()
-                    .filter(adapter -> businessComponentId.equals(adapter.getBusinessComponentId()))
+                    .filter(adapter -> adapter.getBusinessComponent() != null && businessComponentId.equals(adapter.getBusinessComponent().getId().toString()))
                     .collect(Collectors.toList());
         } else {
             adapters = adapterRepository.findAll();
