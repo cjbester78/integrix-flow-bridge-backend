@@ -61,11 +61,11 @@ public class HierarchicalXmlFieldMapper {
         
         // Check if we have a SOAP/WSDL namespace that indicates we need a SOAP envelope
         if (namespaces != null && !namespaces.isEmpty()) {
-            logger.debug("Checking {} namespaces for SOAP indicators", namespaces.size());
+            logger.info("Checking {} namespaces for SOAP indicators", namespaces.size());
             for (Map.Entry<String, String> entry : namespaces.entrySet()) {
                 String prefix = entry.getKey();
                 String uri = entry.getValue();
-                logger.debug("Checking namespace {} = {}", prefix, uri);
+                logger.info("Checking namespace {} = {}", prefix, uri);
                 if (uri.contains("w3schools.com") || uri.contains("www.w3schools.com") || 
                     uri.contains("webserviceX") || uri.contains("tempuri.org") || 
                     uri.contains("/soap/")) {
@@ -74,7 +74,9 @@ public class HierarchicalXmlFieldMapper {
                     break;
                 }
             }
-            logger.debug("SOAP envelope needed: {}", needsSoapEnvelope);
+            logger.info("SOAP envelope needed: {}", needsSoapEnvelope);
+        } else {
+            logger.info("No namespaces provided for SOAP detection");
         }
         
         // Also check if source is already SOAP
@@ -86,6 +88,10 @@ public class HierarchicalXmlFieldMapper {
         }
         
         // Now decide how to create the target document
+        logger.info("Target template is: {}", targetXmlTemplate == null ? "null" : 
+                    (targetXmlTemplate.isEmpty() ? "empty" : "provided"));
+        logger.info("Need SOAP envelope: {}", needsSoapEnvelope);
+        
         if (targetXmlTemplate != null && !targetXmlTemplate.isEmpty()) {
             logger.info("Using provided target template");
             targetDoc = builder.parse(new InputSource(new StringReader(targetXmlTemplate)));
