@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -64,7 +65,7 @@ public class MessageProcessingEngine {
                 logger.info("Starting message processing for flow: {}", flowId);
                 
                 // Load flow configuration
-                IntegrationFlow flow = flowRepository.findById(flowId)
+                IntegrationFlow flow = flowRepository.findById(UUID.fromString(flowId))
                     .orElseThrow(() -> new IllegalArgumentException("Flow not found: " + flowId));
                 
                 // Get adapter configurations
@@ -102,7 +103,7 @@ public class MessageProcessingEngine {
         logger.debug("Applying field mappings for flow: {}", flow.getName());
         
         // Get field mappings for this flow
-        List<FieldMapping> mappings = fieldMappingRepository.findByFlowId(flow.getId());
+        List<FieldMapping> mappings = fieldMappingRepository.findByTransformationFlowIdAndIsActiveTrueOrderByTransformationExecutionOrder(flow.getId());
         
         if (mappings.isEmpty()) {
             logger.warn("No field mappings found for flow: {}", flow.getName());

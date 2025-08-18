@@ -81,7 +81,7 @@ public class FlowStructureService {
         try {
             // Check if name already exists for business component
         if (flowStructureRepository.existsByNameAndBusinessComponentIdAndIsActiveTrue(
-                request.getName(), request.getBusinessComponentId())) {
+                request.getName(), UUID.fromString(request.getBusinessComponentId()))) {
             throw new RuntimeException("Flow structure with name '" + request.getName() + 
                     "' already exists for this business component");
         }
@@ -94,7 +94,7 @@ public class FlowStructureService {
                 .namespace(request.getNamespace() != null ? serializeToJson(request.getNamespace()) : null)
                 .metadata(request.getMetadata() != null ? serializeToJson(request.getMetadata()) : null)
                 .tags(request.getTags() != null ? serializeToJson(request.getTags()) : null)
-                .businessComponent(businessComponentRepository.findById(request.getBusinessComponentId())
+                .businessComponent(businessComponentRepository.findById(UUID.fromString(request.getBusinessComponentId()))
                         .orElseThrow(() -> new RuntimeException("Business component not found")))
                 .createdBy(currentUser)
                 .updatedBy(currentUser)
@@ -155,13 +155,13 @@ public class FlowStructureService {
     public FlowStructureDTO update(String id, FlowStructureCreateRequestDTO request, User currentUser) {
         log.info("Updating flow structure: {}", id);
         
-        FlowStructure flowStructure = flowStructureRepository.findByIdAndIsActiveTrue(id)
+        FlowStructure flowStructure = flowStructureRepository.findByIdAndIsActiveTrue(UUID.fromString(id))
                 .orElseThrow(() -> new RuntimeException("Flow structure not found"));
         
         // Check if name is being changed and already exists
         if (!flowStructure.getName().equals(request.getName()) &&
                 flowStructureRepository.existsByNameAndBusinessComponentIdAndIdNotAndIsActiveTrue(
-                        request.getName(), request.getBusinessComponentId(), id)) {
+                        request.getName(), UUID.fromString(request.getBusinessComponentId()), UUID.fromString(id))) {
             throw new RuntimeException("Flow structure with name '" + request.getName() + 
                     "' already exists for this business component");
         }
@@ -173,13 +173,13 @@ public class FlowStructureService {
         flowStructure.setNamespace(request.getNamespace() != null ? serializeToJson(request.getNamespace()) : null);
         flowStructure.setMetadata(request.getMetadata() != null ? serializeToJson(request.getMetadata()) : null);
         flowStructure.setTags(request.getTags() != null ? serializeToJson(request.getTags()) : null);
-        flowStructure.setBusinessComponent(businessComponentRepository.findById(request.getBusinessComponentId())
+        flowStructure.setBusinessComponent(businessComponentRepository.findById(UUID.fromString(request.getBusinessComponentId()))
                 .orElseThrow(() -> new RuntimeException("Business component not found")));
         flowStructure.setUpdatedBy(currentUser);
         flowStructure.setVersion(flowStructure.getVersion() + 1);
         
         // Update flow structure messages
-        flowStructureMessageRepository.deleteByFlowStructureId(id);
+        flowStructureMessageRepository.deleteByFlowStructureId(UUID.fromString(id));
         if (request.getMessageStructureIds() != null) {
             createFlowStructureMessages(flowStructure, request.getMessageStructureIds());
             // Clear the persistence context to ensure fresh load
@@ -215,7 +215,7 @@ public class FlowStructureService {
     
     @Transactional(readOnly = true)
     public FlowStructureDTO findById(String id) {
-        FlowStructure flowStructure = flowStructureRepository.findByIdAndIsActiveTrue(id)
+        FlowStructure flowStructure = flowStructureRepository.findByIdAndIsActiveTrue(UUID.fromString(id))
                 .orElseThrow(() -> new RuntimeException("Flow structure not found"));
         return toDTO(flowStructure);
     }
@@ -238,7 +238,7 @@ public class FlowStructureService {
     
     @Transactional(readOnly = true)
     public List<FlowStructureDTO> findByBusinessComponent(String businessComponentId) {
-        return flowStructureRepository.findByBusinessComponentId(businessComponentId)
+        return flowStructureRepository.findByBusinessComponentId(UUID.fromString(businessComponentId))
                 .stream()
                 .map(this::toDTO)
                 .collect(Collectors.toList());
@@ -247,7 +247,7 @@ public class FlowStructureService {
     @Transactional(readOnly = true)
     public List<FlowStructureDTO> findByMessageStructure(String messageStructureId) {
         log.info("Finding flow structures using message structure: {}", messageStructureId);
-        List<FlowStructure> flowStructures = flowStructureMessageRepository.findFlowStructuresByMessageStructureId(messageStructureId);
+        List<FlowStructure> flowStructures = flowStructureMessageRepository.findFlowStructuresByMessageStructureId(UUID.fromString(messageStructureId));
         
         return flowStructures.stream()
                 .filter(FlowStructure::getIsActive)
@@ -275,7 +275,7 @@ public class FlowStructureService {
     @Transactional
     public void delete(String id) {
         log.info("Deleting flow structure: {}", id);
-        FlowStructure flowStructure = flowStructureRepository.findByIdAndIsActiveTrue(id)
+        FlowStructure flowStructure = flowStructureRepository.findByIdAndIsActiveTrue(UUID.fromString(id))
                 .orElseThrow(() -> new RuntimeException("Flow structure not found"));
         
         flowStructure.setIsActive(false);
@@ -571,7 +571,7 @@ public class FlowStructureService {
     @Transactional
     public FlowStructureDTO regenerateWsdl(String id) {
         log.info("Regenerating WSDL for flow structure: {}", id);
-        FlowStructure flowStructure = flowStructureRepository.findById(id)
+        FlowStructure flowStructure = flowStructureRepository.findById(UUID.fromString(id))
                 .orElseThrow(() -> new RuntimeException("Flow structure not found"));
         
         if (!"INTERNAL".equals(flowStructure.getSourceType())) {
@@ -627,7 +627,7 @@ public class FlowStructureService {
                             .collect(Collectors.toSet()) : new HashSet<>();
             
             return FlowStructureDTO.builder()
-                    .id(entity.getId())
+                    .id(entity.getId().toString())
                     .name(entity.getName())
                     .description(entity.getDescription())
                     .processingMode(FlowStructureDTO.ProcessingMode.valueOf(entity.getProcessingMode().name()))
@@ -666,7 +666,7 @@ public class FlowStructureService {
     private MessageStructureDTO toMessageStructureDTO(MessageStructure entity) {
         try {
             return MessageStructureDTO.builder()
-                    .id(entity.getId())
+                    .id(entity.getId().toString())
                     .name(entity.getName())
                     .description(entity.getDescription())
                     .xsdContent(entity.getXsdContent())
@@ -690,7 +690,7 @@ public class FlowStructureService {
     private BusinessComponentDTO toBusinessComponentDTO(com.integrixs.data.model.BusinessComponent entity) {
         if (entity == null) return null;
         return BusinessComponentDTO.builder()
-                .id(entity.getId())
+                .id(entity.getId().toString())
                 .name(entity.getName())
                 .description(entity.getDescription())
                 .build();
@@ -699,7 +699,7 @@ public class FlowStructureService {
     private UserDTO toUserDTO(User user) {
         if (user == null) return null;
         return UserDTO.builder()
-                .id(user.getId())
+                .id(user.getId().toString())
                 .username(user.getUsername())
                 .email(user.getEmail())
                 .build();

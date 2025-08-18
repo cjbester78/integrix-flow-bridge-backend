@@ -76,7 +76,7 @@ public class UserService {
     @Cacheable(value = "users", key = "#user?.id", condition = "#user != null")
     public UserDTO mapToDTO(User user) {
         UserDTO dto = new UserDTO();
-        dto.setId(user.getId());
+        dto.setId(user.getId().toString());
         dto.setUsername(user.getUsername());
         dto.setEmail(user.getEmail());
         dto.setFirstName(user.getFirstName());
@@ -102,7 +102,7 @@ public class UserService {
 
     @Cacheable(value = "users", key = "#id")
     public Optional<UserDTO> findById(String id) {
-        return userRepository.findById(id).map(this::mapToDTO);
+        return userRepository.findById(UUID.fromString(id)).map(this::mapToDTO);
     }
 
     public List<UserDTO> findAll(int page, int limit) {
@@ -116,7 +116,7 @@ public class UserService {
 
     @CachePut(value = "users", key = "#id")
     public Optional<UserDTO> update(String id, UpdateUserRequestDTO dto) {
-        return userRepository.findById(id).map(user -> {
+        return userRepository.findById(UUID.fromString(id)).map(user -> {
             user.setEmail(dto.getEmail());
             user.setFirstName(dto.getFirstName());
             user.setLastName(dto.getLastName());
@@ -129,8 +129,8 @@ public class UserService {
 
     @CacheEvict(value = "users", key = "#id")
     public boolean deleteById(String id) {
-        if (userRepository.existsById(id)) {
-            userRepository.deleteById(id);
+        if (userRepository.existsById(UUID.fromString(id))) {
+            userRepository.deleteById(UUID.fromString(id));
             return true;
         }
         return false;

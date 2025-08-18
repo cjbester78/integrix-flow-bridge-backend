@@ -4,6 +4,7 @@ import com.integrixs.backend.domain.valueobjects.FlowName;
 import com.integrixs.backend.events.DomainEventPublisher;
 import com.integrixs.data.model.FlowStatus;
 import com.integrixs.data.model.IntegrationFlow;
+import com.integrixs.data.model.User;
 import com.integrixs.data.repository.IntegrationFlowRepository;
 import com.integrixs.shared.events.flow.FlowCreatedEvent;
 import com.integrixs.shared.events.flow.FlowStatusChangedEvent;
@@ -14,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 /**
  * Domain service for integration flow business logic.
@@ -39,7 +41,7 @@ public class FlowDomainService {
      * @return created flow
      */
     @Transactional
-    public IntegrationFlow createFlow(IntegrationFlow flow, String createdBy) {
+    public IntegrationFlow createFlow(IntegrationFlow flow, User createdBy) {
         // Validate flow name using value object
         FlowName flowName = FlowName.of(flow.getName());
         flow.setName(flowName.getValue());
@@ -59,11 +61,11 @@ public class FlowDomainService {
         
         // Publish domain event
         eventPublisher.publish(new FlowCreatedEvent(
-            savedFlow.getId(),
+            savedFlow.getId().toString(),
             savedFlow.getName(),
             savedFlow.getSourceAdapterId(),
             savedFlow.getTargetAdapterId(),
-            createdBy
+            createdBy.getUsername()
         ));
         
         log.info("Created integration flow: {} with ID: {}", savedFlow.getName(), savedFlow.getId());
@@ -80,7 +82,7 @@ public class FlowDomainService {
      */
     @Transactional
     public IntegrationFlow activateFlow(String flowId, String activatedBy) {
-        IntegrationFlow flow = flowRepository.findById(flowId)
+        IntegrationFlow flow = flowRepository.findById(UUID.fromString(flowId))
             .orElseThrow(() -> new BusinessException("Flow not found: " + flowId));
         
         if (flow.isActive()) {
@@ -126,7 +128,7 @@ public class FlowDomainService {
      */
     @Transactional
     public IntegrationFlow deactivateFlow(String flowId, String deactivatedBy, String reason) {
-        IntegrationFlow flow = flowRepository.findById(flowId)
+        IntegrationFlow flow = flowRepository.findById(UUID.fromString(flowId))
             .orElseThrow(() -> new BusinessException("Flow not found: " + flowId));
         
         if (!flow.isActive()) {

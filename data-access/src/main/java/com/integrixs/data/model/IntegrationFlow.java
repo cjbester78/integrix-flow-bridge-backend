@@ -68,16 +68,16 @@ public class IntegrationFlow {
     /**
      * Source adapter ID (sender - receives data FROM external systems)
      */
-    @Column(name = "source_adapter_id", columnDefinition = "char(36)", nullable = false)
-    @NotBlank(message = "Source adapter is required")
-    private String sourceAdapterId;
+    @Column(name = "source_adapter_id", nullable = false)
+    @NotNull(message = "Source adapter is required")
+    private UUID sourceAdapterId;
 
     /**
      * Target adapter ID (receiver - sends data TO external systems)
      */
-    @Column(name = "target_adapter_id", columnDefinition = "char(36)", nullable = false)
-    @NotBlank(message = "Target adapter is required")
-    private String targetAdapterId;
+    @Column(name = "target_adapter_id", nullable = false)
+    @NotNull(message = "Target adapter is required")
+    private UUID targetAdapterId;
 
     /**
      * Source flow structure ID (for structured data flows)

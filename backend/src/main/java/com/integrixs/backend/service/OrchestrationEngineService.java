@@ -37,7 +37,7 @@ public class OrchestrationEngineService {
      */
     public OrchestrationResult executeOrchestrationFlow(String flowId, Object inputData) {
         try {
-            Optional<IntegrationFlow> flowOpt = integrationFlowRepository.findById(flowId);
+            Optional<IntegrationFlow> flowOpt = integrationFlowRepository.findById(UUID.fromString(flowId));
             if (!flowOpt.isPresent()) {
                 return OrchestrationResult.error("Flow not found: " + flowId);
             }
@@ -86,7 +86,7 @@ public class OrchestrationEngineService {
         ValidationResult result = new ValidationResult();
         
         try {
-            Optional<IntegrationFlow> flowOpt = integrationFlowRepository.findById(flowId);
+            Optional<IntegrationFlow> flowOpt = integrationFlowRepository.findById(UUID.fromString(flowId));
             if (!flowOpt.isPresent()) {
                 result.addError("Flow not found: " + flowId);
                 return result;
@@ -116,7 +116,7 @@ public class OrchestrationEngineService {
     private OrchestrationExecution createExecution(IntegrationFlow flow, Object inputData) {
         OrchestrationExecution execution = new OrchestrationExecution();
         execution.setExecutionId(UUID.randomUUID().toString());
-        execution.setFlowId(flow.getId());
+        execution.setFlowId(flow.getId().toString());
         execution.setFlowName(flow.getName());
         execution.setStatus(ExecutionStatus.RUNNING);
         execution.setStartTime(LocalDateTime.now());
@@ -268,11 +268,11 @@ public class OrchestrationEngineService {
     }
 
     private void validateFlowStructure(IntegrationFlow flow, ValidationResult result) {
-        if (flow.getSourceAdapterId() == null || flow.getSourceAdapterId().trim().isEmpty()) {
+        if (flow.getSourceAdapterId() == null) {
             result.addError("Source adapter is required for orchestration flow");
         }
         
-        if (flow.getTargetAdapterId() == null || flow.getTargetAdapterId().trim().isEmpty()) {
+        if (flow.getTargetAdapterId() == null) {
             result.addError("Target adapter is required for orchestration flow");
         }
         

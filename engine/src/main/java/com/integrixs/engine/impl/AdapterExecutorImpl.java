@@ -18,6 +18,7 @@ import java.io.OutputStream;
 import java.nio.channels.WritableByteChannel;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.UUID;
 
 @Component
 /**
@@ -108,7 +109,7 @@ public class AdapterExecutorImpl implements AdapterExecutor {
     }
 
     private CommunicationAdapter getAdapter(String adapterId) {
-        return adapterRepository.findById(adapterId)
+        return adapterRepository.findById(UUID.fromString(adapterId))
                 .orElseThrow(() -> new RuntimeException("Adapter not found: " + adapterId));
     }
     

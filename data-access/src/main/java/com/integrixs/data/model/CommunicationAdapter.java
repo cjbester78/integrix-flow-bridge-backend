@@ -5,10 +5,10 @@ import com.integrixs.shared.enums.AdapterType;
 import com.integrixs.adapters.core.AdapterMode;
 
 import jakarta.persistence.*;
-import org.hibernate.annotations.GenericGenerator;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Entity
 @Table(name = "communication_adapters")
@@ -19,11 +19,9 @@ import java.time.LocalDateTime;
 public class CommunicationAdapter {
 
     @Id
-    @GeneratedValue(generator = "uuid2")
-    @GenericGenerator(name = "uuid2", strategy = "org.hibernate.id.UUIDGenerator")
-    @Column(columnDefinition = "char(36)")
+    @GeneratedValue(strategy = GenerationType.UUID)
     /** Unique identifier (UUID) for the entity */
-    private String id;
+    private UUID id;
 
     @Column(nullable = false)
     /** Name of the component */
@@ -72,11 +70,11 @@ public class CommunicationAdapter {
 
     // === Getters and Setters ===
 
-    public String getId() {
+    public UUID getId() {
         return id;
     }
 
-    public void setId(String id) {
+    public void setId(UUID id) {
         this.id = id;
     }
 
@@ -136,11 +134,11 @@ public class CommunicationAdapter {
         this.direction = direction;
     }
 
-    public String getBusinessComponentId() {
+    public UUID getBusinessComponentId() {
         return businessComponent != null ? businessComponent.getId() : null;
     }
 
-    public void setBusinessComponentId(String businessComponentId) {
+    public void setBusinessComponentId(UUID businessComponentId) {
         // This setter is kept for backward compatibility
         // In production code, use setBusinessComponent() instead
     }
