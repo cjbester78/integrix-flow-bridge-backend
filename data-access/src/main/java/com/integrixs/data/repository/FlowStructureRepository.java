@@ -10,11 +10,12 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @Repository
-public interface FlowStructureRepository extends JpaRepository<FlowStructure, String> {
+public interface FlowStructureRepository extends JpaRepository<FlowStructure, UUID> {
     
-    Optional<FlowStructure> findByIdAndIsActiveTrue(String id);
+    Optional<FlowStructure> findByIdAndIsActiveTrue(UUID id);
     
     List<FlowStructure> findAllByIsActiveTrue();
     
@@ -24,7 +25,7 @@ public interface FlowStructureRepository extends JpaRepository<FlowStructure, St
            "AND (:direction IS NULL OR fs.direction = :direction) " +
            "AND (:search IS NULL OR LOWER(fs.name) LIKE LOWER(CONCAT('%', :search, '%')) " +
            "OR LOWER(fs.description) LIKE LOWER(CONCAT('%', :search, '%')))")
-    Page<FlowStructure> findAllWithFilters(@Param("businessComponentId") String businessComponentId,
+    Page<FlowStructure> findAllWithFilters(@Param("businessComponentId") UUID businessComponentId,
                                          @Param("processingMode") FlowStructure.ProcessingMode processingMode,
                                          @Param("direction") FlowStructure.Direction direction,
                                          @Param("search") String search,
@@ -32,9 +33,9 @@ public interface FlowStructureRepository extends JpaRepository<FlowStructure, St
     
     @Query("SELECT fs FROM FlowStructure fs WHERE fs.businessComponent.id = :businessComponentId " +
            "AND fs.isActive = true ORDER BY fs.name")
-    List<FlowStructure> findByBusinessComponentId(@Param("businessComponentId") String businessComponentId);
+    List<FlowStructure> findByBusinessComponentId(@Param("businessComponentId") UUID businessComponentId);
     
-    boolean existsByNameAndBusinessComponentIdAndIsActiveTrue(String name, String businessComponentId);
+    boolean existsByNameAndBusinessComponentIdAndIsActiveTrue(String name, UUID businessComponentId);
     
-    boolean existsByNameAndBusinessComponentIdAndIdNotAndIsActiveTrue(String name, String businessComponentId, String id);
+    boolean existsByNameAndBusinessComponentIdAndIdNotAndIsActiveTrue(String name, UUID businessComponentId, UUID id);
 }

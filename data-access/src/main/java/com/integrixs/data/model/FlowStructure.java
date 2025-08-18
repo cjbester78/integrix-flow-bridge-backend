@@ -7,6 +7,9 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
 import java.util.Set;
+import java.util.UUID;
+import java.util.List;
+import java.util.ArrayList;
 
 @Entity
 @Table(name = "flow_structures")
@@ -19,9 +22,9 @@ import java.util.Set;
 public class FlowStructure {
     
     @Id
-    @Column(name = "id", length = 36)
+    @GeneratedValue(strategy = GenerationType.UUID)
     @EqualsAndHashCode.Include
-    private String id;
+    private UUID id;
     
     @Column(name = "name", nullable = false)
     private String name;
@@ -37,21 +40,14 @@ public class FlowStructure {
     @Column(name = "direction", nullable = false)
     private Direction direction;
     
-    @Column(name = "wsdl_content", columnDefinition = "LONGTEXT")
+    @Column(name = "wsdl_content", columnDefinition = "XML")
     private String wsdlContent;
     
     @Column(name = "source_type")
     @Builder.Default
     private String sourceType = "INTERNAL";
     
-    @Column(name = "namespace", columnDefinition = "JSON")
-    private String namespace;
-    
-    @Column(name = "metadata", columnDefinition = "JSON")
-    private String metadata;
-    
-    @Column(name = "tags", columnDefinition = "JSON")
-    private String tags;
+    // Namespace, metadata, and tags removed - use related tables instead
     
     @Column(name = "version")
     @Builder.Default
@@ -67,6 +63,14 @@ public class FlowStructure {
     
     @OneToMany(mappedBy = "flowStructure", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<FlowStructureMessage> flowStructureMessages;
+    
+    // One-to-many relationship with namespaces
+    @OneToMany(mappedBy = "flowStructure", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<FlowStructureNamespace> namespaces = new ArrayList<>();
+    
+    // One-to-many relationship with operations
+    @OneToMany(mappedBy = "flowStructure", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<FlowStructureOperation> operations = new ArrayList<>();
     
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by")
@@ -96,9 +100,6 @@ public class FlowStructure {
     
     @PrePersist
     protected void onCreate() {
-        if (id == null) {
-            id = java.util.UUID.randomUUID().toString();
-        }
         if (version == null) {
             version = 1;
         }

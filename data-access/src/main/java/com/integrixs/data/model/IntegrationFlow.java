@@ -5,12 +5,12 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.GenericGenerator;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * Entity representing an integration flow.
@@ -46,11 +46,9 @@ public class IntegrationFlow {
      * Unique identifier (UUID) for the entity
      */
     @Id
-    @GeneratedValue(generator = "uuid2")
-    @GenericGenerator(name = "uuid2", strategy = "org.hibernate.id.UUIDGenerator")
-    @Column(columnDefinition = "char(36)")
+    @GeneratedValue(strategy = GenerationType.UUID)
     @EqualsAndHashCode.Include
-    private String id;
+    private UUID id;
 
     /**
      * Name of the integration flow
@@ -200,9 +198,10 @@ public class IntegrationFlow {
     /**
      * User who created the flow
      */
-    @Column(name = "created_by", columnDefinition = "char(36)")
-    @NotBlank(message = "Created by is required")
-    private String createdBy;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "created_by")
+    @NotNull(message = "Created by is required")
+    private User createdBy;
 
     /**
      * Timestamp of last execution
