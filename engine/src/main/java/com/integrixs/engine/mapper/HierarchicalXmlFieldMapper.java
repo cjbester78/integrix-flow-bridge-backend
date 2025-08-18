@@ -64,10 +64,11 @@ public class HierarchicalXmlFieldMapper {
             // Check if we have a SOAP/WSDL namespace that indicates we need a SOAP envelope
             if (namespaces != null && !namespaces.isEmpty()) {
                 for (String uri : namespaces.values()) {
-                    if (uri.contains("w3schools.com") || uri.contains("webserviceX") || 
-                        uri.contains("tempuri.org") || uri.contains("/soap/")) {
+                    if (uri.contains("w3schools.com") || uri.contains("www.w3schools.com") || 
+                        uri.contains("webserviceX") || uri.contains("tempuri.org") || 
+                        uri.contains("/soap/")) {
                         needsSoapEnvelope = true;
-                        logger.info("Detected SOAP web service namespace, will create SOAP envelope");
+                        logger.info("Detected SOAP web service namespace '{}', will create SOAP envelope", uri);
                         break;
                     }
                 }
