@@ -80,7 +80,7 @@ public class DataStructureService {
             
             // Get filtered data structures
             Page<DataStructure> structurePage = dataStructureRepository.findWithFilters(
-                type, usageEnum, businessComponentId, search, pageable
+                type, usageEnum, businessComponentId != null ? UUID.fromString(businessComponentId) : null, search, pageable
             );
             
             // Convert to response format
@@ -107,7 +107,7 @@ public class DataStructureService {
      */
     @Transactional(readOnly = true)
     public DataStructure getDataStructure(String id) {
-        return dataStructureRepository.findById(id)
+        return dataStructureRepository.findById(UUID.fromString(id))
             .orElseThrow(() -> new BusinessException("Data structure not found: " + id));
     }
     
@@ -238,13 +238,13 @@ public class DataStructureService {
                         
                         try {
                             DataStructure depStructure = createDataStructure(depStructureData, userId);
-                            savedDependencyIds.add(depStructure.getId());
+                            savedDependencyIds.add(depStructure.getId().toString());
                             log.info("Saved dependency structure: {} with ID: {}", depName, depStructure.getId());
                         } catch (Exception e) {
                             log.warn("Failed to save dependency structure {}: {}", depName, e.getMessage());
                         }
                     } else {
-                        savedDependencyIds.add(existing.get().getId());
+                        savedDependencyIds.add(existing.get().getId().toString());
                         log.info("Dependency structure already exists: {} with ID: {}", depName, existing.get().getId());
                     }
                 }
@@ -260,7 +260,7 @@ public class DataStructureService {
             
             // Build the data structure
             DataStructure dataStructure = DataStructure.builder()
-                .id(UUID.randomUUID().toString())
+                .id(UUID.randomUUID())
                 .name(name)
                 .type(type)
                 .description((String) structureData.get("description"))
@@ -278,7 +278,7 @@ public class DataStructureService {
             // Set business component if provided
             String businessComponentId = (String) structureData.get("businessComponentId");
             if (businessComponentId != null) {
-                BusinessComponent businessComponent = businessComponentRepository.findById(businessComponentId)
+                BusinessComponent businessComponent = businessComponentRepository.findById(UUID.fromString(businessComponentId))
                     .orElseThrow(() -> new BusinessException("Business component not found: " + businessComponentId));
                 dataStructure.setBusinessComponent(businessComponent);
             }
@@ -287,7 +287,7 @@ public class DataStructureService {
             User user = userRepository.findByUsername(userId);
             if (user == null) {
                 // Try finding by ID if username lookup failed
-                user = userRepository.findById(userId).orElse(null);
+                user = userRepository.findById(UUID.fromString(userId)).orElse(null);
             }
             
             if (user != null) {
@@ -323,7 +323,7 @@ public class DataStructureService {
             if (updates.containsKey("name")) {
                 String newName = (String) updates.get("name");
                 // Check if new name already exists (excluding current structure)
-                if (dataStructureRepository.existsByNameAndIdNot(newName, id)) {
+                if (dataStructureRepository.existsByNameAndIdNot(newName, UUID.fromString(id))) {
                     throw new BusinessException("Data structure with name '" + newName + "' already exists");
                 }
                 dataStructure.setName(newName);
@@ -393,11 +393,11 @@ public class DataStructureService {
         environmentPermissionService.checkPermission("dataStructure.delete");
         
         try {
-            if (!dataStructureRepository.existsById(id)) {
+            if (!dataStructureRepository.existsById(UUID.fromString(id))) {
                 throw new BusinessException("Data structure not found: " + id);
             }
             
-            dataStructureRepository.deleteById(id);
+            dataStructureRepository.deleteById(UUID.fromString(id));
             log.info("Deleted data structure: {}", id);
         } catch (BusinessException e) {
             throw e;

@@ -210,7 +210,7 @@ public class FlowExportService {
     private FlowExportDTO.CertificateReferenceDTO createCertificateReference(String certificateId) {
         return certificateRepository.findById(UUID.fromString(certificateId))
                 .map(cert -> FlowExportDTO.CertificateReferenceDTO.builder()
-                        .id(cert.getId())
+                        .id(cert.getId().toString())
                         .name(cert.getName())
                         .type(cert.getType())
                         .format(cert.getFormat())
@@ -289,7 +289,7 @@ public class FlowExportService {
                 .configuration(parseConfiguration(adapter.getConfiguration()))
                 // isActive not in CommunicationAdapterDTO
                 .description(adapter.getDescription())
-                .businessComponentId(adapter.getBusinessComponentId())
+                .businessComponentId(adapter.getBusinessComponentId() != null ? adapter.getBusinessComponentId().toString() : null)
                 .build();
     }
 
