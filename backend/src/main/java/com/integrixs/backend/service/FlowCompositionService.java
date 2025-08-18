@@ -40,6 +40,9 @@ public class FlowCompositionService {
     @Autowired
     private FieldMappingService fieldMappingService;
     
+    @Autowired
+    private UserRepository userRepository;
+    
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     /**
@@ -74,8 +77,12 @@ public class FlowCompositionService {
         flow.setSourceStructureId(request.getSourceStructureId());
         flow.setTargetStructureId(request.getTargetStructureId());
         flow.setStatus(FlowStatus.DEVELOPED_INACTIVE);
-        // TODO: Fix this - need to load User from createdBy string
-        // flow.setCreatedBy(request.getCreatedBy());
+        // Load user from createdBy string
+        if (request.getCreatedBy() != null) {
+            User createdByUser = userRepository.findById(UUID.fromString(request.getCreatedBy()))
+                .orElseThrow(() -> new RuntimeException("User not found: " + request.getCreatedBy()));
+            flow.setCreatedBy(createdByUser);
+        }
         
         // Use mapping mode from request if provided, otherwise determine based on field mappings
         if (request.getMappingMode() != null) {
@@ -199,8 +206,12 @@ public class FlowCompositionService {
         flow.setSourceAdapterId(UUID.fromString(request.getSourceAdapterId()));
         flow.setTargetAdapterId(UUID.fromString(request.getTargetAdapterId()));
         flow.setStatus(FlowStatus.DEVELOPED_INACTIVE);
-        // TODO: Fix this - need to load User from createdBy string
-        // flow.setCreatedBy(request.getCreatedBy());
+        // Load user from createdBy string
+        if (request.getCreatedBy() != null) {
+            User createdByUser = userRepository.findById(UUID.fromString(request.getCreatedBy()))
+                .orElseThrow(() -> new RuntimeException("User not found: " + request.getCreatedBy()));
+            flow.setCreatedBy(createdByUser);
+        }
         
         // Save orchestration configuration as JSON
         try {

@@ -231,8 +231,9 @@ public class FlowStructureService {
         FlowStructure.Direction dir = direction != null ? 
                 FlowStructure.Direction.valueOf(direction.name()) : null;
                 
+        UUID businessComponentUuid = businessComponentId != null ? UUID.fromString(businessComponentId) : null;
         Page<FlowStructure> page = flowStructureRepository.findAllWithFilters(
-                businessComponentId, mode, dir, search, pageable);
+                businessComponentUuid, mode, dir, search, pageable);
         return page.map(this::toDTO);
     }
     
