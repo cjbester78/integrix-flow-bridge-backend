@@ -359,20 +359,40 @@ public class FlowStructureService {
                         DocumentBuilder builder = factory.newDocumentBuilder();
                         Document xsdDoc = builder.parse(new ByteArrayInputStream(xsdContent.getBytes(StandardCharsets.UTF_8)));
                         
-                        // Get all element definitions from the XSD
-                        NodeList elements = xsdDoc.getElementsByTagNameNS("http://www.w3.org/2001/XMLSchema", "element");
+                        // Get the schema element
+                        Element schemaElement = xsdDoc.getDocumentElement();
                         
-                        for (int i = 0; i < elements.getLength(); i++) {
-                            Element elem = (Element) elements.item(i);
-                            String elementName = elem.getAttribute("name");
+                        // Get direct child elements of the schema (top-level elements only)
+                        NodeList schemaChildren = schemaElement.getChildNodes();
+                        
+                        wsdl.append("      <!-- ").append(msg.getMessageType()).append(" message from ").append(msgStructure.getName()).append(" -->\n");
+                        
+                        for (int i = 0; i < schemaChildren.getLength(); i++) {
+                            Node child = schemaChildren.item(i);
                             
-                            // Only include top-level elements (those without parent elements)
-                            if (elementName != null && !elementName.isEmpty() && elem.getParentNode().getNodeName().endsWith("schema")) {
-                                wsdl.append("      <!-- ").append(msg.getMessageType()).append(" message from ").append(msgStructure.getName()).append(" -->\n");
+                            // Only process element nodes that are actual element definitions
+                            if (child.getNodeType() == Node.ELEMENT_NODE && 
+                                child.getLocalName() != null && 
+                                (child.getLocalName().equals("element") || 
+                                 child.getLocalName().equals("complexType") || 
+                                 child.getLocalName().equals("simpleType"))) {
                                 
-                                // Serialize the element with all its content
-                                wsdl.append(serializeElement(elem, "      "));
-                                wsdl.append("\n");
+                                Element elem = (Element) child;
+                                
+                                // For elements, check if it's a message element (not a type definition element)
+                                if (elem.getLocalName().equals("element")) {
+                                    String elementName = elem.getAttribute("name");
+                                    // Skip schema definition elements
+                                    if (elementName != null && !elementName.isEmpty() && 
+                                        !elementName.equals("schema") && !elementName.equals("element")) {
+                                        wsdl.append(serializeElement(elem, "      "));
+                                        wsdl.append("\n");
+                                    }
+                                } else {
+                                    // Include type definitions as-is
+                                    wsdl.append(serializeElement(elem, "      "));
+                                    wsdl.append("\n");
+                                }
                             }
                         }
                     } catch (Exception e) {

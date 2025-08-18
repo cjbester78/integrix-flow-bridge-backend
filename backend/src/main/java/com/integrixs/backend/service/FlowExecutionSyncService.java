@@ -195,35 +195,26 @@ public class FlowExecutionSyncService {
                                     logger.info("Target flow structure found: {}", targetFlowStructure.getName());
                                     if (targetFlowStructure.getWsdlContent() != null) {
                                         logger.info("Target flow structure has WSDL content");
-                                        Map<String, String> targetNamespaces = WsdlNamespaceExtractor.extractNamespaces(targetFlowStructure.getWsdlContent());
                                         
-                                        // For target namespaces, we want to ensure they take precedence
-                                        // Extract the target namespace specifically
-                                        String targetNamespace = targetNamespaces.get("tns");
-                                        if (targetNamespace != null) {
-                                            // Find the appropriate prefix or use a default
-                                            String targetPrefix = null;
-                                            for (Map.Entry<String, String> entry : targetNamespaces.entrySet()) {
-                                                if (entry.getValue().equals(targetNamespace) && !entry.getKey().equals("tns")) {
-                                                    targetPrefix = entry.getKey();
-                                                    break;
-                                                }
-                                            }
-                                            if (targetPrefix == null) {
-                                                // Check for common prefixes like "tem" for temperature
-                                                if (targetNamespace.contains("w3schools")) {
-                                                    targetPrefix = "tem";
-                                                } else if (targetNamespace.contains("acme/weather")) {
-                                                    targetPrefix = "weat";
-                                                } else {
-                                                    targetPrefix = "ns";
-                                                }
-                                            }
-                                            namespaces.put(targetPrefix, targetNamespace);
-                                            logger.info("Using target namespace: {} = {}", targetPrefix, targetNamespace);
+                                        // Extract the service namespace specifically
+                                        Map<String, String> serviceNs = WsdlNamespaceExtractor.extractServiceNamespace(targetFlowStructure.getWsdlContent());
+                                        if (serviceNs.containsKey("prefix") && serviceNs.containsKey("uri")) {
+                                            String prefix = serviceNs.get("prefix");
+                                            String uri = serviceNs.get("uri");
+                                            namespaces.put(prefix, uri);
+                                            logger.info("Using target service namespace: {} = {}", prefix, uri);
                                         }
                                         
-                                        namespaces.putAll(targetNamespaces);
+                                        // Also extract all namespaces for completeness
+                                        Map<String, String> targetNamespaces = WsdlNamespaceExtractor.extractNamespaces(targetFlowStructure.getWsdlContent());
+                                        
+                                        // Add other namespaces but don't override the service namespace
+                                        for (Map.Entry<String, String> entry : targetNamespaces.entrySet()) {
+                                            if (!namespaces.containsKey(entry.getKey())) {
+                                                namespaces.put(entry.getKey(), entry.getValue());
+                                            }
+                                        }
+                                        
                                         // TODO: Extract sample XML from WSDL
                                         targetTemplate = null; // Let the mapper create the structure for now
                                     }

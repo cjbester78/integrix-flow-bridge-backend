@@ -82,6 +82,61 @@ public class WsdlNamespaceExtractor {
     }
     
     /**
+     * Extract the primary service namespace from WSDL (targetNamespace)
+     * This is the namespace that should be used for service operations
+     * @param wsdlContent The WSDL XML content
+     * @return The service namespace info (prefix and URI)
+     */
+    public static Map<String, String> extractServiceNamespace(String wsdlContent) {
+        Map<String, String> serviceNamespace = new HashMap<>();
+        
+        if (wsdlContent == null || wsdlContent.trim().isEmpty()) {
+            logger.debug("No WSDL content provided");
+            return serviceNamespace;
+        }
+        
+        try {
+            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+            factory.setNamespaceAware(true);
+            DocumentBuilder builder = factory.newDocumentBuilder();
+            Document doc = builder.parse(new InputSource(new StringReader(wsdlContent)));
+            
+            Element root = doc.getDocumentElement();
+            
+            // Get the targetNamespace - this is the service namespace
+            String targetNamespace = root.getAttribute("targetNamespace");
+            if (targetNamespace != null && !targetNamespace.isEmpty()) {
+                // Find the prefix for this namespace
+                NamedNodeMap attributes = root.getAttributes();
+                for (int i = 0; i < attributes.getLength(); i++) {
+                    Node attr = attributes.item(i);
+                    String name = attr.getNodeName();
+                    String value = attr.getNodeValue();
+                    
+                    if (name.startsWith("xmlns:") && value.equals(targetNamespace)) {
+                        String prefix = name.substring(6);
+                        serviceNamespace.put("prefix", prefix);
+                        serviceNamespace.put("uri", targetNamespace);
+                        logger.debug("Found service namespace: {} = {}", prefix, targetNamespace);
+                        break;
+                    }
+                }
+                
+                // If no prefix found, it might be using tns by convention
+                if (!serviceNamespace.containsKey("prefix")) {
+                    serviceNamespace.put("prefix", "tns");
+                    serviceNamespace.put("uri", targetNamespace);
+                }
+            }
+            
+        } catch (Exception e) {
+            logger.error("Error extracting service namespace from WSDL: {}", e.getMessage(), e);
+        }
+        
+        return serviceNamespace;
+    }
+    
+    /**
      * Extract namespace mapping for a specific operation
      * @param wsdlContent The WSDL XML content
      * @param operationName The operation name (e.g., "CelsiusToFahrenheit")

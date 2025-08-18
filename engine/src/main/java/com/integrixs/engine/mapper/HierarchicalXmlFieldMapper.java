@@ -56,10 +56,20 @@ public class HierarchicalXmlFieldMapper {
         // Create or parse target document
         Document targetDoc;
         
-        // Special handling for SOAP flows - create SOAP envelope structure
-        if (sourceXml.contains("CelsiusToFahrenheit") || 
-            (targetXmlTemplate != null && targetXmlTemplate.contains("CelsiusToFahrenheit"))) {
-            logger.info("Detected temperature conversion flow, creating SOAP envelope structure");
+        // Check if we need to create a SOAP envelope structure
+        boolean needsSoapEnvelope = false;
+        
+        // Check if source is SOAP and we don't have a target template
+        if (targetXmlTemplate == null || targetXmlTemplate.isEmpty()) {
+            if (sourceXml.contains("http://schemas.xmlsoap.org/soap/envelope/") || 
+                sourceXml.contains("soap:Envelope") || 
+                sourceXml.contains("soapenv:Envelope")) {
+                needsSoapEnvelope = true;
+            }
+        }
+        
+        if (needsSoapEnvelope) {
+            logger.info("Creating SOAP envelope structure for target");
             targetDoc = builder.newDocument();
             
             // Get the target namespace from passed namespaces
@@ -68,37 +78,49 @@ public class HierarchicalXmlFieldMapper {
             
             // Find the target namespace and prefix from passed namespaces
             if (namespaces != null) {
-                for (Map.Entry<String, String> entry : namespaces.entrySet()) {
-                    String ns = entry.getValue();
-                    // Look for the non-SOAP namespace that will be our target
-                    if (!ns.contains("schemas.xmlsoap.org") && !entry.getKey().equals("tns")) {
-                        targetNamespace = ns;
-                        targetPrefix = entry.getKey();
-                        logger.info("Found target namespace from flow structure: {} = {}", targetPrefix, targetNamespace);
-                        break;
+                // First, check if we have a "tns" prefix - this is typically the service namespace
+                if (namespaces.containsKey("tns")) {
+                    targetPrefix = "tns";
+                    targetNamespace = namespaces.get("tns");
+                    logger.info("Using service namespace (tns): {} = {}", targetPrefix, targetNamespace);
+                } else {
+                    // Otherwise look for a non-standard namespace
+                    for (Map.Entry<String, String> entry : namespaces.entrySet()) {
+                        String ns = entry.getValue();
+                        String prefix = entry.getKey();
+                        // Look for the non-SOAP namespace that will be our target
+                        // Skip standard namespaces like xsd, wsdl, etc.
+                        if (!ns.contains("schemas.xmlsoap.org") && 
+                            !ns.contains("www.w3.org/2001/XMLSchema") &&
+                            !ns.contains("schemas.xmlsoap.org/wsdl") &&
+                            !prefix.equals("xsd") &&
+                            !prefix.equals("wsdl") &&
+                            !prefix.equals("s") &&
+                            !prefix.isEmpty()) {
+                            targetNamespace = ns;
+                            targetPrefix = prefix;
+                            logger.info("Found target namespace: {} = {}", targetPrefix, targetNamespace);
+                            break;
+                        }
                     }
                 }
             }
             
-            // Fallback to W3Schools if no namespace provided
-            if (targetNamespace == null) {
-                targetNamespace = "https://www.w3schools.com/xml/";
-                targetPrefix = "tem";
-                logger.warn("No target namespace provided, using default: {} = {}", targetPrefix, targetNamespace);
-            }
             
+            // Create basic SOAP envelope
             Element envelope = targetDoc.createElementNS("http://schemas.xmlsoap.org/soap/envelope/", "soapenv:Envelope");
             envelope.setAttribute("xmlns:soapenv", "http://schemas.xmlsoap.org/soap/envelope/");
-            envelope.setAttribute("xmlns:" + targetPrefix, targetNamespace);
+            
+            // Add target namespace if found
+            if (targetNamespace != null && targetPrefix != null) {
+                envelope.setAttribute("xmlns:" + targetPrefix, targetNamespace);
+            }
             
             Element body = targetDoc.createElementNS("http://schemas.xmlsoap.org/soap/envelope/", "soapenv:Body");
-            Element celsiusToFahrenheit = targetDoc.createElementNS(targetNamespace, targetPrefix + ":CelsiusToFahrenheit");
-            Element celsius = targetDoc.createElementNS(targetNamespace, targetPrefix + ":Celsius");
-            
-            celsiusToFahrenheit.appendChild(celsius);
-            body.appendChild(celsiusToFahrenheit);
             envelope.appendChild(body);
             targetDoc.appendChild(envelope);
+            
+            logger.info("Created SOAP envelope structure");
         } else if (targetXmlTemplate != null && !targetXmlTemplate.isEmpty()) {
             logger.info("Using provided target template");
             targetDoc = builder.parse(new InputSource(new StringReader(targetXmlTemplate)));
@@ -140,7 +162,7 @@ public class HierarchicalXmlFieldMapper {
                 if (mapping.isArrayMapping()) {
                     processArrayMapping(sourceDoc, targetDoc, mapping, xpath);
                 } else {
-                    processSimpleMapping(sourceDoc, targetDoc, mapping, xpath);
+                    processSimpleMapping(sourceDoc, targetDoc, mapping, xpath, effectiveNamespaces);
                 }
             } catch (Exception e) {
                 logger.error("Error processing mapping {}: {}", i+1, e.getMessage(), e);
@@ -149,19 +171,22 @@ public class HierarchicalXmlFieldMapper {
         
         // Convert result to string
         String result = documentToString(targetDoc);
-        logger.info("Field mapping completed. Result: {}", result);
+        logger.info("Field mapping completed");
+        logger.info("========== TRANSFORMED XML OUTPUT ==========");
+        logger.info(result);
+        logger.info("============================================");
         return result;
     }
     
     private void processSimpleMapping(Document sourceDoc, Document targetDoc, 
-                                     FieldMapping mapping, XPath xpath) throws Exception {
+                                     FieldMapping mapping, XPath xpath, Map<String, String> namespaces) throws Exception {
         
         String sourceXPath = mapping.getSourceXPath();
         String targetXPath = mapping.getTargetXPath();
         
         if (sourceXPath == null || targetXPath == null) {
             // Fall back to legacy field mapping
-            processLegacyMapping(sourceDoc, targetDoc, mapping, xpath);
+            processLegacyMapping(sourceDoc, targetDoc, mapping, xpath, namespaces);
             return;
         }
         
@@ -229,26 +254,38 @@ public class HierarchicalXmlFieldMapper {
     }
     
     private void processLegacyMapping(Document sourceDoc, Document targetDoc,
-                                     FieldMapping mapping, XPath xpath) throws Exception {
+                                     FieldMapping mapping, XPath xpath, Map<String, String> namespaces) throws Exception {
         
         logger.debug("Processing legacy mapping: sourceFields={}, targetField={}", 
             mapping.getSourceFields(), mapping.getTargetField());
         
         // Handle legacy field-based mapping
-        String sourceFieldsStr = mapping.getSourceFields();
+        List<String> sourceFieldsList = mapping.getSourceFieldsList();
         String targetField = mapping.getTargetField();
         
-        if (sourceFieldsStr == null || sourceFieldsStr.isEmpty() || targetField == null) {
+        if (sourceFieldsList == null || sourceFieldsList.isEmpty() || targetField == null) {
             logger.debug("Skipping mapping due to null/empty fields");
             return;
         }
         
-        // Check if sourceFields is a literal value or a field reference
-        String value;
-        if (sourceFieldsStr != null && (sourceFieldsStr.startsWith("//") || sourceFieldsStr.contains("/"))) {
+        // Get the first source field from the list
+        String sourceField = sourceFieldsList.get(0);
+        
+        // Check if sourceField is a literal value or a field reference
+        String value = null;
+        
+        // Skip if source field is the root element name
+        if (sourceDoc.getDocumentElement() != null && 
+            sourceField.equals(sourceDoc.getDocumentElement().getNodeName())) {
+            logger.debug("Skipping extraction from root element: {}", sourceField);
+            return;
+        }
+        
+        // Try to extract value from the source field
+        if (sourceField != null && (sourceField.startsWith("//") || sourceField.contains("/"))) {
             // It's an XPath expression
-            logger.debug("Source is XPath expression: {}", sourceFieldsStr);
-            XPathExpression sourceExpr = xpath.compile(sourceFieldsStr);
+            logger.debug("Source is XPath expression: {}", sourceField);
+            XPathExpression sourceExpr = xpath.compile(sourceField);
             NodeList sourceNodes = (NodeList) sourceExpr.evaluate(sourceDoc, XPathConstants.NODESET);
             
             if (sourceNodes.getLength() > 0) {
@@ -256,13 +293,28 @@ public class HierarchicalXmlFieldMapper {
                 logger.debug("Found value from XPath: {}", value);
             } else {
                 // No nodes found, skip this mapping
-                logger.debug("No nodes found for XPath: {}", sourceFieldsStr);
+                logger.debug("No nodes found for XPath: {}", sourceField);
                 return;
             }
         } else {
-            // It's a literal value (like "12")
-            value = sourceFieldsStr;
-            logger.debug("Using literal value: {}", value);
+            // Try as element name
+            logger.debug("Trying to extract value from element: {}", sourceField);
+            XPathExpression sourceExpr = xpath.compile("//" + sourceField);
+            NodeList sourceNodes = (NodeList) sourceExpr.evaluate(sourceDoc, XPathConstants.NODESET);
+            
+            if (sourceNodes.getLength() > 0) {
+                value = getNodeValue(sourceNodes.item(0));
+                logger.debug("Found value from element '{}': '{}'", sourceField, value);
+            } else {
+                // If no element found and it looks like a simple value, use it as literal
+                if (!sourceField.contains("<") && !sourceField.contains("{")) {
+                    value = sourceField;
+                    logger.debug("Using as literal value: {}", value);
+                } else {
+                    logger.debug("No nodes found for element: {}", sourceField);
+                    return;
+                }
+            }
         }
         
         // Handle targetField - ensure it's a proper XPath
@@ -274,12 +326,48 @@ public class HierarchicalXmlFieldMapper {
             if (!targetXPath.startsWith("/")) {
                 targetXPath = "//" + targetField;
             }
-        } else if (targetField.equals("Celsius")) {
-            // Special handling for Celsius field - use proper namespace
-            targetXPath = "//tem:Celsius";
         } else {
-            // No namespace, add // if needed
-            if (!targetXPath.startsWith("/")) {
+            // No namespace prefix in target field - need to find the appropriate namespace
+            // Look through the namespaces to find a non-SOAP namespace for the target
+            String targetPrefix = null;
+            
+            // Find the appropriate namespace prefix for the target field
+            logger.info("Looking for namespace prefix for field '{}'. Available namespaces:", targetField);
+            for (Map.Entry<String, String> ns : namespaces.entrySet()) {
+                logger.info("  {} = {}", ns.getKey(), ns.getValue());
+            }
+            
+            // First check if we have a "tns" prefix - this is typically the service namespace
+            if (namespaces.containsKey("tns")) {
+                targetPrefix = "tns";
+                logger.info("Using service namespace prefix 'tns' for target field '{}'", targetField);
+            } else {
+                // Otherwise look for a non-standard namespace
+                for (Map.Entry<String, String> ns : namespaces.entrySet()) {
+                    String uri = ns.getValue();
+                    String prefix = ns.getKey();
+                    
+                    // Skip SOAP and standard namespaces
+                    if (!uri.contains("schemas.xmlsoap.org") && 
+                        !uri.contains("www.w3.org/2001/XMLSchema") &&
+                        !uri.contains("schemas.xmlsoap.org/wsdl") &&
+                        !prefix.equals("xsd") &&
+                        !prefix.equals("wsdl") &&
+                        !prefix.equals("s") &&
+                        !prefix.isEmpty()) {
+                        targetPrefix = prefix;
+                        logger.info("Selected namespace prefix '{}' (URI: {}) for target field '{}'", prefix, uri, targetField);
+                        break;
+                    }
+                }
+            }
+            
+            
+            // Build the XPath with or without namespace prefix
+            if (targetPrefix != null) {
+                targetXPath = "//" + targetPrefix + ":" + targetField;
+            } else {
+                // No suitable namespace found, try without prefix
                 targetXPath = "//" + targetField;
             }
         }
