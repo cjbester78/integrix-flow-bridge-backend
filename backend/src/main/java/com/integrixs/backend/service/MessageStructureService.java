@@ -133,7 +133,7 @@ public class MessageStructureService {
                 .orElseThrow(() -> new RuntimeException("Message structure not found"));
         
         // First check if there are any flow structures using this message structure
-        List<FlowStructure> flowStructures = flowStructureMessageRepository.findFlowStructuresByMessageStructureId(UUID.fromString(id));
+        List<FlowStructure> flowStructures = flowStructureMessageRepository.findFlowStructuresByMessageStructureId(id);
         
         // Filter out inactive flow structures (soft-deleted ones)
         List<FlowStructure> activeFlowStructures = flowStructures.stream()
@@ -190,7 +190,7 @@ public class MessageStructureService {
     private BusinessComponentDTO toBusinessComponentDTO(com.integrixs.data.model.BusinessComponent entity) {
         if (entity == null) return null;
         return BusinessComponentDTO.builder()
-                .id(entity.getId())
+                .id(entity.getId().toString())
                 .name(entity.getName())
                 .description(entity.getDescription())
                 .build();
@@ -429,7 +429,7 @@ public class MessageStructureService {
         List<XsdImportResult> results = new ArrayList<>();
         
         // Get business component
-        BusinessComponent businessComponent = businessComponentRepository.findById(businessComponentId)
+        BusinessComponent businessComponent = businessComponentRepository.findById(UUID.fromString(businessComponentId))
                 .orElseThrow(() -> new RuntimeException("Business component not found: " + businessComponentId));
         
         // First validate all files
@@ -527,7 +527,7 @@ public class MessageStructureService {
                                     .ifPresent(depStructure -> {
                                         Map<String, String> depInfo = new HashMap<>();
                                         depInfo.put("name", depFileName);
-                                        depInfo.put("structureId", depStructure.getId());
+                                        depInfo.put("structureId", depStructure.getId().toString());
                                         resolvedDeps.add(depInfo);
                                     });
                             }

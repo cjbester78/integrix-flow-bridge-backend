@@ -199,7 +199,7 @@ public class FlowImportService {
                     CommunicationAdapter targetAdapter = importAdapter(
                             export.getTargetAdapter(), businessComponentId, options, idMappings, result);
                     if (targetAdapter != null) {
-                        targetAdapterId = targetAdapter.getId();
+                        targetAdapterId = targetAdapter.getId().toString();
                         result.getSummary().setAdaptersImported(result.getSummary().getAdaptersImported() + 1);
                     }
                 }
@@ -215,7 +215,7 @@ public class FlowImportService {
                     options, idMappings, result);
             
             if (importedFlow != null) {
-                result.setImportedFlowId(importedFlow.getId());
+                result.setImportedFlowId(importedFlow.getId().toString());
                 result.setImportedFlowName(importedFlow.getName());
                 result.getSummary().setFlowImported(true);
                 
@@ -283,7 +283,7 @@ public class FlowImportService {
             component.setDepartment(null);
             
             component = businessComponentRepository.save(component);
-            idMappings.put(dto.getId(), component.getId());
+            idMappings.put(dto.getId(), component.getId().toString());
             
             return component;
             
@@ -319,10 +319,13 @@ public class FlowImportService {
             adapter.setConfiguration(objectMapper.writeValueAsString(dto.getConfiguration()));
             adapter.setActive(dto.isActive());
             adapter.setDescription(dto.getDescription());
-            adapter.setBusinessComponentId(businessComponentId);
+            if (businessComponentId != null) {
+                adapter.setBusinessComponent(businessComponentRepository.findById(UUID.fromString(businessComponentId))
+                    .orElseThrow(() -> new RuntimeException("Business component not found: " + businessComponentId)));
+            }
             
             adapter = communicationAdapterRepository.save(adapter);
-            idMappings.put(dto.getId(), adapter.getId());
+            idMappings.put(dto.getId(), adapter.getId().toString());
             
             return adapter;
             
@@ -356,8 +359,8 @@ public class FlowImportService {
             IntegrationFlow flow = IntegrationFlow.builder()
                     .name(dto.getName())
                     .description(dto.getDescription())
-                    .sourceAdapterId(sourceAdapterId)
-                    .targetAdapterId(targetAdapterId)
+                    .sourceAdapterId(sourceAdapterId != null ? UUID.fromString(sourceAdapterId) : null)
+                    .targetAdapterId(targetAdapterId != null ? UUID.fromString(targetAdapterId) : null)
                     .sourceStructureId(dto.getSourceStructureId())
                     .targetStructureId(dto.getTargetStructureId())
                     .status(FlowStatus.DEVELOPED_INACTIVE) // Always import as undeployed
@@ -368,12 +371,12 @@ public class FlowImportService {
                     .build();
             
             if (businessComponentId != null) {
-                BusinessComponent bc = businessComponentRepository.findById(businessComponentId).orElse(null);
+                BusinessComponent bc = businessComponentRepository.findById(UUID.fromString(businessComponentId)).orElse(null);
                 flow.setBusinessComponent(bc);
             }
             
             flow = integrationFlowRepository.save(flow);
-            idMappings.put(dto.getId(), flow.getId());
+            idMappings.put(dto.getId(), flow.getId().toString());
             
             return flow;
             
@@ -410,7 +413,7 @@ public class FlowImportService {
                 
                 transformation = flowTransformationRepository.save(transformation);
                 transformationMap.put(transDto.getId(), transformation);
-                idMappings.put(transDto.getId(), transformation.getId());
+                idMappings.put(transDto.getId(), transformation.getId().toString());
                 result.getSummary().setTransformationsImported(
                         result.getSummary().getTransformationsImported() + 1);
                 
@@ -554,7 +557,7 @@ public class FlowImportService {
                     .userId(SecurityUtils.getCurrentUserId())
                     .username(SecurityUtils.getCurrentUsernameStatic())
                     .domainType("INTEGRATION_FLOW")
-                    .domainReferenceId(flow != null ? flow.getId() : null)
+                    .domainReferenceId(flow != null ? flow.getId().toString() : null)
                     .build();
             
             systemLogRepository.save(log);
