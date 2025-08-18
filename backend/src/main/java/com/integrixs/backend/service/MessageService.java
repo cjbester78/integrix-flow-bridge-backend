@@ -488,7 +488,7 @@ public class MessageService {
         }
         
         return MessageDTO.builder()
-                .id(log.getId())
+                .id(log.getId().toString())
                 .timestamp(log.getTimestamp())
                 .source(log.getSource() != null ? log.getSource() : "System")
                 .target(log.getSourceName() != null ? log.getSourceName() : "Integration Flow")
@@ -556,7 +556,7 @@ public class MessageService {
                 }
                 
                 return MessageDTO.builder()
-                        .id(log.getId())
+                        .id(log.getId().toString())
                         .timestamp(log.getTimestamp())
                         .source(log.getSource() != null ? log.getSource() : "System")
                         .target(log.getSourceName() != null ? log.getSourceName() : "Integration Flow")
@@ -576,7 +576,7 @@ public class MessageService {
         }
         
         return MessageDTO.builder()
-                .id(log.getId())
+                .id(log.getId().toString())
                 .timestamp(log.getTimestamp())
                 .source(log.getSource() != null ? log.getSource() : "System")
                 .target(log.getSourceName() != null ? log.getSourceName() : "Integration Flow")
@@ -594,7 +594,7 @@ public class MessageService {
         String status = mapLogLevelToStatus(log.getLevel().name());
         
         return RecentMessageDTO.builder()
-                .id(log.getId())
+                .id(log.getId().toString())
                 .source(log.getSource() != null ? log.getSource() : "System")
                 .target(log.getSourceName() != null ? log.getSourceName() : "Integration Flow")
                 .status(status)
@@ -639,10 +639,10 @@ public class MessageService {
             log.setLevel(LogLevel.INFO);
             log.setMessage("Flow execution: " + flow.getName());
             log.setDomainType("IntegrationFlow");
-            log.setDomainReferenceId(flow.getId());
-            log.setComponentId(flow.getBusinessComponent() != null ? flow.getBusinessComponent().getId() : null); // Set business component ID from flow
+            log.setDomainReferenceId(flow.getId().toString());
+            log.setComponentId(flow.getBusinessComponent() != null ? flow.getBusinessComponent().getId().toString() : null); // Set business component ID from flow
             log.setSource(protocol);
-            log.setSourceId(flow.getId());
+            log.setSourceId(flow.getId().toString());
             log.setSourceName(flow.getName());
             log.setCorrelationId(correlationId);
             
@@ -806,10 +806,10 @@ public class MessageService {
             log.setLevel(level);
             log.setMessage(message);
             log.setDomainType("CommunicationAdapter");
-            log.setDomainReferenceId(adapter.getId());
-            log.setComponentId(adapter.getBusinessComponentId());
+            log.setDomainReferenceId(adapter.getId().toString());
+            log.setComponentId(adapter.getBusinessComponent() != null ? adapter.getBusinessComponent().getId().toString() : null);
             log.setSource("ADAPTER");
-            log.setSourceId(adapter.getId());
+            log.setSourceId(adapter.getId().toString());
             log.setSourceName(adapter.getName());
             log.setCorrelationId(correlationId); // Link to flow execution
             

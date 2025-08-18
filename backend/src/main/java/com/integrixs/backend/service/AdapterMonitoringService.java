@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
+import java.util.UUID;
 
 @Slf4j
 @Service
@@ -48,7 +49,7 @@ public class AdapterMonitoringService {
     
     @Transactional(readOnly = true)
     public AdapterStatusDTO getAdapterStatus(String adapterId) {
-        CommunicationAdapter adapter = adapterRepository.findById(adapterId)
+        CommunicationAdapter adapter = adapterRepository.findById(UUID.fromString(adapterId))
                 .orElseThrow(() -> new BusinessException("Adapter not found: " + adapterId));
         
         return getOrCreateAdapterStatus(adapter);
@@ -56,7 +57,7 @@ public class AdapterMonitoringService {
     
     @Transactional
     public AdapterStatusDTO startAdapter(String adapterId) {
-        CommunicationAdapter adapter = adapterRepository.findById(adapterId)
+        CommunicationAdapter adapter = adapterRepository.findById(UUID.fromString(adapterId))
                 .orElseThrow(() -> new BusinessException("Adapter not found: " + adapterId));
         
         AdapterStatusDTO status = getOrCreateAdapterStatus(adapter);
@@ -72,7 +73,7 @@ public class AdapterMonitoringService {
     
     @Transactional
     public AdapterStatusDTO stopAdapter(String adapterId) {
-        CommunicationAdapter adapter = adapterRepository.findById(adapterId)
+        CommunicationAdapter adapter = adapterRepository.findById(UUID.fromString(adapterId))
                 .orElseThrow(() -> new BusinessException("Adapter not found: " + adapterId));
         
         AdapterStatusDTO status = getOrCreateAdapterStatus(adapter);
@@ -105,7 +106,7 @@ public class AdapterMonitoringService {
     private AdapterStatusDTO getOrCreateAdapterStatus(CommunicationAdapter adapter) {
         // Always recalculate statistics to get fresh data
         AdapterStatusDTO status = new AdapterStatusDTO();
-        status.setId(adapter.getId());
+        status.setId(adapter.getId().toString());
         status.setName(adapter.getName());
         status.setType(adapter.getType() != null ? adapter.getType().toString() : "UNKNOWN");
         status.setMode(adapter.getMode() != null ? adapter.getMode().toString() : "UNKNOWN");
@@ -120,7 +121,7 @@ public class AdapterMonitoringService {
             status.setLoad(0);
         }
         
-        status.setBusinessComponentId(adapter.getBusinessComponentId());
+        status.setBusinessComponentId(adapter.getBusinessComponent() != null ? adapter.getBusinessComponent().getId().toString() : null);
         // Get business component name from the relation if available
         if (adapter.getBusinessComponent() != null) {
             status.setBusinessComponentName(adapter.getBusinessComponent().getName());
@@ -205,7 +206,7 @@ public class AdapterMonitoringService {
         status.setStatus(adapterStatus);
         
         // Cache the calculated status
-        adapterStatuses.put(adapter.getId(), status);
+        adapterStatuses.put(adapter.getId().toString(), status);
         
         return status;
     }
