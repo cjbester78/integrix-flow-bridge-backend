@@ -70,8 +70,13 @@ public class FlowCompositionService {
         IntegrationFlow flow = new IntegrationFlow();
         flow.setName(request.getFlowName());
         flow.setDescription(request.getDescription());
-        flow.setSourceAdapterId(UUID.fromString(request.getSourceAdapterId()));
-        flow.setTargetAdapterId(UUID.fromString(request.getTargetAdapterId()));
+        // Convert String adapter IDs to UUID
+        if (request.getSourceAdapterId() != null) {
+            flow.setSourceAdapterId(UUID.fromString(request.getSourceAdapterId()));
+        }
+        if (request.getTargetAdapterId() != null) {
+            flow.setTargetAdapterId(UUID.fromString(request.getTargetAdapterId()));
+        }
         flow.setSourceFlowStructureId(request.getSourceFlowStructureId());
         flow.setTargetFlowStructureId(request.getTargetFlowStructureId());
         flow.setSourceStructureId(request.getSourceStructureId());
@@ -203,8 +208,13 @@ public class FlowCompositionService {
         IntegrationFlow flow = new IntegrationFlow();
         flow.setName(request.getFlowName());
         flow.setDescription(request.getDescription());
-        flow.setSourceAdapterId(UUID.fromString(request.getSourceAdapterId()));
-        flow.setTargetAdapterId(UUID.fromString(request.getTargetAdapterId()));
+        // Convert String adapter IDs to UUID
+        if (request.getSourceAdapterId() != null) {
+            flow.setSourceAdapterId(UUID.fromString(request.getSourceAdapterId()));
+        }
+        if (request.getTargetAdapterId() != null) {
+            flow.setTargetAdapterId(UUID.fromString(request.getTargetAdapterId()));
+        }
         flow.setStatus(FlowStatus.DEVELOPED_INACTIVE);
         // Load user from createdBy string
         if (request.getCreatedBy() != null) {
