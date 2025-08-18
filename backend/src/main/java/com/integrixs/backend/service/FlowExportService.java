@@ -208,7 +208,7 @@ public class FlowExportService {
     }
 
     private FlowExportDTO.CertificateReferenceDTO createCertificateReference(String certificateId) {
-        return certificateRepository.findById(certificateId)
+        return certificateRepository.findById(UUID.fromString(certificateId))
                 .map(cert -> FlowExportDTO.CertificateReferenceDTO.builder()
                         .id(cert.getId())
                         .name(cert.getName())
@@ -249,7 +249,7 @@ public class FlowExportService {
                     .userId(SecurityUtils.getCurrentUserId())
                     .username(SecurityUtils.getCurrentUsernameStatic())
                     .domainType("INTEGRATION_FLOW")
-                    .domainReferenceId(flow.getId())
+                    .domainReferenceId(flow.getId().toString())
                     .build();
             
             systemLogRepository.save(log);
@@ -263,11 +263,11 @@ public class FlowExportService {
 
     private FlowDTO convertToFlowDTO(IntegrationFlow flow) {
         return FlowDTO.builder()
-                .id(flow.getId())
+                .id(flow.getId().toString())
                 .name(flow.getName())
                 .description(flow.getDescription())
-                .sourceAdapterId(flow.getSourceAdapterId())
-                .targetAdapterId(flow.getTargetAdapterId())
+                .sourceAdapterId(flow.getSourceAdapterId() != null ? flow.getSourceAdapterId().toString() : null)
+                .targetAdapterId(flow.getTargetAdapterId() != null ? flow.getTargetAdapterId().toString() : null)
                 .sourceStructureId(flow.getSourceStructureId())
                 .targetStructureId(flow.getTargetStructureId())
                 .status(flow.getStatus().toString())
@@ -276,13 +276,13 @@ public class FlowExportService {
                 .mappingMode(flow.getMappingMode() != null ? flow.getMappingMode().toString() : null)
                 .createdAt(flow.getCreatedAt())
                 .updatedAt(flow.getUpdatedAt())
-                .createdBy(flow.getCreatedBy())
+                .createdBy(flow.getCreatedBy() != null ? flow.getCreatedBy().getUsername() : null)
                 .build();
     }
 
     private CommunicationAdapterDTO convertToAdapterDTO(CommunicationAdapter adapter) {
         return CommunicationAdapterDTO.builder()
-                .id(adapter.getId())
+                .id(adapter.getId().toString())
                 .name(adapter.getName())
                 .type(adapter.getType().toString())
                 .mode(adapter.getMode().toString())
@@ -295,7 +295,7 @@ public class FlowExportService {
 
     private BusinessComponentDTO convertToBusinessComponentDTO(BusinessComponent component) {
         return BusinessComponentDTO.builder()
-                .id(component.getId())
+                .id(component.getId().toString())
                 .name(component.getName())
                 .description(component.getDescription())
                 .contactEmail(component.getContactEmail())
@@ -307,8 +307,8 @@ public class FlowExportService {
 
     private FlowTransformationDTO convertToFlowTransformationDTO(FlowTransformation transformation) {
         return FlowTransformationDTO.builder()
-                .id(transformation.getId())
-                .flowId(transformation.getFlow().getId())
+                .id(transformation.getId().toString())
+                .flowId(transformation.getFlow().getId().toString())
                 .name(transformation.getName())
                 .description(transformation.getDescription())
                 .transformationType(com.integrixs.shared.enums.TransformationType.valueOf(transformation.getType().name()))
@@ -323,7 +323,7 @@ public class FlowExportService {
     private FieldMappingDTO convertToFieldMappingDTO(FieldMapping mapping) {
         return FieldMappingDTO.builder()
                 .id(mapping.getId())
-                .transformationId(mapping.getTransformation().getId())
+                .transformationId(mapping.getTransformation().getId().toString())
                 .sourceFields(mapping.getSourceFieldsList())
                 .targetField(mapping.getTargetField())
                 .javaFunction(mapping.getJavaFunction())
