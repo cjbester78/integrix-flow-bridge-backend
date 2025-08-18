@@ -8,6 +8,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.GenericGenerator;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 /**
  * Entity for event sourcing - stores all domain events.
@@ -37,9 +38,9 @@ public class EventStore {
     @Id
     @GeneratedValue(generator = "uuid2")
     @GenericGenerator(name = "uuid2", strategy = "org.hibernate.id.UUIDGenerator")
-    @Column(columnDefinition = "char(36)")
+    @Column(columnDefinition = "UUID")
     @EqualsAndHashCode.Include
-    private String eventId;
+    private UUID eventId;
     
     /**
      * Type of the aggregate this event belongs to

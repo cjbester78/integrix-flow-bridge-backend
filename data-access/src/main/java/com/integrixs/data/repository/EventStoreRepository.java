@@ -10,6 +10,7 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * Repository for event store operations.
@@ -18,7 +19,7 @@ import java.util.List;
  * @since 1.0.0
  */
 @Repository
-public interface EventStoreRepository extends JpaRepository<EventStore, String> {
+public interface EventStoreRepository extends JpaRepository<EventStore, UUID> {
     
     /**
      * Finds events by aggregate ID ordered by version.

@@ -10,6 +10,7 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * Repository for AuditTrail entities.
@@ -18,7 +19,7 @@ import java.util.List;
  * @since 1.0.0
  */
 @Repository
-public interface AuditTrailRepository extends JpaRepository<AuditTrail, String> {
+public interface AuditTrailRepository extends JpaRepository<AuditTrail, UUID> {
     
     /**
      * Find audit entries by entity type and ID
@@ -28,7 +29,7 @@ public interface AuditTrailRepository extends JpaRepository<AuditTrail, String> 
     /**
      * Find audit entries by user ID
      */
-    Page<AuditTrail> findByUserIdOrderByCreatedAtDesc(String userId, Pageable pageable);
+    Page<AuditTrail> findByUserIdOrderByCreatedAtDesc(UUID userId, Pageable pageable);
     
     /**
      * Find audit entries by action
@@ -46,7 +47,7 @@ public interface AuditTrailRepository extends JpaRepository<AuditTrail, String> 
     /**
      * Find audit entries by business component
      */
-    Page<AuditTrail> findByBusinessComponentIdOrderByCreatedAtDesc(String businessComponentId, Pageable pageable);
+    Page<AuditTrail> findByBusinessComponentIdOrderByCreatedAtDesc(UUID businessComponentId, Pageable pageable);
     
     /**
      * Search audit entries by multiple criteria
@@ -60,7 +61,7 @@ public interface AuditTrailRepository extends JpaRepository<AuditTrail, String> 
            "ORDER BY a.createdAt DESC")
     Page<AuditTrail> searchAuditTrail(@Param("entityType") String entityType,
                                      @Param("action") AuditTrail.AuditAction action,
-                                     @Param("userId") String userId,
+                                     @Param("userId") UUID userId,
                                      @Param("startDate") LocalDateTime startDate,
                                      @Param("endDate") LocalDateTime endDate,
                                      Pageable pageable);

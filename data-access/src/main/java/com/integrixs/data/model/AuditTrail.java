@@ -6,6 +6,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.GenericGenerator;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 /**
  * Entity representing an audit trail entry.
@@ -37,9 +38,9 @@ public class AuditTrail {
     @Id
     @GeneratedValue(generator = "uuid2")
     @GenericGenerator(name = "uuid2", strategy = "org.hibernate.id.UUIDGenerator")
-    @Column(columnDefinition = "char(36)")
+    @Column(columnDefinition = "UUID")
     @EqualsAndHashCode.Include
-    private String id;
+    private UUID id;
 
     /**
      * Type of entity being audited (e.g., IntegrationFlow, CommunicationAdapter)
