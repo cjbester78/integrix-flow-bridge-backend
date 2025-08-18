@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @Service
 @Transactional
@@ -66,14 +67,15 @@ public class FlowCompositionService {
         IntegrationFlow flow = new IntegrationFlow();
         flow.setName(request.getFlowName());
         flow.setDescription(request.getDescription());
-        flow.setSourceAdapterId(request.getSourceAdapterId());
-        flow.setTargetAdapterId(request.getTargetAdapterId());
+        flow.setSourceAdapterId(UUID.fromString(request.getSourceAdapterId()));
+        flow.setTargetAdapterId(UUID.fromString(request.getTargetAdapterId()));
         flow.setSourceFlowStructureId(request.getSourceFlowStructureId());
         flow.setTargetFlowStructureId(request.getTargetFlowStructureId());
         flow.setSourceStructureId(request.getSourceStructureId());
         flow.setTargetStructureId(request.getTargetStructureId());
         flow.setStatus(FlowStatus.DEVELOPED_INACTIVE);
-        flow.setCreatedBy(request.getCreatedBy());
+        // TODO: Fix this - need to load User from createdBy string
+        // flow.setCreatedBy(request.getCreatedBy());
         
         // Use mapping mode from request if provided, otherwise determine based on field mappings
         if (request.getMappingMode() != null) {
@@ -89,7 +91,7 @@ public class FlowCompositionService {
         
         // Set the source business component as the primary business component
         if (request.getSourceBusinessComponentId() != null) {
-            BusinessComponent businessComponent = businessComponentRepository.findById(request.getSourceBusinessComponentId()).orElse(null);
+            BusinessComponent businessComponent = businessComponentRepository.findById(UUID.fromString(request.getSourceBusinessComponentId())).orElse(null);
             if (businessComponent != null) {
                 flow.setBusinessComponent(businessComponent);
             }
@@ -112,7 +114,7 @@ public class FlowCompositionService {
         // Create transformation if field mappings are provided
         if (request.getFieldMappings() != null && !request.getFieldMappings().isEmpty()) {
             FlowTransformationDTO transformation = new FlowTransformationDTO();
-            transformation.setFlowId(savedFlow.getId());
+            transformation.setFlowId(savedFlow.getId().toString());
             transformation.setType("FIELD_MAPPING");
             transformation.setName(request.getRequestMappingName() != null ? request.getRequestMappingName() : "Request Mapping");
             transformation.setConfiguration("{\"mappingType\":\"request\"}");
@@ -123,7 +125,7 @@ public class FlowCompositionService {
             
             // Save field mappings
             for (FieldMappingDTO mapping : request.getFieldMappings()) {
-                mapping.setTransformationId(savedTransformation.getId());
+                mapping.setTransformationId(savedTransformation.getId().toString());
                 fieldMappingService.save(mapping);
             }
         }
@@ -134,7 +136,7 @@ public class FlowCompositionService {
             for (AdditionalMapping additionalMapping : request.getAdditionalMappings()) {
                 if (additionalMapping.getFieldMappings() != null && !additionalMapping.getFieldMappings().isEmpty()) {
                     FlowTransformationDTO transformation = new FlowTransformationDTO();
-                    transformation.setFlowId(savedFlow.getId());
+                    transformation.setFlowId(savedFlow.getId().toString());
                     transformation.setType("FIELD_MAPPING");
                     transformation.setName(additionalMapping.getName()); // Save the user-entered name
                     
@@ -166,7 +168,7 @@ public class FlowCompositionService {
                     
                     // Save field mappings for this additional mapping
                     for (FieldMappingDTO mapping : additionalMapping.getFieldMappings()) {
-                        mapping.setTransformationId(savedTransformation.getId());
+                        mapping.setTransformationId(savedTransformation.getId().toString());
                         fieldMappingService.save(mapping);
                     }
                 }
@@ -194,10 +196,11 @@ public class FlowCompositionService {
         IntegrationFlow flow = new IntegrationFlow();
         flow.setName(request.getFlowName());
         flow.setDescription(request.getDescription());
-        flow.setSourceAdapterId(request.getSourceAdapterId());
-        flow.setTargetAdapterId(request.getTargetAdapterId());
+        flow.setSourceAdapterId(UUID.fromString(request.getSourceAdapterId()));
+        flow.setTargetAdapterId(UUID.fromString(request.getTargetAdapterId()));
         flow.setStatus(FlowStatus.DEVELOPED_INACTIVE);
-        flow.setCreatedBy(request.getCreatedBy());
+        // TODO: Fix this - need to load User from createdBy string
+        // flow.setCreatedBy(request.getCreatedBy());
         
         // Save orchestration configuration as JSON
         try {
@@ -219,7 +222,7 @@ public class FlowCompositionService {
             int order = 1;
             for (OrchestrationStep step : request.getOrchestrationSteps()) {
                 FlowTransformationDTO transformation = new FlowTransformationDTO();
-                transformation.setFlowId(savedFlow.getId());
+                transformation.setFlowId(savedFlow.getId().toString());
                 transformation.setType(step.getType());
                 try {
 					transformation.setConfiguration(objectMapper.writeValueAsString(step.getConfiguration()));
