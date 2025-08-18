@@ -327,10 +327,10 @@ INSERT INTO roles (name, description) VALUES
 ('INTEGRATOR', 'Integration configuration access'),
 ('VIEWER', 'Read-only access');
 
--- Insert default system configuration
-INSERT INTO system_configuration (config_key, config_value, config_type, description) VALUES
-('environment.type', 'DEVELOPMENT', 'STRING', 'Environment type: DEVELOPMENT, QA, or PRODUCTION'),
-('xml.namespace.aware', 'true', 'BOOLEAN', 'Whether XML processing should be namespace aware'),
-('xml.validation.enabled', 'true', 'BOOLEAN', 'Whether to validate XML against schemas'),
-('flow.execution.timeout', '300000', 'INTEGER', 'Flow execution timeout in milliseconds'),
-('adapter.connection.timeout', '30000', 'INTEGER', 'Adapter connection timeout in milliseconds');
+-- Insert default system configuration (no created_by/updated_by since no users exist yet)
+INSERT INTO system_configuration (id, config_key, config_value, config_type, description) VALUES
+(uuid_generate_v4(), 'environment.type', 'DEVELOPMENT', 'STRING', 'Environment type: DEVELOPMENT, QA, or PRODUCTION'),
+(uuid_generate_v4(), 'xml.namespace.aware', 'true', 'BOOLEAN', 'Whether XML processing should be namespace aware'),
+(uuid_generate_v4(), 'xml.validation.enabled', 'true', 'BOOLEAN', 'Whether to validate XML against schemas'),
+(uuid_generate_v4(), 'flow.execution.timeout', '300000', 'INTEGER', 'Flow execution timeout in milliseconds'),
+(uuid_generate_v4(), 'adapter.connection.timeout', '30000', 'INTEGER', 'Adapter connection timeout in milliseconds');
