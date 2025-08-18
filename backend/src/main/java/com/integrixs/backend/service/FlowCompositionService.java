@@ -3,7 +3,7 @@ package com.integrixs.backend.service;
 import com.integrixs.data.model.*;
 import com.integrixs.data.repository.*;
 import com.integrixs.shared.dto.flow.FlowTransformationDTO;
-import com.integrixs.shared.dto.mapping.FieldMappingDTO;
+import com.integrixs.shared.dto.FieldMappingDTO;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 

@@ -1,7 +1,7 @@
 package com.integrixs.shared.dto.flow;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.integrixs.shared.dto.mapping.FieldMappingDTO;
+import com.integrixs.shared.dto.FieldMappingDTO;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;

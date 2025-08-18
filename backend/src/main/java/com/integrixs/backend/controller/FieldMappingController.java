@@ -1,7 +1,7 @@
 package com.integrixs.backend.controller;
 
 import com.integrixs.backend.service.FieldMappingService;
-import com.integrixs.shared.dto.mapping.FieldMappingDTO;
+import com.integrixs.shared.dto.FieldMappingDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

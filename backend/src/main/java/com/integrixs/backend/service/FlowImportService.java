@@ -432,7 +432,6 @@ public class FlowImportService {
                     
                     FieldMapping mapping = FieldMapping.builder()
                             .transformation(transformation)
-                            .sourceFields(mappingDto.getSourceFields())
                             .targetField(mappingDto.getTargetField())
                             .javaFunction(mappingDto.getJavaFunction())
                             .mappingRule(mappingDto.getMappingRule())
@@ -448,6 +447,9 @@ public class FlowImportService {
                             .functionName(mappingDto.getFunctionName())
                             .isActive(mappingDto.isActive())
                             .build();
+                    
+                    // Set sourceFields from List<String>
+                    mapping.setSourceFieldsList(mappingDto.getSourceFields());
                     
                     mapping = fieldMappingRepository.save(mapping);
                     idMappings.put(mappingDto.getId(), mapping.getId());

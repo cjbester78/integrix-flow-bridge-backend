@@ -324,7 +324,7 @@ public class FlowExportService {
         return FieldMappingDTO.builder()
                 .id(mapping.getId())
                 .transformationId(mapping.getTransformation().getId())
-                .sourceFields(mapping.getSourceFields())
+                .sourceFields(mapping.getSourceFieldsList())
                 .targetField(mapping.getTargetField())
                 .javaFunction(mapping.getJavaFunction())
                 .mappingRule(mapping.getMappingRule())
