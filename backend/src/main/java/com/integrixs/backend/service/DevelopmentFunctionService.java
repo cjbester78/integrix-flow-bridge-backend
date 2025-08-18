@@ -71,7 +71,7 @@ public class DevelopmentFunctionService {
      */
     @Transactional(readOnly = true)
     public TransformationCustomFunction getFunction(String functionId) {
-        return functionRepository.findById(functionId)
+        return functionRepository.findById(UUID.fromString(functionId))
                 .orElseThrow(() -> new BusinessException("Function not found: " + functionId));
     }
     
@@ -147,7 +147,7 @@ public class DevelopmentFunctionService {
         validateFunctionSyntax(request.getLanguage(), request.getFunctionBody());
         
         TransformationCustomFunction function = TransformationCustomFunction.builder()
-                .functionId(UUID.randomUUID().toString())
+                .functionId(UUID.randomUUID())
                 .name(request.getName())
                 .description(request.getDescription())
                 .category(request.getCategory())
@@ -177,7 +177,7 @@ public class DevelopmentFunctionService {
             throw new BusinessException("Function update is only allowed in development mode");
         }
         
-        TransformationCustomFunction function = functionRepository.findById(functionId)
+        TransformationCustomFunction function = functionRepository.findById(UUID.fromString(functionId))
                 .orElseThrow(() -> new BusinessException("Function not found: " + functionId));
         
         // Allow editing built-in functions in development mode
@@ -187,7 +187,7 @@ public class DevelopmentFunctionService {
         
         // Check if new name conflicts with existing function
         if (request.getName() != null && !request.getName().equals(function.getName())) {
-            if (functionRepository.existsByNameAndFunctionIdNot(request.getName(), functionId)) {
+            if (functionRepository.existsByNameAndFunctionIdNot(request.getName(), UUID.fromString(functionId))) {
                 throw new BusinessException("Function with name '" + request.getName() + "' already exists");
             }
             function.setName(request.getName());
@@ -256,18 +256,18 @@ public class DevelopmentFunctionService {
             throw new BusinessException("Function deletion is only allowed in development mode");
         }
         
-        if (!functionRepository.existsById(functionId)) {
+        if (!functionRepository.existsById(UUID.fromString(functionId))) {
             throw new BusinessException("Function not found: " + functionId);
         }
         
-        functionRepository.deleteById(functionId);
+        functionRepository.deleteById(UUID.fromString(functionId));
     }
     
     /**
      * Test a function with provided inputs
      */
     public FunctionTestResult testFunction(String functionId, Map<String, Object> inputs) {
-        TransformationCustomFunction function = functionRepository.findById(functionId)
+        TransformationCustomFunction function = functionRepository.findById(UUID.fromString(functionId))
                 .orElseThrow(() -> new BusinessException("Function not found: " + functionId));
         
         FunctionTestResult result = new FunctionTestResult();

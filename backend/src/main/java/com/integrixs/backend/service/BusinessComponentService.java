@@ -14,6 +14,7 @@ import org.slf4j.LoggerFactory;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.UUID;
 
 @Service
 @Transactional
@@ -50,11 +51,11 @@ public class BusinessComponentService {
     }
 
     public Optional<BusinessComponentDTO> getBusinessComponentById(String id) {
-        return repository.findById(id).map(this::toDTO);
+        return repository.findById(UUID.fromString(id)).map(this::toDTO);
     }
 
     public Optional<BusinessComponentDTO> updateBusinessComponent(String id, BusinessComponentUpdateRequestDTO dto) {
-        return repository.findById(id).map(businessComponent -> {
+        return repository.findById(UUID.fromString(id)).map(businessComponent -> {
             businessComponent.setName(dto.getName());
             businessComponent.setDescription(dto.getDescription());
             businessComponent.setContactEmail(dto.getContactEmail());
@@ -64,12 +65,12 @@ public class BusinessComponentService {
     }
 
     public void deleteBusinessComponent(String id) {
-        repository.deleteById(id);
+        repository.deleteById(UUID.fromString(id));
     }
 
     private BusinessComponentDTO toDTO(BusinessComponent businessComponent) {
         BusinessComponentDTO dto = new BusinessComponentDTO();
-        dto.setId(businessComponent.getId());
+        dto.setId(businessComponent.getId().toString());
         dto.setName(businessComponent.getName());
         dto.setDescription(businessComponent.getDescription());
         dto.setContactEmail(businessComponent.getContactEmail());

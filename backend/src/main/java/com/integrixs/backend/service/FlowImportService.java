@@ -108,7 +108,7 @@ public class FlowImportService {
         // Check certificate references
         if (options.isImportCertificateReferences() && export.getCertificateReferences() != null) {
             for (FlowExportDTO.CertificateReferenceDTO certRef : export.getCertificateReferences()) {
-                if (!certificateRepository.existsById(certRef.getId())) {
+                if (!certificateRepository.existsById(UUID.fromString(certRef.getId()))) {
                     conflicts.add(createMissingReferenceConflict("Certificate", 
                             certRef.getId(), certRef.getName()));
                 }
@@ -174,7 +174,7 @@ public class FlowImportService {
                 BusinessComponent importedComponent = importBusinessComponent(
                         export.getBusinessComponent(), options, idMappings, result);
                 if (importedComponent != null) {
-                    businessComponentId = importedComponent.getId();
+                    businessComponentId = importedComponent.getId().toString();
                     result.getSummary().setBusinessComponentImported(true);
                 }
             } else if (options.getTargetBusinessComponentId() != null) {
@@ -190,7 +190,7 @@ public class FlowImportService {
                     CommunicationAdapter sourceAdapter = importAdapter(
                             export.getSourceAdapter(), businessComponentId, options, idMappings, result);
                     if (sourceAdapter != null) {
-                        sourceAdapterId = sourceAdapter.getId();
+                        sourceAdapterId = sourceAdapter.getId().toString();
                         result.getSummary().setAdaptersImported(result.getSummary().getAdaptersImported() + 1);
                     }
                 }

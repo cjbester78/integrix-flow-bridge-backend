@@ -244,7 +244,7 @@ public class FlowStructureService {
     @Transactional(readOnly = true)
     public List<FlowStructureDTO> findByMessageStructure(String messageStructureId) {
         log.info("Finding flow structures using message structure: {}", messageStructureId);
-        List<FlowStructure> flowStructures = flowStructureMessageRepository.findFlowStructuresByMessageStructureId(UUID.fromString(messageStructureId));
+        List<FlowStructure> flowStructures = flowStructureMessageRepository.findFlowStructuresByMessageStructureId(messageStructureId);
         
         return flowStructures.stream()
                 .filter(FlowStructure::getIsActive)
@@ -252,7 +252,7 @@ public class FlowStructureService {
                     FlowStructureDTO dto = convertToFlowStructureDTO(flowStructure);
                     
                     // Add information about which message types use this message structure
-                    List<String> messageTypes = flowStructureMessageRepository.findByFlowStructureId(flowStructure.getId())
+                    List<String> messageTypes = flowStructureMessageRepository.findByFlowStructureId(flowStructure.getId().toString())
                             .stream()
                             .filter(fsm -> fsm.getMessageStructure().getId().toString().equals(messageStructureId))
                             .map(fsm -> fsm.getMessageType().toString())

@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.UUID;
 
 @Service
 @Transactional(readOnly = true)
@@ -40,7 +41,7 @@ public class RoleService {
      * Get role by ID
      */
     public RoleDTO getRoleById(String id) {
-        Role role = roleRepository.findById(id)
+        Role role = roleRepository.findById(UUID.fromString(id))
                 .orElseThrow(() -> new ResourceNotFoundException("Role not found with id: " + id));
         return convertToDTO(role);
     }
@@ -50,7 +51,7 @@ public class RoleService {
      */
     private RoleDTO convertToDTO(Role role) {
         return RoleDTO.builder()
-                .id(role.getId())
+                .id(role.getId().toString())
                 .name(role.getName())
                 .description(role.getPermissions()) // Use permissions as description for now
                 .build();
