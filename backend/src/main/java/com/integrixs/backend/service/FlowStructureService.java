@@ -230,14 +230,14 @@ public class FlowStructureService {
         UUID businessComponentUuid = businessComponentId != null ? UUID.fromString(businessComponentId) : null;
         Page<FlowStructure> page = flowStructureRepository.findAllWithFilters(
                 businessComponentUuid, mode, dir, search, pageable);
-        return page.map(this::toDTO);
+        return page.map(this::convertToFlowStructureDTO);
     }
     
     @Transactional(readOnly = true)
     public List<FlowStructureDTO> findByBusinessComponent(String businessComponentId) {
         return flowStructureRepository.findByBusinessComponentId(UUID.fromString(businessComponentId))
                 .stream()
-                .map(this::toDTO)
+                .map(this::convertToFlowStructureDTO)
                 .collect(Collectors.toList());
     }
     
@@ -249,7 +249,7 @@ public class FlowStructureService {
         return flowStructures.stream()
                 .filter(FlowStructure::getIsActive)
                 .map(flowStructure -> {
-                    FlowStructureDTO dto = toDTO(flowStructure);
+                    FlowStructureDTO dto = convertToFlowStructureDTO(flowStructure);
                     
                     // Add information about which message types use this message structure
                     List<String> messageTypes = flowStructureMessageRepository.findByFlowStructureId(flowStructure.getId())

@@ -114,8 +114,8 @@ public class MessageStructureService {
     @Transactional(readOnly = true)
     public Page<MessageStructureDTO> findAll(String businessComponentId, String search, Pageable pageable) {
         Page<MessageStructure> page = messageStructureRepository.findAllWithFilters(
-                businessComponentId, search, pageable);
-        return page.map(this::toDTO);
+                UUID.fromString(businessComponentId), search, pageable);
+        return page.map(this::convertToMessageStructureDTO);
     }
     
     @Transactional(readOnly = true)
