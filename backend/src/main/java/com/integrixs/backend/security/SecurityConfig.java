@@ -122,6 +122,7 @@ public class SecurityConfig {
                                 "/minimal-echo",
                                 "/basic"
                         ).permitAll()
+                        .requestMatchers("/soap/**").permitAll() // Allow SOAP endpoints without authentication
                         .requestMatchers("/api/debug/**").permitAll()
                         .requestMatchers("/api/websocket-test/**").permitAll()
                         .requestMatchers("/api/system-settings/**").hasRole("ADMINISTRATOR")
