@@ -94,9 +94,11 @@ public class IntegrationEndpointController {
                 produces = {MediaType.APPLICATION_XML_VALUE, MediaType.TEXT_XML_VALUE})
     public ResponseEntity<String> getWsdl(
             @PathVariable String flowPath,
-            @RequestParam(required = false) String wsdl) {
+            @RequestParam(required = false) String wsdl,
+            HttpServletRequest request) {
         
-        if (wsdl != null) {
+        // Check if this is a WSDL request (parameter exists, regardless of value)
+        if (request.getParameterMap().containsKey("wsdl")) {
             logger.info("WSDL request for flow: {}", flowPath);
             try {
                 String wsdlContent = endpointService.generateWsdl(flowPath);

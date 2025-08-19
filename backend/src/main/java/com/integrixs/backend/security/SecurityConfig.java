@@ -123,6 +123,7 @@ public class SecurityConfig {
                                 "/basic"
                         ).permitAll()
                         .requestMatchers("/soap/**").permitAll() // Allow SOAP endpoints without authentication
+                        .requestMatchers("/api/test-deployed-flows").permitAll() // Test endpoint
                         .requestMatchers("/api/debug/**").permitAll()
                         .requestMatchers("/api/websocket-test/**").permitAll()
                         .requestMatchers("/api/system-settings/**").hasRole("ADMINISTRATOR")
