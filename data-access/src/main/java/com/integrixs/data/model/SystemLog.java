@@ -67,8 +67,8 @@ public class SystemLog {
     @Column(name = "domain_reference_id", columnDefinition = "char(36)")
     private String domainReferenceId;
 
-    @Column(name = "user_id", columnDefinition = "char(36)")
-    private String userId;
+    @Column(name = "user_id", columnDefinition = "UUID")
+    private UUID userId;
 
     @Column(name = "username", length = 100)
     private String username;

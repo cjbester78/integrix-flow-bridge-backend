@@ -7,6 +7,7 @@ import org.springframework.data.jpa.domain.Specification;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * JPA Specifications for SystemLog dynamic queries.
@@ -47,7 +48,12 @@ public class SystemLogSpecifications {
             }
             
             if (userId != null) {
-                predicates.add(criteriaBuilder.equal(root.get("userId"), userId));
+                try {
+                    UUID userUuid = UUID.fromString(userId);
+                    predicates.add(criteriaBuilder.equal(root.get("userId"), userUuid));
+                } catch (IllegalArgumentException e) {
+                    // Invalid UUID format, skip this filter
+                }
             }
             
             if (startDate != null) {
