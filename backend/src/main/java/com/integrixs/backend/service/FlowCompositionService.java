@@ -281,22 +281,8 @@ public class FlowCompositionService {
             CompleteFlowComposition composition = new CompleteFlowComposition();
             composition.setFlow(flow);
             
-            // Get business components if available in configuration
-            try {
-                if (flow.getConfiguration() != null) {
-                    if (flow.getConfiguration().contains("DIRECT_MAPPING")) {
-                        FlowConfiguration config = objectMapper.readValue(flow.getConfiguration(), FlowConfiguration.class);
-                        composition.setSourceBusinessComponent(
-                            businessComponentRepository.findById(UUID.fromString(config.getSourceBusinessComponentId())).orElse(null)
-                        );
-                        composition.setTargetBusinessComponent(
-                            businessComponentRepository.findById(UUID.fromString(config.getTargetBusinessComponentId())).orElse(null)
-                        );
-                    }
-                }
-            } catch (Exception e) {
-                // Configuration parsing failed, continue without business components
-            }
+            // Business components are now stored directly in the flow
+            // No need to parse JSON configuration anymore
             
             // Get adapters
             composition.setSourceAdapter(adapterRepository.findById(flow.getSourceAdapterId()).orElse(null));

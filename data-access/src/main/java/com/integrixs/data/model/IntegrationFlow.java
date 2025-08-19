@@ -39,7 +39,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
-@ToString(exclude = {"transformations", "configuration", "deploymentMetadata"})
+@ToString(exclude = {"transformations", "deploymentMetadata"})
 public class IntegrationFlow {
 
     /**
@@ -115,13 +115,6 @@ public class IntegrationFlow {
     @NotNull(message = "Status is required")
     @Builder.Default
     private FlowStatus status = FlowStatus.DRAFT;
-
-    /**
-     * Flow configuration in JSON format
-     */
-    @Column(columnDefinition = "json")
-    @Size(max = 10000, message = "Configuration cannot exceed 10000 characters")
-    private String configuration;
 
     /**
      * Whether the flow is currently active

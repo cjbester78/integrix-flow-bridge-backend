@@ -63,7 +63,6 @@ public class IntegrationFlowService {
                 existing.setSourceStructureId(updatedFlow.getSourceStructureId());
                 existing.setTargetStructureId(updatedFlow.getTargetStructureId());
                 existing.setStatus(updatedFlow.getStatus());
-                existing.setConfiguration(updatedFlow.getConfiguration());
                 existing.setActive(updatedFlow.isActive());
                 existing.setCreatedBy(updatedFlow.getCreatedBy());
                 existing.setExecutionCount(updatedFlow.getExecutionCount());
@@ -105,7 +104,7 @@ public class IntegrationFlowService {
                 .sourceStructureId(flow.getSourceStructureId())
                 .targetStructureId(flow.getTargetStructureId())
                 .status(flow.getStatus() != null ? flow.getStatus().toString() : null)
-                .configuration(flow.getConfiguration())
+                // Configuration field removed - using native columns instead
                 .isActive(flow.isActive())
                 .mappingMode(flow.getMappingMode() != null ? flow.getMappingMode().toString() : null)
                 .createdAt(flow.getCreatedAt())

@@ -27,7 +27,6 @@ public class IntegrationFlowDTO {
     @Deprecated
     private String targetStructureId;
     private String status;
-    private String configuration;
     private boolean isActive;
     private String mappingMode; // WITH_MAPPING or PASS_THROUGH
     private boolean skipXmlConversion; // Skip XML conversion for direct passthrough

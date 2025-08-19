@@ -365,7 +365,7 @@ public class FlowImportService {
                     .sourceStructureId(dto.getSourceStructureId())
                     .targetStructureId(dto.getTargetStructureId())
                     .status(FlowStatus.DEVELOPED_INACTIVE) // Always import as undeployed
-                    .configuration(dto.getConfiguration())
+                    // Configuration field removed - using native columns instead
                     .isActive(false) // Start inactive
                     .mappingMode(com.integrixs.data.model.MappingMode.valueOf(dto.getMappingMode()))
                     .createdBy(userRepository.findByUsername(SecurityUtils.getCurrentUsernameStatic()))

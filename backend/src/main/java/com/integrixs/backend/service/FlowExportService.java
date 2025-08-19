@@ -271,7 +271,7 @@ public class FlowExportService {
                 .sourceStructureId(flow.getSourceStructureId())
                 .targetStructureId(flow.getTargetStructureId())
                 .status(flow.getStatus().toString())
-                .configuration(flow.getConfiguration())
+                // Configuration field removed - using native columns instead
                 // isActive not available in FlowDTO
                 .mappingMode(flow.getMappingMode() != null ? flow.getMappingMode().toString() : null)
                 .createdAt(flow.getCreatedAt())
