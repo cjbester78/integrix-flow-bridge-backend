@@ -2,6 +2,7 @@ package com.integrixs.data.model;
 
 import lombok.*;
 import java.io.Serializable;
+import java.util.UUID;
 
 @Data
 @Builder
@@ -9,6 +10,6 @@ import java.io.Serializable;
 @AllArgsConstructor
 @EqualsAndHashCode
 public class FlowStructureMessageId implements Serializable {
-    private String flowStructure;
+    private UUID flowStructure;
     private FlowStructureMessage.MessageType messageType;
 }
