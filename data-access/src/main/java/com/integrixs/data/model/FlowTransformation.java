@@ -69,6 +69,7 @@ public class FlowTransformation {
      * Configuration in JSON format
      */
     @Column(name = "configuration", columnDefinition = "json", nullable = false)
+    @org.hibernate.annotations.JdbcTypeCode(org.hibernate.type.SqlTypes.JSON)
     @NotBlank(message = "Configuration is required")
     @Size(max = 10000, message = "Configuration cannot exceed 10000 characters")
     private String configuration;
