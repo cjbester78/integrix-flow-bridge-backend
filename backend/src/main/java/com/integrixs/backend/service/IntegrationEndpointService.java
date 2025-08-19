@@ -165,8 +165,11 @@ public class IntegrationEndpointService {
     /**
      * Generate WSDL for a deployed SOAP flow
      */
+    @Transactional(readOnly = true)
     public String generateWsdl(String flowPath) throws Exception {
+        logger.info("Generating WSDL for flow path: {}", flowPath);
         IntegrationFlow flow = findDeployedFlow(flowPath);
+        logger.info("Found flow: {} with deployment endpoint: {}", flow.getName(), flow.getDeploymentEndpoint());
         
         // Get source adapter
         CommunicationAdapter sourceAdapter = adapterRepository.findById(flow.getSourceAdapterId())
@@ -235,11 +238,19 @@ public class IntegrationEndpointService {
     }
     
     private IntegrationFlow findDeployedFlow(String flowPath) throws Exception {
+        logger.info("Looking for deployed flow with path containing: {}", flowPath);
+        
         // Find deployed flow with transformations eagerly loaded
         Optional<IntegrationFlow> flow = flowRepository.findByDeploymentEndpointContainingAndStatus(
             flowPath, FlowStatus.DEPLOYED_ACTIVE);
         
         if (flow.isEmpty()) {
+            // Log all deployed flows for debugging
+            List<IntegrationFlow> allDeployedFlows = flowRepository.findByStatusAndIsActiveTrueOrderByName(FlowStatus.DEPLOYED_ACTIVE);
+            logger.warn("No deployed active flow found for path: {}. Deployed flows:", flowPath);
+            for (IntegrationFlow f : allDeployedFlows) {
+                logger.warn("  - Flow: {} with endpoint: {}", f.getName(), f.getDeploymentEndpoint());
+            }
             throw new IllegalArgumentException("No deployed active flow found for path: " + flowPath);
         }
         

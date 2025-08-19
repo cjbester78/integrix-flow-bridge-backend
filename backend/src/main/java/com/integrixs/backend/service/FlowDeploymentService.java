@@ -84,7 +84,12 @@ public class FlowDeploymentService {
             // Activate the flow
             flow.setActive(true);
             
-            flowRepository.save(flow);
+            logger.info("Setting deployment endpoint to: {} for flow: {}", endpoint, flowId);
+            IntegrationFlow savedFlow = flowRepository.save(flow);
+            flowRepository.flush(); // Force flush to database
+            
+            // Verify the save worked
+            logger.info("After save - deployment endpoint is: {}", savedFlow.getDeploymentEndpoint());
             
             logger.info("Flow deployed successfully: {} with endpoint: {}", flowId, endpoint);
             
