@@ -3,7 +3,10 @@ package com.integrixs.backend.controller;
 import com.integrixs.backend.service.IntegrationEndpointService;
 import com.integrixs.backend.service.MessageService;
 import com.integrixs.data.repository.CommunicationAdapterRepository;
+import com.integrixs.data.repository.IntegrationFlowRepository;
 import com.integrixs.data.repository.SystemLogRepository;
+import com.integrixs.data.model.FlowStatus;
+import com.integrixs.data.model.IntegrationFlow;
 import com.integrixs.data.model.SystemLog;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,6 +16,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.servlet.http.HttpServletRequest;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -34,6 +40,9 @@ public class IntegrationEndpointController {
     
     @Autowired
     private CommunicationAdapterRepository adapterRepository;
+    
+    @Autowired
+    private IntegrationFlowRepository flowRepository;
     
     /**
      * Handle SOAP requests
@@ -147,6 +156,41 @@ public class IntegrationEndpointController {
                "    </soap:Fault>\n" +
                "  </soap:Body>\n" +
                "</soap:Envelope>";
+    }
+    
+    /**
+     * Test endpoint to check deployed flows
+     */
+    @GetMapping("/api/test-deployed-flows")
+    public ResponseEntity<?> testDeployedFlows() {
+        logger.info("Checking deployed flows");
+        
+        try {
+            List<IntegrationFlow> deployedFlows = flowRepository.findByStatusAndIsActiveTrueOrderByName(FlowStatus.DEPLOYED_ACTIVE);
+            List<Map<String, Object>> flowInfo = new ArrayList<>();
+            
+            for (IntegrationFlow flow : deployedFlows) {
+                Map<String, Object> info = new HashMap<>();
+                info.put("id", flow.getId().toString());
+                info.put("name", flow.getName());
+                info.put("status", flow.getStatus().toString());
+                info.put("deploymentEndpoint", flow.getDeploymentEndpoint());
+                info.put("deployedAt", flow.getDeployedAt());
+                info.put("active", flow.isActive());
+                flowInfo.add(info);
+            }
+            
+            return ResponseEntity.ok(Map.of(
+                "count", deployedFlows.size(),
+                "flows", flowInfo
+            ));
+            
+        } catch (Exception e) {
+            logger.error("Test deployed flows failed", e);
+            return ResponseEntity.ok(Map.of(
+                "error", e.getMessage()
+            ));
+        }
     }
     
     /**
