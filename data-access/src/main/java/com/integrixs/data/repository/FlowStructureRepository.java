@@ -19,15 +19,16 @@ public interface FlowStructureRepository extends JpaRepository<FlowStructure, UU
     
     List<FlowStructure> findAllByIsActiveTrue();
     
-    @Query("SELECT fs FROM FlowStructure fs WHERE fs.isActive = true " +
-           "AND (:businessComponentId IS NULL OR fs.businessComponent.id = :businessComponentId) " +
-           "AND (:processingMode IS NULL OR fs.processingMode = :processingMode) " +
+    @Query(value = "SELECT * FROM flow_structures fs WHERE fs.is_active = true " +
+           "AND (:businessComponentId IS NULL OR fs.business_component_id = :businessComponentId) " +
+           "AND (:processingMode IS NULL OR fs.processing_mode = :processingMode) " +
            "AND (:direction IS NULL OR fs.direction = :direction) " +
            "AND (:search IS NULL OR LOWER(fs.name) LIKE LOWER(CONCAT('%', :search, '%')) " +
-           "OR (fs.description IS NOT NULL AND LOWER(fs.description) LIKE LOWER(CONCAT('%', :search, '%'))))")
+           "OR (fs.description IS NOT NULL AND LOWER(CAST(fs.description AS TEXT)) LIKE LOWER(CONCAT('%', :search, '%'))))",
+           nativeQuery = true)
     Page<FlowStructure> findAllWithFilters(@Param("businessComponentId") UUID businessComponentId,
-                                         @Param("processingMode") FlowStructure.ProcessingMode processingMode,
-                                         @Param("direction") FlowStructure.Direction direction,
+                                         @Param("processingMode") String processingMode,
+                                         @Param("direction") String direction,
                                          @Param("search") String search,
                                          Pageable pageable);
     

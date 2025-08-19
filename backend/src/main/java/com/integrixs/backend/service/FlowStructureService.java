@@ -223,14 +223,12 @@ public class FlowStructureService {
                                          FlowStructureDTO.Direction direction,
                                          String search, 
                                          Pageable pageable) {
-        FlowStructure.ProcessingMode mode = processingMode != null ? 
-                FlowStructure.ProcessingMode.valueOf(processingMode.name()) : null;
-        FlowStructure.Direction dir = direction != null ? 
-                FlowStructure.Direction.valueOf(direction.name()) : null;
+        String modeString = processingMode != null ? processingMode.name() : null;
+        String dirString = direction != null ? direction.name() : null;
                 
         UUID businessComponentUuid = businessComponentId != null ? UUID.fromString(businessComponentId) : null;
         Page<FlowStructure> page = flowStructureRepository.findAllWithFilters(
-                businessComponentUuid, mode, dir, search, pageable);
+                businessComponentUuid, modeString, dirString, search, pageable);
         return page.map(this::convertToFlowStructureDTO);
     }
     
