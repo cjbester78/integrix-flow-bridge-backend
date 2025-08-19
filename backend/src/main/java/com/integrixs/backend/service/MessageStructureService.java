@@ -115,7 +115,7 @@ public class MessageStructureService {
     public Page<MessageStructureDTO> findAll(String businessComponentId, String search, Pageable pageable) {
         UUID businessComponentUuid = businessComponentId != null && !businessComponentId.isEmpty() 
                 ? UUID.fromString(businessComponentId) : null;
-        Page<MessageStructure> page = messageStructureRepository.findAllWithFilters(
+        Page<MessageStructure> page = messageStructureRepository.searchMessageStructures(
                 businessComponentUuid, search, pageable);
         return page.map(this::convertToMessageStructureDTO);
     }

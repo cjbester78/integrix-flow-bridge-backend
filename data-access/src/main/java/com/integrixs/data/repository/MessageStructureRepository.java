@@ -23,17 +23,16 @@ public interface MessageStructureRepository extends JpaRepository<MessageStructu
            "AND (:businessComponentId IS NULL OR ms.business_component_id = :businessComponentId) " +
            "AND (:search IS NULL OR :search = '' OR " +
            "(LOWER(ms.name) LIKE LOWER(CONCAT('%', :search, '%')) " +
-           "OR (ms.description IS NOT NULL AND LOWER(CAST(ms.description AS TEXT)) LIKE LOWER(CONCAT('%', :search, '%'))))) " +
-           "ORDER BY ms.name",
+           "OR (ms.description IS NOT NULL AND LOWER(CAST(ms.description AS TEXT)) LIKE LOWER(CONCAT('%', :search, '%')))))  /* #pageable# */",
            countQuery = "SELECT COUNT(*) FROM message_structures ms WHERE ms.is_active = true " +
            "AND (:businessComponentId IS NULL OR ms.business_component_id = :businessComponentId) " +
            "AND (:search IS NULL OR :search = '' OR " +
            "(LOWER(ms.name) LIKE LOWER(CONCAT('%', :search, '%')) " +
            "OR (ms.description IS NOT NULL AND LOWER(CAST(ms.description AS TEXT)) LIKE LOWER(CONCAT('%', :search, '%')))))",
            nativeQuery = true)
-    Page<MessageStructure> findAllWithFilters(@Param("businessComponentId") UUID businessComponentId,
-                                            @Param("search") String search,
-                                            Pageable pageable);
+    Page<MessageStructure> searchMessageStructures(@Param("businessComponentId") UUID businessComponentId,
+                                                  @Param("search") String search,
+                                                  Pageable pageable);
     
     List<MessageStructure> findByBusinessComponentIdAndIsActiveTrueOrderByName(UUID businessComponentId);
     
