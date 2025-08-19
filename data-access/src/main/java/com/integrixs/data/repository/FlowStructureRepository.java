@@ -24,7 +24,7 @@ public interface FlowStructureRepository extends JpaRepository<FlowStructure, UU
            "AND (:processingMode IS NULL OR fs.processingMode = :processingMode) " +
            "AND (:direction IS NULL OR fs.direction = :direction) " +
            "AND (:search IS NULL OR LOWER(fs.name) LIKE LOWER(CONCAT('%', :search, '%')) " +
-           "OR LOWER(fs.description) LIKE LOWER(CONCAT('%', :search, '%')))")
+           "OR (fs.description IS NOT NULL AND LOWER(fs.description) LIKE LOWER(CONCAT('%', :search, '%'))))")
     Page<FlowStructure> findAllWithFilters(@Param("businessComponentId") UUID businessComponentId,
                                          @Param("processingMode") FlowStructure.ProcessingMode processingMode,
                                          @Param("direction") FlowStructure.Direction direction,
