@@ -109,16 +109,8 @@ public class FlowCompositionService {
             }
         }
         
-        // Save additional configuration as JSON
-        try {
-            FlowConfiguration config = new FlowConfiguration();
-            config.setSourceBusinessComponentId(request.getSourceBusinessComponentId());
-            config.setTargetBusinessComponentId(request.getTargetBusinessComponentId());
-            config.setFlowType("DIRECT_MAPPING");
-            flow.setConfiguration(objectMapper.writeValueAsString(config));
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to serialize flow configuration", e);
-        }
+        // Set flow type
+        flow.setFlowType(FlowType.DIRECT_MAPPING);
         
         // Save the flow
         IntegrationFlow savedFlow = flowRepository.save(flow);
@@ -223,17 +215,10 @@ public class FlowCompositionService {
             flow.setCreatedBy(createdByUser);
         }
         
-        // Save orchestration configuration as JSON
-        try {
-            OrchestrationConfiguration config = new OrchestrationConfiguration();
-            config.setBusinessComponentIds(request.getBusinessComponentIds());
-            config.setAdapterIds(request.getAdapterIds());
-            config.setOrchestrationSteps(request.getOrchestrationSteps());
-            config.setFlowType("ORCHESTRATION");
-            flow.setConfiguration(objectMapper.writeValueAsString(config));
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to serialize orchestration configuration", e);
-        }
+        // Set flow type to orchestration
+        flow.setFlowType(FlowType.ORCHESTRATION);
+        
+        // TODO: Store orchestration steps in a proper table structure instead of JSON
         
         // Save the flow
         IntegrationFlow savedFlow = flowRepository.save(flow);
