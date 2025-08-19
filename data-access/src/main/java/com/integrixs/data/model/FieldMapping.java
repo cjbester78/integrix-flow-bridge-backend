@@ -56,6 +56,7 @@ public class FieldMapping {
      * Source fields in JSON format
      */
     @Column(name = "source_fields", columnDefinition = "json", nullable = false)
+    @org.hibernate.annotations.JdbcTypeCode(org.hibernate.type.SqlTypes.JSON)
     @NotBlank(message = "Source fields are required")
     @Size(max = 5000, message = "Source fields cannot exceed 5000 characters")
     private String sourceFields;
@@ -123,6 +124,7 @@ public class FieldMapping {
      * Input data types in JSON format
      */
     @Column(name = "input_types", columnDefinition = "json")
+    @org.hibernate.annotations.JdbcTypeCode(org.hibernate.type.SqlTypes.JSON)
     @Size(max = 1000, message = "Input types cannot exceed 1000 characters")
     private String inputTypes;
 
@@ -166,12 +168,14 @@ public class FieldMapping {
      * Visual flow data (nodes and edges) in JSON format
      */
     @Column(name = "visual_flow_data", columnDefinition = "json")
+    @org.hibernate.annotations.JdbcTypeCode(org.hibernate.type.SqlTypes.JSON)
     private String visualFlowData;
 
     /**
      * Function node configuration in JSON format
      */
     @Column(name = "function_node", columnDefinition = "json")
+    @org.hibernate.annotations.JdbcTypeCode(org.hibernate.type.SqlTypes.JSON)
     private String functionNode;
 
     /**
