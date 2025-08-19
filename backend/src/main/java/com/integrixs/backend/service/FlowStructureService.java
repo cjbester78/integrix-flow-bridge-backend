@@ -500,7 +500,7 @@ public class FlowStructureService {
         // Service section
         wsdl.append("  <service name=\"").append(serviceName).append("Service\">\n");
         wsdl.append("    <port name=\"").append(serviceName).append("Port\" binding=\"tns:").append(serviceName).append("Binding\">\n");
-        wsdl.append("      <soap:address location=\"http://localhost:8080/api/flow/").append(serviceName).append("\"/>\n");
+        wsdl.append("      <soap:address location=\"\"/>\n"); // Location will be set during deployment
         wsdl.append("    </port>\n");
         wsdl.append("  </service>\n");
         wsdl.append("</definitions>");
