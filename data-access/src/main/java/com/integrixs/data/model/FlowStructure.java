@@ -40,7 +40,7 @@ public class FlowStructure {
     @Column(name = "direction", nullable = false)
     private Direction direction;
     
-    @Column(name = "wsdl_content", columnDefinition = "XML")
+    @Column(name = "wsdl_content", columnDefinition = "TEXT")
     private String wsdlContent;
     
     @Column(name = "source_type")

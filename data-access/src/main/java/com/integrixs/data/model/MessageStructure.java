@@ -31,7 +31,7 @@ public class MessageStructure {
     @Column(name = "description", columnDefinition = "TEXT")
     private String description;
     
-    @Column(name = "xsd_content", columnDefinition = "XML", nullable = false)
+    @Column(name = "xsd_content", columnDefinition = "TEXT", nullable = false)
     private String xsdContent;
     
     // Namespace, metadata, and tags removed - use related tables instead
