@@ -169,8 +169,29 @@ public class IntegrationEndpointService {
     @Transactional(readOnly = true)
     public String generateWsdl(String flowPath) throws Exception {
         logger.info("Generating WSDL for flow path: {}", flowPath);
-        IntegrationFlow flow = findDeployedFlow(flowPath);
-        logger.info("Found flow: {} with deployment endpoint: {}", flow.getName(), flow.getDeploymentEndpoint());
+        
+        IntegrationFlow flow;
+        try {
+            flow = findDeployedFlow(flowPath);
+            logger.info("Found flow: {} with deployment endpoint: {}", flow.getName(), flow.getDeploymentEndpoint());
+        } catch (IllegalArgumentException e) {
+            // If not found by deployment endpoint, try finding by name
+            logger.warn("Flow not found by deployment endpoint, trying by name: {}", flowPath);
+            
+            // Try to find a deployed flow with matching name
+            List<IntegrationFlow> deployedFlows = flowRepository.findByStatusAndIsActiveTrueOrderByName(FlowStatus.DEPLOYED_ACTIVE);
+            Optional<IntegrationFlow> flowByName = deployedFlows.stream()
+                .filter(f -> f.getName().toLowerCase().replace(" ", "-").equals(flowPath.toLowerCase()) ||
+                            f.getName().toLowerCase().replace(" ", "").equals(flowPath.toLowerCase()))
+                .findFirst();
+                
+            if (flowByName.isEmpty()) {
+                throw new IllegalArgumentException("No deployed flow found for path: " + flowPath);
+            }
+            
+            flow = flowByName.get();
+            logger.info("Found flow by name: {} with deployment endpoint: {}", flow.getName(), flow.getDeploymentEndpoint());
+        }
         
         // Get source adapter
         CommunicationAdapter sourceAdapter = adapterRepository.findById(flow.getSourceAdapterId())
@@ -264,17 +285,29 @@ public class IntegrationEndpointService {
         if (integrationFlow.getTransformations() != null && !integrationFlow.getTransformations().isEmpty()) {
             for (int i = 0; i < integrationFlow.getTransformations().size(); i++) {
                 FlowTransformation transformation = integrationFlow.getTransformations().get(i);
-                // Load the transformation with field mappings
-                Optional<FlowTransformation> transformationWithMappings = 
-                    transformationRepository.findWithFieldMappingsById(transformation.getId());
                 
-                if (transformationWithMappings.isPresent()) {
-                    // Replace with the fully loaded transformation
-                    integrationFlow.getTransformations().set(i, transformationWithMappings.get());
-                    logger.info("Transformation '{}' loaded with {} field mappings", 
-                        transformationWithMappings.get().getName(),
-                        transformationWithMappings.get().getFieldMappings() != null ? 
-                            transformationWithMappings.get().getFieldMappings().size() : 0);
+                // Skip if transformation ID is null
+                if (transformation.getId() == null) {
+                    logger.warn("Transformation at index {} has null ID, skipping field mapping load", i);
+                    continue;
+                }
+                
+                try {
+                    // Load the transformation with field mappings
+                    Optional<FlowTransformation> transformationWithMappings = 
+                        transformationRepository.findWithFieldMappingsById(transformation.getId());
+                    
+                    if (transformationWithMappings.isPresent()) {
+                        // Replace with the fully loaded transformation
+                        integrationFlow.getTransformations().set(i, transformationWithMappings.get());
+                        logger.info("Transformation '{}' loaded with {} field mappings", 
+                            transformationWithMappings.get().getName(),
+                            transformationWithMappings.get().getFieldMappings() != null ? 
+                                transformationWithMappings.get().getFieldMappings().size() : 0);
+                    }
+                } catch (Exception e) {
+                    logger.error("Error loading field mappings for transformation {}: {}", 
+                        transformation.getId(), e.getMessage());
                 }
             }
         }
