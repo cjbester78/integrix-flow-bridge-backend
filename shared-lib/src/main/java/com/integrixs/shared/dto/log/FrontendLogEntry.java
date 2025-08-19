@@ -10,6 +10,7 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * DTO representing a single frontend log entry.
@@ -73,7 +74,7 @@ public class FrontendLogEntry {
     /**
      * User ID if authenticated
      */
-    private String userId;
+    private UUID userId;
     
     /**
      * Session ID

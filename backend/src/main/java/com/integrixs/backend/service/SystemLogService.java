@@ -56,8 +56,8 @@ public class SystemLogService {
                     .category("FRONTEND_" + entry.getCategory())
                     .message(entry.getMessage())
                     .source("FRONTEND")
-                    .userId(entry.getUserId() != null ? UUID.fromString(entry.getUserId()) : null)
-                    .username(getUsernameById(entry.getUserId()))
+                    .userId(entry.getUserId())
+                    .username(getUsernameByUuid(entry.getUserId()))
                     .ipAddress(entry.getClientIp())
                     .userAgent(entry.getUserAgent())
                     .correlationId(entry.getCorrelationId())
@@ -202,6 +202,26 @@ public class SystemLogService {
             return user.map(User::getUsername).orElse(null);
         } catch (Exception e) {
             log.debug("Failed to get username for ID: {}", userId);
+            return null;
+        }
+    }
+    
+    /**
+     * Get username by user UUID.
+     *
+     * @param userId The user UUID
+     * @return The username or null if not found
+     */
+    private String getUsernameByUuid(UUID userId) {
+        if (userId == null) {
+            return null;
+        }
+        
+        try {
+            Optional<User> user = userRepository.findById(userId);
+            return user.map(User::getUsername).orElse(null);
+        } catch (Exception e) {
+            log.debug("Failed to get username for UUID: {}", userId);
             return null;
         }
     }
