@@ -221,7 +221,7 @@ public class MessageService {
             // Use the new AdapterPayload entity
             AdapterPayload adapterPayload = AdapterPayload.builder()
                 .correlationId(correlationId)
-                .adapterId(adapter.getId().toString())
+                .adapterId(adapter.getId())
                 .adapterName(adapter.getName())
                 .adapterType(adapter.getType() != null ? adapter.getType().name() : "UNKNOWN")
                 .direction(direction)

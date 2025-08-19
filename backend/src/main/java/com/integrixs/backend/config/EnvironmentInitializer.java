@@ -52,6 +52,7 @@ public class EnvironmentInitializer {
                 SystemConfiguration config = new SystemConfiguration();
                 config.setConfigKey(ENVIRONMENT_TYPE_KEY);
                 config.setConfigValue(environmentConfig.getType().name());
+                config.setConfigType("STRING");
                 config.setDescription("System environment type");
                 systemConfigurationRepository.save(config);
             }

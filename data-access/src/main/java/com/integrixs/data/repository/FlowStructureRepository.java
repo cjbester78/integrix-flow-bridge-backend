@@ -31,9 +31,7 @@ public interface FlowStructureRepository extends JpaRepository<FlowStructure, UU
                                          @Param("search") String search,
                                          Pageable pageable);
     
-    @Query("SELECT fs FROM FlowStructure fs WHERE fs.businessComponent.id = :businessComponentId " +
-           "AND fs.isActive = true ORDER BY fs.name")
-    List<FlowStructure> findByBusinessComponentId(@Param("businessComponentId") UUID businessComponentId);
+    List<FlowStructure> findByBusinessComponentIdAndIsActiveTrueOrderByName(UUID businessComponentId);
     
     boolean existsByNameAndBusinessComponentIdAndIsActiveTrue(String name, UUID businessComponentId);
     

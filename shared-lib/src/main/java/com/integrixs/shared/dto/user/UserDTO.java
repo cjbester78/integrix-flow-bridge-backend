@@ -82,11 +82,6 @@ public class UserDTO {
     private String status;
 
     /**
-     * Indicates whether the user's email address has been verified.
-     */
-    private boolean emailVerified;
-
-    /**
      * Timestamp when the user account was created.
      */
     private LocalDateTime createdAt;

@@ -31,7 +31,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
-@ToString(exclude = {"passwordHash", "emailVerificationToken", "passwordResetToken"})
+@ToString(exclude = {"passwordHash", "passwordResetToken"})
 public class User {
 
     /**
@@ -131,19 +131,6 @@ public class User {
      */
     @Column(name = "last_login_at")
     private LocalDateTime lastLoginAt;
-
-    /**
-     * Whether email has been verified
-     */
-    @Column(name = "email_verified")
-    @Builder.Default
-    private boolean emailVerified = false;
-
-    /**
-     * Token for email verification
-     */
-    @Column(name = "email_verification_token")
-    private String emailVerificationToken;
 
     /**
      * Token for password reset

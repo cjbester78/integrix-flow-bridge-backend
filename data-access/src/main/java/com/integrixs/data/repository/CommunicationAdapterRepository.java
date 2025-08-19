@@ -13,6 +13,6 @@ import java.util.UUID;
  * Provides CRUD operations and query methods for the corresponding entity.
  */
 public interface CommunicationAdapterRepository extends JpaRepository<CommunicationAdapter, UUID> {
-    List<CommunicationAdapter> findByBusinessComponentId(UUID businessComponentId);
+    List<CommunicationAdapter> findByBusinessComponent_Id(UUID businessComponentId);
     boolean existsByName(String name);
 }

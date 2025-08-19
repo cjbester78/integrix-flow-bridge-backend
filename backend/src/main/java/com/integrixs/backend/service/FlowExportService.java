@@ -322,7 +322,7 @@ public class FlowExportService {
 
     private FieldMappingDTO convertToFieldMappingDTO(FieldMapping mapping) {
         return FieldMappingDTO.builder()
-                .id(mapping.getId())
+                .id(mapping.getId().toString())
                 .transformationId(mapping.getTransformation().getId().toString())
                 .sourceFields(mapping.getSourceFieldsList())
                 .targetField(mapping.getTargetField())

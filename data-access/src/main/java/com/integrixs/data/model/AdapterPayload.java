@@ -25,15 +25,15 @@ public class AdapterPayload {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(name = "id", columnDefinition = "UUID")
+    @Column(name = "id")
     @EqualsAndHashCode.Include
     private UUID id;
 
     @Column(name = "correlation_id", nullable = false, length = 100)
     private String correlationId;
 
-    @Column(name = "adapter_id", nullable = false, columnDefinition = "char(36)")
-    private String adapterId;
+    @Column(name = "adapter_id", nullable = false)
+    private UUID adapterId;
 
     @Column(name = "adapter_name", nullable = false, length = 255)
     private String adapterName;
@@ -47,7 +47,10 @@ public class AdapterPayload {
     @Column(name = "payload_type", nullable = false, length = 20)
     private String payloadType; // REQUEST or RESPONSE
 
-    @Column(name = "payload", columnDefinition = "LONGTEXT")
+    @Column(name = "message_structure_id", nullable = false, columnDefinition = "UUID")
+    private UUID messageStructureId;
+
+    @Column(name = "payload", columnDefinition = "TEXT")
     private String payload;
 
     @Column(name = "payload_size")

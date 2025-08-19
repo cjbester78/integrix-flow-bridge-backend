@@ -6,12 +6,12 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.GenericGenerator;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * Entity representing a field mapping within a transformation.
@@ -39,11 +39,10 @@ public class FieldMapping {
      * Unique identifier (UUID) for the entity
      */
     @Id
-    @GeneratedValue(generator = "uuid2")
-    @GenericGenerator(name = "uuid2", strategy = "org.hibernate.id.UUIDGenerator")
-    @Column(columnDefinition = "char(36)")
+    @GeneratedValue(strategy = GenerationType.UUID)
+    @Column(name = "id", columnDefinition = "UUID")
     @EqualsAndHashCode.Include
-    private String id;
+    private UUID id;
 
     /**
      * The transformation this mapping belongs to

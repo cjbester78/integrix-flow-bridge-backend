@@ -113,14 +113,16 @@ public class MessageStructureService {
     
     @Transactional(readOnly = true)
     public Page<MessageStructureDTO> findAll(String businessComponentId, String search, Pageable pageable) {
+        UUID businessComponentUuid = businessComponentId != null && !businessComponentId.isEmpty() 
+                ? UUID.fromString(businessComponentId) : null;
         Page<MessageStructure> page = messageStructureRepository.findAllWithFilters(
-                UUID.fromString(businessComponentId), search, pageable);
+                businessComponentUuid, search, pageable);
         return page.map(this::convertToMessageStructureDTO);
     }
     
     @Transactional(readOnly = true)
     public List<MessageStructureDTO> findByBusinessComponent(String businessComponentId) {
-        return messageStructureRepository.findByBusinessComponentId(UUID.fromString(businessComponentId))
+        return messageStructureRepository.findByBusinessComponentIdAndIsActiveTrueOrderByName(UUID.fromString(businessComponentId))
                 .stream()
                 .map(this::convertToMessageStructureDTO)
                 .collect(Collectors.toList());
@@ -133,7 +135,7 @@ public class MessageStructureService {
                 .orElseThrow(() -> new RuntimeException("Message structure not found"));
         
         // First check if there are any flow structures using this message structure
-        List<FlowStructure> flowStructures = flowStructureMessageRepository.findFlowStructuresByMessageStructureId(id);
+        List<FlowStructure> flowStructures = flowStructureMessageRepository.findFlowStructuresByMessageStructureId(UUID.fromString(id));
         
         // Filter out inactive flow structures (soft-deleted ones)
         List<FlowStructure> activeFlowStructures = flowStructures.stream()

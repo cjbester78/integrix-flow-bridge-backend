@@ -67,7 +67,7 @@ public class FlowTransformationService {
     private FlowTransformation fromDTO(FlowTransformationDTO dto) {
         FlowTransformation transformation = new FlowTransformation();
         if (dto.getId() != null) {
-            transformation.setId(dto.getId() != null ? UUID.fromString(dto.getId()) : null);
+            transformation.setId(UUID.fromString(dto.getId()));
         }
         
         // Set flow if flowId is provided

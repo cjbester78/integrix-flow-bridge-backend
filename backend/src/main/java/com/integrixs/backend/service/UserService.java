@@ -65,7 +65,6 @@ public class UserService {
         user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
         user.setRole(request.getRole());
         user.setStatus(request.getStatus());
-        user.setEmailVerified(false);
         user.setPermissions("{}");
         user.setCreatedAt(LocalDateTime.now());
         user.setUpdatedAt(LocalDateTime.now());
@@ -86,7 +85,6 @@ public class UserService {
         dto.setCreatedAt(user.getCreatedAt());
         dto.setUpdatedAt(user.getUpdatedAt());
         dto.setLastLoginAt(user.getLastLoginAt());
-        dto.setEmailVerified(user.isEmailVerified());
 
         try {
             Map<String, Object> permissions = objectMapper.readValue(

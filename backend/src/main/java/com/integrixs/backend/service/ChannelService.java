@@ -32,7 +32,7 @@ public class ChannelService {
             
             if (businessComponentId != null) {
                 logger.debug("Fetching adapters for business component: {}", businessComponentId);
-                adapters = adapterRepository.findByBusinessComponentId(UUID.fromString(businessComponentId));
+                adapters = adapterRepository.findByBusinessComponent_Id(UUID.fromString(businessComponentId));
             } else {
                 logger.debug("Fetching all adapters");
                 adapters = adapterRepository.findAll();

@@ -36,6 +36,7 @@ import java.nio.charset.StandardCharsets;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.UUID;
 
 @Service
 @Slf4j
@@ -175,7 +176,7 @@ public class FlowStructureService {
         flowStructure.setVersion(flowStructure.getVersion() + 1);
         
         // Update flow structure messages
-        flowStructureMessageRepository.deleteByFlowStructureId(flowStructure.getId().toString());
+        flowStructureMessageRepository.deleteByFlowStructureId(flowStructure.getId());
         if (request.getMessageStructureIds() != null) {
             createFlowStructureMessages(flowStructure, request.getMessageStructureIds());
             // Clear the persistence context to ensure fresh load
@@ -235,7 +236,7 @@ public class FlowStructureService {
     
     @Transactional(readOnly = true)
     public List<FlowStructureDTO> findByBusinessComponent(String businessComponentId) {
-        return flowStructureRepository.findByBusinessComponentId(UUID.fromString(businessComponentId))
+        return flowStructureRepository.findByBusinessComponentIdAndIsActiveTrueOrderByName(UUID.fromString(businessComponentId))
                 .stream()
                 .map(this::convertToFlowStructureDTO)
                 .collect(Collectors.toList());
@@ -244,7 +245,7 @@ public class FlowStructureService {
     @Transactional(readOnly = true)
     public List<FlowStructureDTO> findByMessageStructure(String messageStructureId) {
         log.info("Finding flow structures using message structure: {}", messageStructureId);
-        List<FlowStructure> flowStructures = flowStructureMessageRepository.findFlowStructuresByMessageStructureId(messageStructureId);
+        List<FlowStructure> flowStructures = flowStructureMessageRepository.findFlowStructuresByMessageStructureId(UUID.fromString(messageStructureId));
         
         return flowStructures.stream()
                 .filter(FlowStructure::getIsActive)
@@ -252,7 +253,7 @@ public class FlowStructureService {
                     FlowStructureDTO dto = convertToFlowStructureDTO(flowStructure);
                     
                     // Add information about which message types use this message structure
-                    List<String> messageTypes = flowStructureMessageRepository.findByFlowStructureId(flowStructure.getId().toString())
+                    List<String> messageTypes = flowStructureMessageRepository.findByFlowStructureId(flowStructure.getId())
                             .stream()
                             .filter(fsm -> fsm.getMessageStructure().getId().toString().equals(messageStructureId))
                             .map(fsm -> fsm.getMessageType().toString())

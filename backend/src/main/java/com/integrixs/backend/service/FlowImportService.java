@@ -456,7 +456,7 @@ public class FlowImportService {
                     mapping.setSourceFieldsList(mappingDto.getSourceFields());
                     
                     mapping = fieldMappingRepository.save(mapping);
-                    idMappings.put(mappingDto.getId(), mapping.getId());
+                    idMappings.put(mappingDto.getId(), mapping.getId().toString());
                     result.getSummary().setFieldMappingsImported(
                             result.getSummary().getFieldMappingsImported() + 1);
                     

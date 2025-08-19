@@ -52,7 +52,7 @@ spring:
 # ✅ JPA default settings
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: none
     show-sql: false  # Set to true in dev profile only
     properties:
       hibernate:

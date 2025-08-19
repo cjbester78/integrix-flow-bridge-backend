@@ -39,10 +39,9 @@ public interface AuditTrailRepository extends JpaRepository<AuditTrail, UUID> {
     /**
      * Find audit entries within a date range
      */
-    @Query("SELECT a FROM AuditTrail a WHERE a.createdAt BETWEEN :startDate AND :endDate ORDER BY a.createdAt DESC")
-    Page<AuditTrail> findByDateRange(@Param("startDate") LocalDateTime startDate, 
-                                     @Param("endDate") LocalDateTime endDate, 
-                                     Pageable pageable);
+    Page<AuditTrail> findByCreatedAtBetweenOrderByCreatedAtDesc(LocalDateTime startDate, 
+                                                                LocalDateTime endDate, 
+                                                                Pageable pageable);
     
     /**
      * Find audit entries by business component
