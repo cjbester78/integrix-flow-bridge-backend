@@ -77,7 +77,7 @@ public class FlowDeploymentService {
             // Only update flow status after successful deployment
             flow.setStatus(FlowStatus.DEPLOYED_ACTIVE);
             flow.setDeployedAt(LocalDateTime.now());
-            flow.setDeployedBy(userId);
+            flow.setDeployedBy(userId != null ? UUID.fromString(userId) : null);
             flow.setDeploymentEndpoint(endpoint);
             flow.setDeploymentMetadata(objectMapper.writeValueAsString(metadata));
             
@@ -153,7 +153,7 @@ public class FlowDeploymentService {
             .flowId(flowId)
             .endpoint(flow.getDeploymentEndpoint())
             .deployedAt(flow.getDeployedAt())
-            .deployedBy(flow.getDeployedBy())
+            .deployedBy(flow.getDeployedBy() != null ? flow.getDeployedBy().toString() : null)
             .metadata(metadata)
             .build();
     }

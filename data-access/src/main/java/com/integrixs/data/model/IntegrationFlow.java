@@ -82,30 +82,30 @@ public class IntegrationFlow {
     /**
      * Source flow structure ID (for structured data flows)
      */
-    @Column(name = "source_flow_structure_id", columnDefinition = "char(36)")
-    private String sourceFlowStructureId;
+    @Column(name = "source_flow_structure_id")
+    private UUID sourceFlowStructureId;
 
     /**
      * Target flow structure ID (for structured data flows)
      */
-    @Column(name = "target_flow_structure_id", columnDefinition = "char(36)")
-    private String targetFlowStructureId;
+    @Column(name = "target_flow_structure_id")
+    private UUID targetFlowStructureId;
     
     /**
      * Legacy: Source data structure ID (deprecated - use sourceFlowStructureId)
      * @deprecated Use sourceFlowStructureId instead
      */
-    @Column(name = "source_structure_id", columnDefinition = "char(36)")
+    @Column(name = "source_structure_id")
     @Deprecated
-    private String sourceStructureId;
+    private UUID sourceStructureId;
 
     /**
      * Legacy: Target data structure ID (deprecated - use targetFlowStructureId)
      * @deprecated Use targetFlowStructureId instead
      */
-    @Column(name = "target_structure_id", columnDefinition = "char(36)")
+    @Column(name = "target_structure_id")
     @Deprecated
-    private String targetStructureId;
+    private UUID targetStructureId;
 
     /**
      * Current flow status
@@ -158,8 +158,8 @@ public class IntegrationFlow {
     /**
      * User who deployed the flow
      */
-    @Column(name = "deployed_by", columnDefinition = "char(36)")
-    private String deployedBy;
+    @Column(name = "deployed_by")
+    private UUID deployedBy;
 
     /**
      * Deployment endpoint URL

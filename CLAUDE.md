@@ -6,6 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 1. **Never do work arounds - always fix the root issue**
 2. **Never do place holders - implement the full solution**
+3. Always follow Java OO best practise for all code changes.
 
 ## Project Overview
 
