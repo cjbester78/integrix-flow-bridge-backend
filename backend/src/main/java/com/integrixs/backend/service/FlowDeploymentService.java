@@ -190,10 +190,11 @@ public class FlowDeploymentService {
                 Map<String, Object> config = objectMapper.readValue(configJson, Map.class);
                 String connectionMode = (String) config.get("connectionMode");
                 
-                // If PUSH mode and endpoint is configured, use it
-                if ("PUSH".equals(connectionMode) && config.containsKey("serviceEndpointUrl")) {
+                // Check if serviceEndpointUrl is configured
+                if (config.containsKey("serviceEndpointUrl")) {
                     String configuredEndpoint = (String) config.get("serviceEndpointUrl");
                     if (configuredEndpoint != null && !configuredEndpoint.isEmpty()) {
+                        logger.info("Using adapter configured endpoint: {}", configuredEndpoint);
                         // Ensure it starts with /
                         if (!configuredEndpoint.startsWith("/")) {
                             configuredEndpoint = "/" + configuredEndpoint;
