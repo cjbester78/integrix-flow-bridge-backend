@@ -7,6 +7,8 @@ import com.integrixs.adapters.core.AdapterMode;
 import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -39,6 +41,7 @@ public class CommunicationAdapter {
     private String direction; // INBOUND, OUTBOUND, BIDIRECTIONAL
 
     @Column(columnDefinition = "json")
+    @JdbcTypeCode(SqlTypes.JSON)
     private String configuration;
 
     @Column(name = "is_active")
