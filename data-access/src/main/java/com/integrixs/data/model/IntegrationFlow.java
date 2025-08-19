@@ -169,9 +169,9 @@ public class IntegrationFlow {
     private String deploymentEndpoint;
 
     /**
-     * Deployment metadata in JSON format
+     * Deployment metadata in JSON format (stored as TEXT)
      */
-    @Column(name = "deployment_metadata", columnDefinition = "json")
+    @Column(name = "deployment_metadata", columnDefinition = "TEXT")
     private String deploymentMetadata;
 
     /**
