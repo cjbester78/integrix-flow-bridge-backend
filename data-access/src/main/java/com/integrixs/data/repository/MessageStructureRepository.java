@@ -23,7 +23,7 @@ public interface MessageStructureRepository extends JpaRepository<MessageStructu
            "AND (:businessComponentId IS NULL OR ms.business_component_id = :businessComponentId) " +
            "AND (:search IS NULL OR :search = '' OR " +
            "(LOWER(ms.name) LIKE LOWER(CONCAT('%', :search, '%')) " +
-           "OR (ms.description IS NOT NULL AND LOWER(CAST(ms.description AS TEXT)) LIKE LOWER(CONCAT('%', :search, '%')))))  /* #pageable# */",
+           "OR (ms.description IS NOT NULL AND LOWER(CAST(ms.description AS TEXT)) LIKE LOWER(CONCAT('%', :search, '%')))))",
            countQuery = "SELECT COUNT(*) FROM message_structures ms WHERE ms.is_active = true " +
            "AND (:businessComponentId IS NULL OR ms.business_component_id = :businessComponentId) " +
            "AND (:search IS NULL OR :search = '' OR " +
