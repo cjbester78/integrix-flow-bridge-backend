@@ -200,8 +200,7 @@ public class FlowControllerV1 {
         flow.setDescription(dto.getDescription());
         flow.setSourceAdapterId(UUID.fromString(dto.getSourceAdapterId()));
         flow.setTargetAdapterId(UUID.fromString(dto.getTargetAdapterId()));
-        flow.setConfiguration(dto.getConfiguration() != null ? 
-            dto.getConfiguration().toString() : "{}");
+        // Configuration field removed - using native columns instead
         return flow;
     }
     
