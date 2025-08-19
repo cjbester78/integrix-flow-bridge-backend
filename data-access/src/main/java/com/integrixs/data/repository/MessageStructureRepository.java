@@ -19,11 +19,13 @@ public interface MessageStructureRepository extends JpaRepository<MessageStructu
     
     List<MessageStructure> findAllByIsActiveTrue();
     
-    @Query("SELECT ms FROM MessageStructure ms WHERE ms.isActive = true " +
-           "AND (:businessComponentId IS NULL OR ms.businessComponent.id = :businessComponentId) " +
+    @Query(value = "SELECT * FROM message_structures ms WHERE ms.is_active = true " +
+           "AND (:businessComponentId IS NULL OR ms.business_component_id = :businessComponentId) " +
            "AND (:search IS NULL OR :search = '' OR " +
            "(LOWER(ms.name) LIKE LOWER(CONCAT('%', :search, '%')) " +
-           "OR (ms.description IS NOT NULL AND LOWER(ms.description) LIKE LOWER(CONCAT('%', :search, '%')))))")
+           "OR (ms.description IS NOT NULL AND LOWER(ms.description::text) LIKE LOWER(CONCAT('%', :search, '%'))))) " +
+           "ORDER BY ms.name",
+           nativeQuery = true)
     Page<MessageStructure> findAllWithFilters(@Param("businessComponentId") UUID businessComponentId,
                                             @Param("search") String search,
                                             Pageable pageable);
