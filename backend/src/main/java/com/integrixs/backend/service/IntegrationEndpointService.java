@@ -199,7 +199,7 @@ public class IntegrationEndpointService {
         
         // First check if flow has a source flow structure with WSDL
         if (flow.getSourceFlowStructureId() != null) {
-            FlowStructure sourceFlowStructure = flowStructureRepository.findById(UUID.fromString(flow.getSourceFlowStructureId()))
+            FlowStructure sourceFlowStructure = flowStructureRepository.findById(flow.getSourceFlowStructureId())
                 .orElse(null);
             
             if (sourceFlowStructure != null && sourceFlowStructure.getWsdlContent() != null) {
@@ -211,7 +211,7 @@ public class IntegrationEndpointService {
         
         // Legacy: Check old data structure if no flow structure
         if (flow.getSourceStructureId() != null) {
-            DataStructure sourceStructure = dataStructureRepository.findById(UUID.fromString(flow.getSourceStructureId()))
+            DataStructure sourceStructure = dataStructureRepository.findById(flow.getSourceStructureId())
                 .orElse(null);
             
             if (sourceStructure != null && sourceStructure.getOriginalContent() != null) {

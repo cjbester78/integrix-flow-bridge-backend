@@ -362,8 +362,8 @@ public class FlowImportService {
                     .description(dto.getDescription())
                     .sourceAdapterId(sourceAdapterId != null ? UUID.fromString(sourceAdapterId) : null)
                     .targetAdapterId(targetAdapterId != null ? UUID.fromString(targetAdapterId) : null)
-                    .sourceStructureId(dto.getSourceStructureId())
-                    .targetStructureId(dto.getTargetStructureId())
+                    .sourceStructureId(dto.getSourceStructureId() != null ? UUID.fromString(dto.getSourceStructureId()) : null)
+                    .targetStructureId(dto.getTargetStructureId() != null ? UUID.fromString(dto.getTargetStructureId()) : null)
                     .status(FlowStatus.DEVELOPED_INACTIVE) // Always import as undeployed
                     // Configuration field removed - using native columns instead
                     .isActive(false) // Start inactive

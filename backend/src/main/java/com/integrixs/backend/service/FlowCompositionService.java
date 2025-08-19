@@ -273,10 +273,19 @@ public class FlowCompositionService {
                 flow.setTargetAdapterId(UUID.fromString(request.getTargetAdapterId()));
             }
             
-            flow.setSourceFlowStructureId(request.getSourceFlowStructureId());
-            flow.setTargetFlowStructureId(request.getTargetFlowStructureId());
-            flow.setSourceStructureId(request.getSourceStructureId());
-            flow.setTargetStructureId(request.getTargetStructureId());
+            // Convert String structure IDs to UUID
+            if (request.getSourceFlowStructureId() != null) {
+                flow.setSourceFlowStructureId(UUID.fromString(request.getSourceFlowStructureId()));
+            }
+            if (request.getTargetFlowStructureId() != null) {
+                flow.setTargetFlowStructureId(UUID.fromString(request.getTargetFlowStructureId()));
+            }
+            if (request.getSourceStructureId() != null) {
+                flow.setSourceStructureId(UUID.fromString(request.getSourceStructureId()));
+            }
+            if (request.getTargetStructureId() != null) {
+                flow.setTargetStructureId(UUID.fromString(request.getTargetStructureId()));
+            }
             
             return flowRepository.save(flow);
         });

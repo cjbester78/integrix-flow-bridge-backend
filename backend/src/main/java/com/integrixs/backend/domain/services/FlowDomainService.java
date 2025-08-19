@@ -99,7 +99,7 @@ public class FlowDomainService {
         flow.setStatus(FlowStatus.ACTIVE);
         flow.setActive(true);
         flow.setDeployedAt(LocalDateTime.now());
-        flow.setDeployedBy(activatedBy);
+        flow.setDeployedBy(activatedBy != null ? UUID.fromString(activatedBy) : null);
         flow.setUpdatedAt(LocalDateTime.now());
         
         IntegrationFlow savedFlow = flowRepository.save(flow);

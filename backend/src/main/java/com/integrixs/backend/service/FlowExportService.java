@@ -268,8 +268,8 @@ public class FlowExportService {
                 .description(flow.getDescription())
                 .sourceAdapterId(flow.getSourceAdapterId() != null ? flow.getSourceAdapterId().toString() : null)
                 .targetAdapterId(flow.getTargetAdapterId() != null ? flow.getTargetAdapterId().toString() : null)
-                .sourceStructureId(flow.getSourceStructureId())
-                .targetStructureId(flow.getTargetStructureId())
+                .sourceStructureId(flow.getSourceStructureId() != null ? flow.getSourceStructureId().toString() : null)
+                .targetStructureId(flow.getTargetStructureId() != null ? flow.getTargetStructureId().toString() : null)
                 .status(flow.getStatus().toString())
                 // Configuration field removed - using native columns instead
                 // isActive not available in FlowDTO
