@@ -11,7 +11,9 @@ import com.integrixs.backend.exception.ResourceNotFoundException;
 import com.integrixs.data.model.CommunicationAdapter;
 import com.integrixs.data.model.IntegrationFlow;
 import com.integrixs.data.model.SystemLog.LogLevel;
+import com.integrixs.data.repository.IntegrationFlowRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -44,6 +46,12 @@ public class MessageService {
     
     @Autowired
     private AdapterPayloadRepository payloadRepository;
+    
+    @Autowired
+    private IntegrationFlowRepository flowRepository;
+    
+    @Autowired
+    private ApplicationContext applicationContext;
     
     @Autowired
     private ObjectMapper objectMapper;
@@ -204,9 +212,123 @@ public class MessageService {
         SystemLog log = logRepository.findById(UUID.fromString(id))
                 .orElseThrow(() -> new ResourceNotFoundException("Message not found with id: " + id));
         
-        // TODO: Implement actual reprocessing logic
-        // For now, just return the message
-        return convertToMessageDTO(log);
+        // Only reprocess messages that are flow executions
+        if (!"FLOW_EXECUTION".equals(log.getCategory())) {
+            throw new IllegalArgumentException("Can only reprocess flow execution messages");
+        }
+        
+        // Get the flow ID from the domain reference
+        String flowId = log.getDomainReferenceId();
+        if (flowId == null || flowId.isEmpty()) {
+            throw new IllegalArgumentException("No flow ID found in message");
+        }
+        
+        // Check if we have the original message payload
+        String originalPayload = null;
+        if (log.getDetails() != null && !log.getDetails().isEmpty()) {
+            try {
+                JsonNode details = objectMapper.readTree(log.getDetails());
+                if (details.has("payload")) {
+                    originalPayload = details.get("payload").asText();
+                } else if (details.has("messageContent")) {
+                    originalPayload = details.get("messageContent").asText();
+                }
+            } catch (Exception e) {
+                logger.warn("Failed to extract original payload from message details", e);
+            }
+        }
+        
+        // If no payload in details, check adapter payloads
+        if (originalPayload == null && log.getCorrelationId() != null) {
+            List<AdapterPayload> payloads = payloadRepository.findByCorrelationIdOrderByCreatedAtAsc(log.getCorrelationId());
+            // Find the first source adapter request payload
+            for (AdapterPayload payload : payloads) {
+                if ("request".equalsIgnoreCase(payload.getPayloadType()) && "source".equalsIgnoreCase(payload.getDirection())) {
+                    originalPayload = payload.getPayload();
+                    break;
+                }
+            }
+        }
+        
+        // Create a new correlation ID for the reprocessing
+        String newCorrelationId = UUID.randomUUID().toString();
+        
+        // Log the reprocessing attempt
+        logger.info("Reprocessing message {} (flow: {}) with new correlation ID: {}", id, flowId, newCorrelationId);
+        
+        try {
+            // Get the flow execution service instance
+            FlowExecutionAsyncService flowExecutionService = applicationContext.getBean(FlowExecutionAsyncService.class);
+            
+            // Create a new message for the reprocessing
+            IntegrationFlow flow = flowRepository.findById(UUID.fromString(flowId))
+                    .orElseThrow(() -> new ResourceNotFoundException("Flow not found: " + flowId));
+            
+            String reprocessCorrelationId = createMessage(flow, 
+                    "Reprocessing message from " + log.getCorrelationId(), 
+                    "REPROCESS", 
+                    newCorrelationId);
+            
+            // Execute the flow
+            // Note: The flow will pull fresh data from the source adapter
+            // TODO: In the future, we could enhance to support replaying with original payload
+            flowExecutionService.executeFlow(flowId);
+            
+            // Update the original message to indicate it was reprocessed
+            log.setDetails(updateDetailsWithReprocessInfo(log.getDetails(), newCorrelationId));
+            logRepository.save(log);
+            
+            // Return the updated message DTO
+            return convertToMessageDTO(log);
+            
+        } catch (Exception e) {
+            logger.error("Failed to reprocess message {}: {}", id, e.getMessage(), e);
+            
+            // Log the failure
+            SystemLog failureLog = new SystemLog();
+            failureLog.setTimestamp(LocalDateTime.now());
+            failureLog.setCategory("REPROCESS_FAILURE");
+            failureLog.setLevel(LogLevel.ERROR);
+            failureLog.setMessage("Failed to reprocess message: " + e.getMessage());
+            failureLog.setDomainType("SystemLog");
+            failureLog.setDomainReferenceId(id);
+            failureLog.setCorrelationId(newCorrelationId);
+            try {
+                failureLog.setDetails(objectMapper.writeValueAsString(Map.of(
+                        "originalMessageId", id,
+                        "error", e.getMessage(),
+                        "stackTrace", Arrays.toString(e.getStackTrace())
+                )));
+            } catch (Exception jsonEx) {
+                failureLog.setDetails("{\"error\": \"Failed to serialize error details\"}");
+            }
+            logRepository.save(failureLog);
+            
+            throw new RuntimeException("Failed to reprocess message: " + e.getMessage(), e);
+        }
+    }
+    
+    private String updateDetailsWithReprocessInfo(String existingDetails, String newCorrelationId) {
+        try {
+            ObjectNode details = existingDetails != null && !existingDetails.isEmpty() 
+                    ? (ObjectNode) objectMapper.readTree(existingDetails)
+                    : objectMapper.createObjectNode();
+            
+            // Add reprocess information
+            ArrayNode reprocessHistory = details.has("reprocessHistory") 
+                    ? (ArrayNode) details.get("reprocessHistory")
+                    : details.putArray("reprocessHistory");
+            
+            ObjectNode reprocessEntry = objectMapper.createObjectNode();
+            reprocessEntry.put("timestamp", LocalDateTime.now().toString());
+            reprocessEntry.put("newCorrelationId", newCorrelationId);
+            reprocessHistory.add(reprocessEntry);
+            
+            return objectMapper.writeValueAsString(details);
+        } catch (Exception e) {
+            logger.warn("Failed to update details with reprocess info", e);
+            return existingDetails;
+        }
     }
     
     /**
