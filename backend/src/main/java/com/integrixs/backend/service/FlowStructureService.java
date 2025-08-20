@@ -297,8 +297,9 @@ public class FlowStructureService {
             throw new IllegalStateException(message);
         }
         
-        flowStructure.setIsActive(false);
-        flowStructureRepository.save(flowStructure);
+        // Perform hard delete - this will cascade delete flow_structure_messages due to CASCADE constraint
+        flowStructureRepository.delete(flowStructure);
+        flowStructureRepository.flush();
     }
     
     private void createFlowStructureMessages(FlowStructure flowStructure, 
