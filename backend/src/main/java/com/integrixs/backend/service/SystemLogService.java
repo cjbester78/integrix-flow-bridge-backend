@@ -57,7 +57,7 @@ public class SystemLogService {
                     .message(entry.getMessage())
                     .source("FRONTEND")
                     .userId(entry.getUserId())
-                    .username(getUsernameByUuid(entry.getUserId()))
+                    .username(entry.getUserId() != null ? getUsernameByUuid(UUID.fromString(entry.getUserId())) : null)
                     .ipAddress(entry.getClientIp())
                     .userAgent(entry.getUserAgent())
                     .correlationId(entry.getCorrelationId())
