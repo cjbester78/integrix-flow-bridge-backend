@@ -14,8 +14,9 @@ import com.integrixs.data.model.SystemLog;
 public class UserManagementError {
 
     @Id
-    @Column(length = 36)
-    private String id = UUID.randomUUID().toString();
+    @GeneratedValue(strategy = GenerationType.UUID)
+    @Column(columnDefinition = "UUID")
+    private UUID id;
 
     @Column(name = "action", nullable = false)
     private String action;
@@ -38,14 +39,14 @@ public class UserManagementError {
     /**
      * Method: {()
      */
-    public String getId() {
+    public UUID getId() {
         return id;
     }
 
     /**
      * Method: {()
      */
-    public void setId(String id) {
+    public void setId(UUID id) {
         this.id = id;
     }
 
