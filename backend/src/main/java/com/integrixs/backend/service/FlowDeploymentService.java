@@ -122,6 +122,12 @@ public class FlowDeploymentService {
         
         // Validate flow is deployed
         if (flow.getStatus() != FlowStatus.DEPLOYED_ACTIVE) {
+            logger.warn("Attempting to undeploy flow that is not in DEPLOYED_ACTIVE status. Current status: {}", flow.getStatus());
+            // If already inactive, just return success
+            if (flow.getStatus() == FlowStatus.DEVELOPED_INACTIVE) {
+                logger.info("Flow is already undeployed: {}", flowId);
+                return;
+            }
             throw new IllegalStateException("Flow is not deployed: " + flowId);
         }
         
