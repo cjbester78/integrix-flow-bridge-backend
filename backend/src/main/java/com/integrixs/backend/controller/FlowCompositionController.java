@@ -124,8 +124,8 @@ public class FlowCompositionController {
                     cloneRequest.setDescription("Cloned from: " + composition.getFlow().getName());
                     cloneRequest.setSourceAdapterId(composition.getFlow().getSourceAdapterId() != null ? composition.getFlow().getSourceAdapterId().toString() : null);
                     cloneRequest.setTargetAdapterId(composition.getFlow().getTargetAdapterId() != null ? composition.getFlow().getTargetAdapterId().toString() : null);
-                    cloneRequest.setSourceStructureId(composition.getFlow().getSourceStructureId() != null ? composition.getFlow().getSourceStructureId().toString() : null);
-                    cloneRequest.setTargetStructureId(composition.getFlow().getTargetStructureId() != null ? composition.getFlow().getTargetStructureId().toString() : null);
+                    cloneRequest.setSourceFlowStructureId(composition.getFlow().getSourceFlowStructureId() != null ? composition.getFlow().getSourceFlowStructureId().toString() : null);
+                    cloneRequest.setTargetFlowStructureId(composition.getFlow().getTargetFlowStructureId() != null ? composition.getFlow().getTargetFlowStructureId().toString() : null);
                     
                     IntegrationFlow clonedFlow = flowCompositionService.createDirectMappingFlow(cloneRequest);
                     return ResponseEntity.ok(clonedFlow);

@@ -85,12 +85,8 @@ ADD CONSTRAINT fk_messages_flow
 
 -- 5. Transformations Protection
 -- Prevent deletion of transformations with field mappings
-ALTER TABLE field_mappings
-DROP CONSTRAINT IF EXISTS fk_mappings_transformation,
-ADD CONSTRAINT fk_mappings_transformation 
-    FOREIGN KEY (transformation_id) 
-    REFERENCES flow_transformations(id) 
-    ON DELETE RESTRICT;
+-- NOTE: Skipping this constraint due to type mismatch (character(36) vs uuid)
+-- transformation_id needs to be converted to uuid type first
 
 -- 6. Business Components Protection
 -- Prevent deletion of business components with flows

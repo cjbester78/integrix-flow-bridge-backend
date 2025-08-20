@@ -54,16 +54,6 @@ public class FlowCreateRequestDTO {
     private String targetAdapterId;
     
     /**
-     * Source data structure ID
-     */
-    private String sourceStructureId;
-    
-    /**
-     * Target data structure ID
-     */
-    private String targetStructureId;
-    
-    /**
      * Flow configuration in JSON format
      */
     @Size(max = 10000, message = "Configuration cannot exceed 10000 characters")

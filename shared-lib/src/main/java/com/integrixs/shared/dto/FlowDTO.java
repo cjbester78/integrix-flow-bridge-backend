@@ -20,8 +20,8 @@ public class FlowDTO {
     private String targetAdapterId;
     private String sourceBusinessComponentId;
     private String targetBusinessComponentId;
-    private String sourceStructureId;
-    private String targetStructureId;
+    private String sourceFlowStructureId;
+    private String targetFlowStructureId;
     private String status;
     private String configuration;
     private String mappingMode;

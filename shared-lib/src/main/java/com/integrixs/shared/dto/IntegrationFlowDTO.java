@@ -22,10 +22,6 @@ public class IntegrationFlowDTO {
     private String targetAdapterId;
     private String sourceFlowStructureId;
     private String targetFlowStructureId;
-    @Deprecated
-    private String sourceStructureId;
-    @Deprecated
-    private String targetStructureId;
     private String status;
     private boolean isActive;
     private String mappingMode; // WITH_MAPPING or PASS_THROUGH

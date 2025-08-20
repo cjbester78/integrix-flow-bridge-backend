@@ -209,17 +209,6 @@ public class IntegrationEndpointService {
             }
         }
         
-        // Legacy: Check old data structure if no flow structure
-        if (flow.getSourceStructureId() != null) {
-            DataStructure sourceStructure = dataStructureRepository.findById(flow.getSourceStructureId())
-                .orElse(null);
-            
-            if (sourceStructure != null && sourceStructure.getOriginalContent() != null) {
-                logger.info("Using WSDL from legacy data structure: {}", sourceStructure.getName());
-                // Return the original WSDL with updated endpoint
-                return updateWsdlEndpoint(sourceStructure.getOriginalContent(), flow.getDeploymentEndpoint());
-            }
-        }
         
         // Fall back to adapter configuration
         String configJson = sourceAdapter.getConfiguration();

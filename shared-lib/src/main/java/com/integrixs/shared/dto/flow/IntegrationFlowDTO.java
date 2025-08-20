@@ -68,20 +68,6 @@ public class IntegrationFlowDTO {
     private String targetFlowStructureId;
     
     /**
-     * Source data structure ID (deprecated - use sourceFlowStructureId)
-     * @deprecated Use sourceFlowStructureId instead
-     */
-    @Deprecated
-    private String sourceStructureId;
-    
-    /**
-     * Target data structure ID (deprecated - use targetFlowStructureId)
-     * @deprecated Use targetFlowStructureId instead
-     */
-    @Deprecated
-    private String targetStructureId;
-    
-    /**
      * Current flow status (ACTIVE, INACTIVE, ERROR, etc.)
      */
     @Pattern(regexp = "^(ACTIVE|INACTIVE|ERROR|SUSPENDED)$", 

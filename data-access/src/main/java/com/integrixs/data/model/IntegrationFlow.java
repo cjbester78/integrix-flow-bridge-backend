@@ -91,21 +91,6 @@ public class IntegrationFlow {
     @Column(name = "target_flow_structure_id")
     private UUID targetFlowStructureId;
     
-    /**
-     * Legacy: Source data structure ID (deprecated - use sourceFlowStructureId)
-     * @deprecated Use sourceFlowStructureId instead
-     */
-    @Column(name = "source_structure_id")
-    @Deprecated
-    private UUID sourceStructureId;
-
-    /**
-     * Legacy: Target data structure ID (deprecated - use targetFlowStructureId)
-     * @deprecated Use targetFlowStructureId instead
-     */
-    @Column(name = "target_structure_id")
-    @Deprecated
-    private UUID targetStructureId;
 
     /**
      * Current flow status

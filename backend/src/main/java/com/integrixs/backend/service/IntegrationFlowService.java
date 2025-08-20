@@ -59,9 +59,6 @@ public class IntegrationFlowService {
                 existing.setTargetAdapterId(updatedFlow.getTargetAdapterId());
                 existing.setSourceFlowStructureId(updatedFlow.getSourceFlowStructureId());
                 existing.setTargetFlowStructureId(updatedFlow.getTargetFlowStructureId());
-                // Keep legacy fields for backward compatibility
-                existing.setSourceStructureId(updatedFlow.getSourceStructureId());
-                existing.setTargetStructureId(updatedFlow.getTargetStructureId());
                 existing.setStatus(updatedFlow.getStatus());
                 existing.setActive(updatedFlow.isActive());
                 existing.setCreatedBy(updatedFlow.getCreatedBy());
@@ -101,8 +98,6 @@ public class IntegrationFlowService {
                 .targetAdapterId(flow.getTargetAdapterId() != null ? flow.getTargetAdapterId().toString() : null)
                 .sourceFlowStructureId(flow.getSourceFlowStructureId() != null ? flow.getSourceFlowStructureId().toString() : null)
                 .targetFlowStructureId(flow.getTargetFlowStructureId() != null ? flow.getTargetFlowStructureId().toString() : null)
-                .sourceStructureId(flow.getSourceStructureId() != null ? flow.getSourceStructureId().toString() : null)
-                .targetStructureId(flow.getTargetStructureId() != null ? flow.getTargetStructureId().toString() : null)
                 .status(flow.getStatus() != null ? flow.getStatus().toString() : null)
                 // Configuration field removed - using native columns instead
                 .isActive(flow.isActive())

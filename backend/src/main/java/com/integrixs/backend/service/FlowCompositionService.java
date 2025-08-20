@@ -352,8 +352,6 @@ public class FlowCompositionService {
         private String targetAdapterId;
         private String sourceFlowStructureId;
         private String targetFlowStructureId;
-        private String sourceStructureId;
-        private String targetStructureId;
         private String createdBy;
         private String requestMappingName;
         private List<FieldMappingDTO> fieldMappings;
@@ -378,10 +376,6 @@ public class FlowCompositionService {
         public void setSourceFlowStructureId(String sourceFlowStructureId) { this.sourceFlowStructureId = sourceFlowStructureId; }
         public String getTargetFlowStructureId() { return targetFlowStructureId; }
         public void setTargetFlowStructureId(String targetFlowStructureId) { this.targetFlowStructureId = targetFlowStructureId; }
-        public String getSourceStructureId() { return sourceStructureId; }
-        public void setSourceStructureId(String sourceStructureId) { this.sourceStructureId = sourceStructureId; }
-        public String getTargetStructureId() { return targetStructureId; }
-        public void setTargetStructureId(String targetStructureId) { this.targetStructureId = targetStructureId; }
         public String getCreatedBy() { return createdBy; }
         public void setCreatedBy(String createdBy) { this.createdBy = createdBy; }
         public String getRequestMappingName() { return requestMappingName; }
@@ -432,8 +426,6 @@ public class FlowCompositionService {
         private String targetAdapterId;
         private String sourceFlowStructureId;
         private String targetFlowStructureId;
-        private String sourceStructureId;
-        private String targetStructureId;
 
         // Getters and setters
         public String getFlowName() { return flowName; }
@@ -448,10 +440,6 @@ public class FlowCompositionService {
         public void setSourceFlowStructureId(String sourceFlowStructureId) { this.sourceFlowStructureId = sourceFlowStructureId; }
         public String getTargetFlowStructureId() { return targetFlowStructureId; }
         public void setTargetFlowStructureId(String targetFlowStructureId) { this.targetFlowStructureId = targetFlowStructureId; }
-        public String getSourceStructureId() { return sourceStructureId; }
-        public void setSourceStructureId(String sourceStructureId) { this.sourceStructureId = sourceStructureId; }
-        public String getTargetStructureId() { return targetStructureId; }
-        public void setTargetStructureId(String targetStructureId) { this.targetStructureId = targetStructureId; }
     }
 
     public static class CompleteFlowComposition {
