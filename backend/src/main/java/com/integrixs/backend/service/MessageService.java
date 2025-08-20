@@ -334,7 +334,7 @@ public class MessageService {
     /**
      * Log adapter payload (request or response) to dedicated payload table
      */
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    @Transactional(propagation = Propagation.REQUIRES_NEW, noRollbackFor = Exception.class)
     public void logAdapterPayload(String correlationId, CommunicationAdapter adapter, 
                                   String payloadType, String payload, String direction) {
         logger.info("DEBUG: logAdapterPayload called - correlationId: {}, adapter: {}, direction: {}, payloadType: {}", 
@@ -356,9 +356,7 @@ public class MessageService {
             AdapterPayload saved = payloadRepository.save(adapterPayload);
             logger.info("DEBUG: Successfully saved adapter payload with ID: {}", saved.getId());
             
-            // Force flush to ensure it's written
-            payloadRepository.flush();
-            logger.info("DEBUG: Flushed to database");
+            logger.info("DEBUG: Saved payload to database");
             
             // Also log a simple entry to system_logs for tracking
             try {
@@ -778,7 +776,6 @@ public class MessageService {
             log.setDetails(details.toString());
             
             logRepository.save(log);
-            logRepository.flush();
             logger.info("Successfully created message log with correlation ID: {} and ID: {}", correlationId, log.getId());
         } catch (Exception e) {
             logger.error("Error creating message log: {}", e.getMessage(), e);
@@ -791,7 +788,7 @@ public class MessageService {
     /**
      * Log a processing step - adds to existing message log
      */
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    @Transactional(propagation = Propagation.REQUIRES_NEW, noRollbackFor = Exception.class)
     public void logProcessingStep(String correlationId, IntegrationFlow flow, String step, String stepDetails, LogLevel level) {
         try {
             logger.debug("Adding processing step for correlation ID: {} - Step: {}", correlationId, step);
@@ -840,7 +837,6 @@ public class MessageService {
             }
             
             logRepository.save(mainLog);
-            logRepository.flush();
             
             logger.debug("Successfully saved processing step. Total steps now: {}", steps.size());
         } catch (Exception e) {
@@ -853,7 +849,7 @@ public class MessageService {
     /**
      * Update message status after processing
      */
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    @Transactional(propagation = Propagation.REQUIRES_NEW, noRollbackFor = Exception.class)
     public void updateMessageStatus(String correlationId, String status, String statusDetails) {
         try {
             // Find the main message log by correlation ID
@@ -908,7 +904,6 @@ public class MessageService {
             }
             
             logRepository.save(mainLog);
-            logRepository.flush();
         } catch (Exception e) {
             logger.error("Error updating message status: {}", e.getMessage(), e);
             e.printStackTrace();
@@ -919,7 +914,7 @@ public class MessageService {
     /**
      * Log adapter-specific activity
      */
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    @Transactional(propagation = Propagation.REQUIRES_NEW, noRollbackFor = Exception.class)
     public void logAdapterActivity(CommunicationAdapter adapter, String message, String activityDetails, LogLevel level, String correlationId) {
         try {
             SystemLog log = new SystemLog();
@@ -948,7 +943,6 @@ public class MessageService {
             log.setDetails(details.toString());
             
             logRepository.save(log);
-            logRepository.flush();
         } catch (Exception e) {
             logger.error("Error logging adapter activity: {}", e.getMessage(), e);
             e.printStackTrace();
