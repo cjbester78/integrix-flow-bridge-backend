@@ -21,6 +21,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import com.integrixs.data.repository.UserRepository;
+import com.integrixs.backend.service.UserService;
 
 /**
  * Enhanced security configuration with comprehensive security features.
@@ -46,6 +47,11 @@ public class SecurityConfig {
     }
 
     @Bean
+    public UserContextFilter userContextFilter(UserRepository userRepository) {
+        return new UserContextFilter(userRepository);
+    }
+    
+    @Bean
     public FilterRegistrationBean<Filter> jwtFilterRegistration(JwtAuthFilter jwtAuthFilter) {
         FilterRegistrationBean<Filter> registration = new FilterRegistrationBean<>();
         registration.setFilter(jwtAuthFilter);
@@ -54,7 +60,8 @@ public class SecurityConfig {
     }
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http, JwtAuthFilter jwtAuthFilter, 
+    public SecurityFilterChain filterChain(HttpSecurity http, JwtAuthFilter jwtAuthFilter,
+                                         UserContextFilter userContextFilter,
                                          CustomAuthenticationEntryPoint customAuthenticationEntryPoint,
                                          CustomAccessDeniedHandler customAccessDeniedHandler) throws Exception {
         return http
@@ -139,6 +146,9 @@ public class SecurityConfig {
                 
                 // JWT filter
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
+                
+                // UserContext filter (after JWT authentication)
+                .addFilterAfter(userContextFilter, JwtAuthFilter.class)
                 
                 // Exception handling
                 .exceptionHandling(exceptions -> exceptions

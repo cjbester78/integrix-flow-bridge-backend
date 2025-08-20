@@ -1,12 +1,16 @@
 package com.integrixs.data.listener;
 
 import com.integrixs.data.model.User;
+import com.integrixs.data.repository.UserRepository;
+import com.integrixs.shared.context.UserContext;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.lang.reflect.Method;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 /**
  * JPA entity listener for automatically populating audit fields.
@@ -16,6 +20,13 @@ import java.time.LocalDateTime;
  */
 @Component
 public class AuditEntityListener {
+    
+    private static UserRepository userRepository;
+    
+    @Autowired
+    public void setUserRepository(UserRepository userRepository) {
+        AuditEntityListener.userRepository = userRepository;
+    }
     
     @PrePersist
     public void setCreatedFields(Object entity) {
@@ -57,13 +68,18 @@ public class AuditEntityListener {
     }
     
     /**
-     * Get the current authenticated user
-     * Note: In data-access module, we don't have access to Spring Security
-     * The actual user should be set by the service layer
+     * Get the current authenticated user from the UserContext
      */
     private User getCurrentUser() {
-        // TODO: This should be handled by the service layer
-        // For now, return null and let the service layer set the user
+        try {
+            UUID userId = UserContext.getCurrentUserId();
+            if (userId != null && userRepository != null) {
+                return userRepository.findById(userId).orElse(null);
+            }
+        } catch (Exception e) {
+            // Log but don't fail
+            e.printStackTrace();
+        }
         return null;
     }
     

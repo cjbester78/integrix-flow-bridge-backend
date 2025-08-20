@@ -11,11 +11,15 @@ import com.integrixs.data.model.MappingMode;
 import com.integrixs.data.repository.CommunicationAdapterRepository;
 import com.integrixs.data.repository.FieldMappingRepository;
 import com.integrixs.data.repository.IntegrationFlowRepository;
+import com.integrixs.data.repository.FlowStructureRepository;
+import com.integrixs.data.model.FlowStructure;
+import com.integrixs.data.model.FlowStructureNamespace;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -35,6 +39,7 @@ public class MessageProcessingEngine {
     private final IntegrationFlowRepository flowRepository;
     private final FieldMappingRepository fieldMappingRepository;
     private final CommunicationAdapterRepository adapterRepository;
+    private final FlowStructureRepository flowStructureRepository;
     
     @Autowired
     public MessageProcessingEngine(
@@ -43,13 +48,15 @@ public class MessageProcessingEngine {
             AdapterFactory adapterFactory,
             IntegrationFlowRepository flowRepository,
             FieldMappingRepository fieldMappingRepository,
-            CommunicationAdapterRepository adapterRepository) {
+            CommunicationAdapterRepository adapterRepository,
+            FlowStructureRepository flowStructureRepository) {
         this.messageRoutingService = messageRoutingService;
         this.xmlFieldMapper = xmlFieldMapper;
         this.adapterFactory = adapterFactory;
         this.flowRepository = flowRepository;
         this.fieldMappingRepository = fieldMappingRepository;
         this.adapterRepository = adapterRepository;
+        this.flowStructureRepository = flowStructureRepository;
     }
     
     /**
@@ -145,8 +152,49 @@ public class MessageProcessingEngine {
      * Extract namespaces from flow configuration
      */
     private Map<String, String> extractNamespaces(IntegrationFlow flow) {
-        // TODO: Extract namespaces from flow configuration
-        return Map.of();
+        Map<String, String> namespaces = new HashMap<>();
+        
+        try {
+            // Extract namespaces from source flow structure
+            if (flow.getSourceFlowStructureId() != null) {
+                flowStructureRepository.findById(flow.getSourceFlowStructureId())
+                    .ifPresent(structure -> extractNamespacesFromStructure(structure, namespaces));
+            }
+            
+            // Extract namespaces from target flow structure (merge with source)
+            if (flow.getTargetFlowStructureId() != null) {
+                flowStructureRepository.findById(flow.getTargetFlowStructureId())
+                    .ifPresent(structure -> extractNamespacesFromStructure(structure, namespaces));
+            }
+            
+            logger.debug("Extracted {} namespaces for flow {}", namespaces.size(), flow.getId());
+            
+        } catch (Exception e) {
+            logger.error("Error extracting namespaces for flow {}: {}", flow.getId(), e.getMessage(), e);
+        }
+        
+        return namespaces;
+    }
+    
+    /**
+     * Extract namespaces from a flow structure and add to the map
+     */
+    private void extractNamespacesFromStructure(FlowStructure structure, Map<String, String> namespaces) {
+        if (structure.getNamespaces() != null) {
+            for (FlowStructureNamespace ns : structure.getNamespaces()) {
+                String prefix = ns.getPrefix();
+                String uri = ns.getUri();
+                
+                // Handle default namespace (null or empty prefix)
+                if (prefix == null || prefix.trim().isEmpty()) {
+                    namespaces.put("", uri);
+                } else {
+                    namespaces.put(prefix, uri);
+                }
+                
+                logger.trace("Added namespace: {} = {}", prefix, uri);
+            }
+        }
     }
     
     /**

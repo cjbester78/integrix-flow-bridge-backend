@@ -230,7 +230,8 @@ public class HttpReceiverAdapterConfig {
     }
 
 	public void setEndpointUrl(Object object) {
-		// TODO Auto-generated method stub
-		
+		if (object != null) {
+			this.targetEndpointUrl = object.toString();
+		}
 	}
 }

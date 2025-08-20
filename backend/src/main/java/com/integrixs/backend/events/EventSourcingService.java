@@ -108,6 +108,7 @@ public class EventSourcingService {
      * @param <T> the aggregate type
      * @return rebuilt aggregate or null
      */
+    @SuppressWarnings("unchecked")
     public <T> T rebuildAggregate(String aggregateId, Class<T> aggregateType) {
         List<EventStore> events = getEventHistory(aggregateId, aggregateType.getSimpleName());
         
@@ -115,12 +116,72 @@ public class EventSourcingService {
             return null;
         }
         
-        // This is a simplified version - in real implementation,
-        // you would apply each event to rebuild the aggregate state
         log.info("Rebuilding aggregate {} from {} events", aggregateId, events.size());
         
-        // TODO: Implement actual event replay logic
-        return null;
+        try {
+            // Create a new instance of the aggregate
+            T aggregate = aggregateType.getDeclaredConstructor().newInstance();
+            
+            // Apply each event to rebuild the state
+            for (EventStore eventStore : events) {
+                // Deserialize the event
+                String eventData = eventStore.getEventData();
+                String eventMetadata = eventStore.getEventMetadata();
+                
+                // Get the event class from metadata
+                Map<String, Object> metadata = objectMapper.readValue(eventMetadata, Map.class);
+                String eventClassName = (String) metadata.get("eventClass");
+                
+                if (eventClassName != null) {
+                    try {
+                        // Load the event class
+                        Class<?> eventClass = Class.forName(eventClassName);
+                        
+                        // Deserialize the event
+                        Object event = objectMapper.readValue(eventData, eventClass);
+                        
+                        // Apply the event to the aggregate
+                        applyEventToAggregate(aggregate, event);
+                        
+                    } catch (ClassNotFoundException e) {
+                        log.warn("Event class not found: {}", eventClassName);
+                    }
+                }
+            }
+            
+            return aggregate;
+            
+        } catch (Exception e) {
+            log.error("Failed to rebuild aggregate {} of type {}", aggregateId, aggregateType.getName(), e);
+            return null;
+        }
+    }
+    
+    /**
+     * Applies an event to an aggregate to rebuild its state.
+     * This uses reflection to find and invoke the appropriate handler method.
+     */
+    private void applyEventToAggregate(Object aggregate, Object event) {
+        try {
+            // Look for a method that handles this specific event type
+            String methodName = "apply" + event.getClass().getSimpleName();
+            
+            // Try to find and invoke the method
+            try {
+                aggregate.getClass().getMethod(methodName, event.getClass()).invoke(aggregate, event);
+            } catch (NoSuchMethodException e) {
+                // If no specific handler found, try a generic "apply" method
+                try {
+                    aggregate.getClass().getMethod("apply", DomainEvent.class).invoke(aggregate, event);
+                } catch (NoSuchMethodException e2) {
+                    log.debug("No event handler found for {} on aggregate {}", 
+                        event.getClass().getSimpleName(), aggregate.getClass().getSimpleName());
+                }
+            }
+            
+        } catch (Exception e) {
+            log.error("Failed to apply event {} to aggregate", event.getClass().getSimpleName(), e);
+        }
     }
     
     /**
