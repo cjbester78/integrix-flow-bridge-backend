@@ -222,10 +222,21 @@ public class HierarchicalXmlFieldMapper {
             return;
         }
         
-        // Evaluate source XPath
+        // Evaluate source XPath - try with namespace prefix if direct path fails
         XPathExpression sourceExpr = xpath.compile(sourceXPath);
         Object sourceResult = sourceExpr.evaluate(sourceDoc, XPathConstants.NODESET);
         NodeList sourceNodes = (NodeList) sourceResult;
+        
+        // If no nodes found and the XPath doesn't contain a prefix, try with wildcard namespace
+        if (sourceNodes.getLength() == 0 && !sourceXPath.contains(":")) {
+            // Try with wildcard namespace prefix
+            String wildcardXPath = sourceXPath.replaceAll("//([^/\\[]+)", "//*[local-name()='$1']")
+                                              .replaceAll("/([^/\\[]+)", "/*[local-name()='$1']");
+            logger.debug("No nodes found for '{}', trying wildcard XPath: '{}'", sourceXPath, wildcardXPath);
+            sourceExpr = xpath.compile(wildcardXPath);
+            sourceResult = sourceExpr.evaluate(sourceDoc, XPathConstants.NODESET);
+            sourceNodes = (NodeList) sourceResult;
+        }
         
         if (sourceNodes.getLength() > 0) {
             Node sourceNode = sourceNodes.item(0);
@@ -338,13 +349,24 @@ public class HierarchicalXmlFieldMapper {
                 value = getNodeValue(sourceNodes.item(0));
                 logger.debug("Found value from element '{}': '{}'", sourceField, value);
             } else {
-                // If no element found and it looks like a simple value, use it as literal
-                if (!sourceField.contains("<") && !sourceField.contains("{")) {
-                    value = sourceField;
-                    logger.debug("Using as literal value: {}", value);
+                // Try with wildcard namespace if no prefix
+                String wildcardXPath = "//*[local-name()='" + sourceField + "']";
+                logger.debug("No nodes found for '{}', trying wildcard XPath: '{}'", sourceField, wildcardXPath);
+                sourceExpr = xpath.compile(wildcardXPath);
+                sourceNodes = (NodeList) sourceExpr.evaluate(sourceDoc, XPathConstants.NODESET);
+                
+                if (sourceNodes.getLength() > 0) {
+                    value = getNodeValue(sourceNodes.item(0));
+                    logger.debug("Found value from wildcard element '{}': '{}'", sourceField, value);
                 } else {
-                    logger.debug("No nodes found for element: {}", sourceField);
-                    return;
+                    // If no element found and it looks like a simple value, use it as literal
+                    if (!sourceField.contains("<") && !sourceField.contains("{")) {
+                        value = sourceField;
+                        logger.debug("Using as literal value: {}", value);
+                    } else {
+                        logger.debug("No nodes found for element: {}", sourceField);
+                        return;
+                    }
                 }
             }
         }
