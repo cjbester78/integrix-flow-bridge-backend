@@ -246,7 +246,7 @@ public class FlowExportService {
                     .details(objectMapper.writeValueAsString(details))
                     .source("EXPORT_SERVICE")
                     .category("FLOW_EXPORT")
-                    .userId(SecurityUtils.getCurrentUserId())
+                    .userId(SecurityUtils.getCurrentUserId() != null ? UUID.fromString(SecurityUtils.getCurrentUserId()) : null)
                     .username(SecurityUtils.getCurrentUsernameStatic())
                     .domainType("INTEGRATION_FLOW")
                     .domainReferenceId(flow.getId().toString())

@@ -80,7 +80,7 @@ public class AuthController {
                 log.setTimestamp(LocalDateTime.now());
                 log.setLevel(SystemLog.LogLevel.INFO);
                 log.setMessage("User logged in successfully: " + username);
-                log.setUserId(user.getId().toString());
+                log.setUserId(user.getId());
                 log.setSource("AuthController");
                 log.setComponent("Login");
                 log.setDomainType("UserManagement");
@@ -146,7 +146,7 @@ public class AuthController {
             log.setTimestamp(LocalDateTime.now());
             log.setLevel(SystemLog.LogLevel.INFO);
             log.setMessage("New user registered: " + user.getUsername());
-            log.setUserId(user.getId().toString());
+            log.setUserId(user.getId());
             log.setSource("AuthController");
             log.setComponent("Register");
             log.setDomainType("UserManagement");
@@ -189,7 +189,7 @@ public class AuthController {
             log.setTimestamp(LocalDateTime.now());
             log.setLevel(SystemLog.LogLevel.INFO);
             log.setMessage("Token refreshed for user: " + username);
-            log.setUserId(session.getUser().getId().toString());
+            log.setUserId(session.getUser().getId());
             log.setSource("AuthController");
             log.setComponent("Refresh");
             log.setDomainType("UserManagement");
@@ -253,7 +253,7 @@ public class AuthController {
             log.setTimestamp(LocalDateTime.now());
             log.setLevel(SystemLog.LogLevel.INFO);
             log.setMessage("User logged out");
-            log.setUserId(session.getUser().getId().toString());
+            log.setUserId(session.getUser().getId());
             log.setSource("AuthController");
             log.setComponent("Logout");
             log.setDomainType("UserManagement");

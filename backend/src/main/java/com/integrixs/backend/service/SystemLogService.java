@@ -21,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.UUID;
 
 /**
  * Service for managing system logs including frontend application logs.
@@ -57,7 +58,7 @@ public class SystemLogService {
                     .message(entry.getMessage())
                     .source("FRONTEND")
                     .userId(entry.getUserId())
-                    .username(entry.getUserId() != null ? getUsernameByUuid(UUID.fromString(entry.getUserId())) : null)
+                    .username(entry.getUserId() != null ? getUsernameByUuid(entry.getUserId()) : null)
                     .ipAddress(entry.getClientIp())
                     .userAgent(entry.getUserAgent())
                     .correlationId(entry.getCorrelationId())
@@ -396,7 +397,7 @@ public class SystemLogService {
                 .domainType(log.getDomainType())
                 .domainReferenceId(log.getDomainReferenceId())
                 .correlationId(log.getCorrelationId())
-                .userId(log.getUserId())
+                .userId(log.getUserId() != null ? log.getUserId().toString() : null)
                 .clientIp(log.getIpAddress())
                 .createdAt(log.getCreatedAt())
                 .build();

@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @RestController
@@ -40,7 +41,7 @@ public class SystemLogController {
         log.setComponentId(dto.getComponentId());
         log.setDomainType(dto.getDomainType());
         log.setDomainReferenceId(dto.getDomainReferenceId());
-        log.setUserId(dto.getUserId());
+        log.setUserId(dto.getUserId() != null ? UUID.fromString(dto.getUserId()) : null);
         log.setTimestamp(LocalDateTime.now());
         log.setCreatedAt(LocalDateTime.now());
 
@@ -78,7 +79,7 @@ public class SystemLogController {
             dto.setComponentId(log.getComponentId());
             dto.setDomainType(log.getDomainType());
             dto.setDomainReferenceId(log.getDomainReferenceId());
-            dto.setUserId(log.getUserId());
+            dto.setUserId(log.getUserId() != null ? log.getUserId().toString() : null);
             dto.setTimestamp(log.getTimestamp());
             dto.setCreatedAt(log.getCreatedAt());
             return dto;

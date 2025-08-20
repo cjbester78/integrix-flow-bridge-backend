@@ -37,7 +37,7 @@ public class LogService {
         log.setLevel(SystemLog.LogLevel.ERROR);
         log.setMessage(message);
         log.setDetails(detailsJson);
-        log.setUserId(userId);
+        log.setUserId(userId != null ? UUID.fromString(userId) : null);
         log.setSource(controller);
         log.setDomainType("UserManagement");
         log.setDomainReferenceId(action);

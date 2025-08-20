@@ -555,7 +555,7 @@ public class FlowImportService {
                     .details(objectMapper.writeValueAsString(details))
                     .source("IMPORT_SERVICE")
                     .category("FLOW_IMPORT")
-                    .userId(SecurityUtils.getCurrentUserId())
+                    .userId(SecurityUtils.getCurrentUserId() != null ? UUID.fromString(SecurityUtils.getCurrentUserId()) : null)
                     .username(SecurityUtils.getCurrentUsernameStatic())
                     .domainType("INTEGRATION_FLOW")
                     .domainReferenceId(flow != null ? flow.getId().toString() : null)
