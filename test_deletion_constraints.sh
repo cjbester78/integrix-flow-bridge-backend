@@ -309,7 +309,7 @@ test_deletion_constraints() {
 # Main execution
 main() {
     # Check if API is running
-    if ! curl -s -f "$API_BASE/actuator/health" > /dev/null; then
+    if ! curl -s "$API_BASE/actuator/health" -o /dev/null -w "%{http_code}" 2>&1 | grep -E "200|401|403" > /dev/null; then
         echo -e "${RED}❌ API is not running at $API_BASE${NC}"
         echo "Please ensure the application is running before running this test."
         exit 1

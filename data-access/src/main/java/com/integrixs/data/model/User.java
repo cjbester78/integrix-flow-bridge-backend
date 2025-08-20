@@ -84,8 +84,8 @@ public class User {
     /**
      * Role ID reference
      */
-    @Column(name = "role_id", columnDefinition = "char(36)")
-    private String roleId;
+    @Column(name = "role_id", columnDefinition = "UUID")
+    private UUID roleId;
 
     /**
      * User role (administrator, developer, integrator, viewer)

@@ -49,7 +49,7 @@ public class SystemLog {
     @Column(name = "source", length = 50)
     private String source;
 
-    @Column(name = "source_id", columnDefinition = "char(36)")
+    @Column(name = "source_id", length = 36)
     private String sourceId;
 
     @Column(name = "source_name", length = 255)
@@ -58,13 +58,13 @@ public class SystemLog {
     @Column(name = "component", length = 100)
     private String component;
 
-    @Column(name = "component_id", columnDefinition = "char(36)")
+    @Column(name = "component_id", length = 36)
     private String componentId;
 
     @Column(name = "domain_type", length = 50)
     private String domainType;
 
-    @Column(name = "domain_reference_id", columnDefinition = "char(36)")
+    @Column(name = "domain_reference_id", length = 36)
     private String domainReferenceId;
 
     @Column(name = "user_id", columnDefinition = "UUID")

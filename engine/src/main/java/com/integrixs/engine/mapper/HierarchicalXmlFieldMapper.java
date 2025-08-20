@@ -1,8 +1,12 @@
 package com.integrixs.engine.mapper;
 
 import com.integrixs.data.model.FieldMapping;
+import com.integrixs.data.model.TransformationCustomFunction;
+import com.integrixs.data.repository.TransformationCustomFunctionRepository;
+import com.integrixs.engine.transformation.TransformationFunctionExecutor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.w3c.dom.*;
 import org.xml.sax.InputSource;
@@ -28,6 +32,12 @@ import java.util.Arrays;
 public class HierarchicalXmlFieldMapper {
     
     private static final Logger logger = LoggerFactory.getLogger(HierarchicalXmlFieldMapper.class);
+    
+    @Autowired
+    private TransformationFunctionExecutor functionExecutor;
+    
+    @Autowired
+    private TransformationCustomFunctionRepository functionRepository;
     
     /**
      * Map source XML to target XML using field mappings
@@ -516,9 +526,58 @@ public class HierarchicalXmlFieldMapper {
     }
     
     private String applyTransformation(String value, String javaFunction) {
-        // TODO: Implement JavaScript/Java function execution
-        // For now, return the value as-is
-        return value;
+        try {
+            // Parse function call (e.g., "concat(field1, field2, '-')")
+            if (javaFunction == null || javaFunction.trim().isEmpty()) {
+                return value;
+            }
+            
+            // Extract function name
+            int parenIndex = javaFunction.indexOf('(');
+            if (parenIndex == -1) {
+                logger.warn("Invalid function format: {}", javaFunction);
+                return value;
+            }
+            
+            String functionName = javaFunction.substring(0, parenIndex).trim();
+            
+            // Get function body from database
+            Optional<TransformationCustomFunction> functionOpt = functionRepository.findByName(functionName);
+            if (!functionOpt.isPresent()) {
+                logger.warn("Function not found in database: {}", functionName);
+                return value;
+            }
+            TransformationCustomFunction function = functionOpt.get();
+            
+            // Create context with the current value
+            Map<String, Object> context = new HashMap<>();
+            context.put("value", value);
+            context.put("field", value); // Alternative reference
+            
+            // Replace the first argument if it's referencing the field value
+            String modifiedCall = javaFunction;
+            String argsString = javaFunction.substring(parenIndex + 1, javaFunction.lastIndexOf(')')).trim();
+            if (!argsString.isEmpty()) {
+                String[] args = argsString.split(",", 2);
+                if (args.length > 0 && (args[0].trim().equals("value") || args[0].trim().equals("field"))) {
+                    // Replace with actual value
+                    modifiedCall = functionName + "(\"" + value.replace("\"", "\\\"") + "\"";
+                    if (args.length > 1) {
+                        modifiedCall += "," + args[1];
+                    }
+                    modifiedCall += ")";
+                }
+            }
+            
+            // Execute the function
+            Object result = functionExecutor.executeFunctionCall(modifiedCall, function.getFunctionBody(), context);
+            
+            return result != null ? result.toString() : "";
+            
+        } catch (Exception e) {
+            logger.error("Error applying transformation function: {}", javaFunction, e);
+            return value; // Return original value on error
+        }
     }
     
     private String documentToString(Document doc) throws Exception {
