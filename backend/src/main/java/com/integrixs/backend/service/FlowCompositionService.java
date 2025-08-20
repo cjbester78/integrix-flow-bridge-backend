@@ -12,6 +12,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -126,7 +128,20 @@ public class FlowCompositionService {
             transformation.setFlowId(savedFlow.getId().toString());
             transformation.setType("FIELD_MAPPING");
             transformation.setName(request.getRequestMappingName() != null ? request.getRequestMappingName() : "Request Mapping");
-            transformation.setConfiguration("{\"mappingType\":\"request\"}");
+            // Build configuration with mapping type and WSDL operations
+            Map<String, Object> configMap = new HashMap<>();
+            configMap.put("mappingType", "request");
+            if (request.getSourceWsdlOperation() != null) {
+                configMap.put("sourceWsdlOperation", request.getSourceWsdlOperation());
+            }
+            if (request.getTargetWsdlOperation() != null) {
+                configMap.put("targetWsdlOperation", request.getTargetWsdlOperation());
+            }
+            try {
+                transformation.setConfiguration(objectMapper.writeValueAsString(configMap));
+            } catch (JsonProcessingException e) {
+                transformation.setConfiguration("{\"mappingType\":\"request\"}");
+            }
             transformation.setExecutionOrder(1);
             transformation.setActive(true);
             
@@ -161,12 +176,18 @@ public class FlowCompositionService {
                         messageType = order == 2 ? "response" : "fault";
                     }
                     
-                    // Store mapping type in configuration
+                    // Store mapping type and WSDL operations in configuration
                     try {
                         ObjectMapper mapper = new ObjectMapper();
-                        String config = mapper.writeValueAsString(new java.util.HashMap<String, String>() {{
-                            put("mappingType", messageType);
-                        }});
+                        Map<String, Object> configMap = new HashMap<>();
+                        configMap.put("mappingType", messageType);
+                        if (additionalMapping.getSourceWsdlOperation() != null) {
+                            configMap.put("sourceWsdlOperation", additionalMapping.getSourceWsdlOperation());
+                        }
+                        if (additionalMapping.getTargetWsdlOperation() != null) {
+                            configMap.put("targetWsdlOperation", additionalMapping.getTargetWsdlOperation());
+                        }
+                        String config = mapper.writeValueAsString(configMap);
                         transformation.setConfiguration(config);
                     } catch (Exception e) {
                         transformation.setConfiguration("{\"mappingType\":\"" + messageType + "\"}");
@@ -358,6 +379,8 @@ public class FlowCompositionService {
         private List<AdditionalMapping> additionalMappings;
         private boolean skipXmlConversion;
         private String mappingMode; // Add mappingMode field
+        private String sourceWsdlOperation; // Selected WSDL operation for source
+        private String targetWsdlOperation; // Selected WSDL operation for target
 
         // Getters and setters
         public String getFlowName() { return flowName; }
@@ -388,6 +411,10 @@ public class FlowCompositionService {
         public void setSkipXmlConversion(boolean skipXmlConversion) { this.skipXmlConversion = skipXmlConversion; }
         public String getMappingMode() { return mappingMode; }
         public void setMappingMode(String mappingMode) { this.mappingMode = mappingMode; }
+        public String getSourceWsdlOperation() { return sourceWsdlOperation; }
+        public void setSourceWsdlOperation(String sourceWsdlOperation) { this.sourceWsdlOperation = sourceWsdlOperation; }
+        public String getTargetWsdlOperation() { return targetWsdlOperation; }
+        public void setTargetWsdlOperation(String targetWsdlOperation) { this.targetWsdlOperation = targetWsdlOperation; }
     }
 
     public static class OrchestrationFlowRequest {
@@ -511,10 +538,16 @@ public class FlowCompositionService {
     public static class AdditionalMapping {
         private String name;
         private List<FieldMappingDTO> fieldMappings;
+        private String sourceWsdlOperation; // Selected WSDL operation for source
+        private String targetWsdlOperation; // Selected WSDL operation for target
         
         public String getName() { return name; }
         public void setName(String name) { this.name = name; }
         public List<FieldMappingDTO> getFieldMappings() { return fieldMappings; }
         public void setFieldMappings(List<FieldMappingDTO> fieldMappings) { this.fieldMappings = fieldMappings; }
+        public String getSourceWsdlOperation() { return sourceWsdlOperation; }
+        public void setSourceWsdlOperation(String sourceWsdlOperation) { this.sourceWsdlOperation = sourceWsdlOperation; }
+        public String getTargetWsdlOperation() { return targetWsdlOperation; }
+        public void setTargetWsdlOperation(String targetWsdlOperation) { this.targetWsdlOperation = targetWsdlOperation; }
     }
 }
