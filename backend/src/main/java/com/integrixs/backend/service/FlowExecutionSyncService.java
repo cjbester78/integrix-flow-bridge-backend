@@ -347,8 +347,24 @@ public class FlowExecutionSyncService {
             return response;
             
         } catch (Exception e) {
-            logger.error("Error processing message through flow: {} (ID: {}). Error: {}", 
-                        flow.getName(), flow.getId(), e.getMessage(), e);
+            logger.error("Error processing message through flow: {} (ID: {}). Error type: {}, Message: {}", 
+                        flow.getName(), flow.getId(), e.getClass().getName(), e.getMessage());
+            logger.error("Full exception:", e);
+            
+            // Check for transaction rollback in the exception chain
+            Throwable current = e;
+            int depth = 0;
+            while (current != null && depth < 10) {
+                logger.error("Exception at depth {}: {} - {}", depth, 
+                    current.getClass().getName(), current.getMessage());
+                if (current.getMessage() != null && 
+                    (current.getMessage().contains("rollback") || 
+                     current.getMessage().contains("Transaction"))) {
+                    logger.error("FOUND TRANSACTION ISSUE at depth {}: {}", depth, current.getMessage());
+                }
+                current = current.getCause();
+                depth++;
+            }
             
             // Log the root cause if it's different
             Throwable rootCause = e;
@@ -356,7 +372,7 @@ public class FlowExecutionSyncService {
                 rootCause = rootCause.getCause();
             }
             if (rootCause != e) {
-                logger.error("Root cause: {}", rootCause.getMessage(), rootCause);
+                logger.error("Root cause: {} - {}", rootCause.getClass().getName(), rootCause.getMessage());
             }
             
             // Update message status to failed

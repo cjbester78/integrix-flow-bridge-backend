@@ -47,7 +47,7 @@ public class AdapterPayload {
     @Column(name = "payload_type", nullable = false, length = 20)
     private String payloadType; // REQUEST or RESPONSE
 
-    @Column(name = "message_structure_id", nullable = false, columnDefinition = "UUID")
+    @Column(name = "message_structure_id", columnDefinition = "UUID")
     private UUID messageStructureId;
 
     @Column(name = "payload", columnDefinition = "TEXT")
