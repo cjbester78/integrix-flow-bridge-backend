@@ -16,7 +16,8 @@ import java.util.UUID;
     @Index(name = "idx_adapter_payload_created_at", columnList = "created_at"),
     @Index(name = "idx_adapter_payload_adapter", columnList = "adapter_id")
 })
-@Data
+@Getter
+@Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
@@ -47,8 +48,10 @@ public class AdapterPayload {
     @Column(name = "payload_type", nullable = false, length = 20)
     private String payloadType; // REQUEST or RESPONSE
 
-    @Column(name = "message_structure_id", columnDefinition = "UUID")
-    private UUID messageStructureId;
+    // Temporarily commented out as it's causing transaction rollback issues
+    // and doesn't appear to be used in the current implementation
+    // @Column(name = "message_structure_id", columnDefinition = "UUID")
+    // private UUID messageStructureId;
 
     @Column(name = "payload", columnDefinition = "TEXT")
     private String payload;
