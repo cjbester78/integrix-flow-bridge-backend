@@ -22,6 +22,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -355,8 +356,125 @@ public class AdapterExecutionService {
     }
     
     private String executeFtpAdapter(CommunicationAdapter adapter, String message, Map<String, Object> context) throws Exception {
-        // TODO: Implement FTP/SFTP adapter execution
-        throw new UnsupportedOperationException("FTP/SFTP adapter execution not yet implemented");
+        logger.info("Executing FTP/SFTP adapter: {} [{}]", adapter.getName(), adapter.getType());
+        
+        // Create adapter factory
+        com.integrixs.adapters.factory.AdapterFactory factory = new com.integrixs.adapters.factory.DefaultAdapterFactory();
+        
+        // Parse configuration JSON
+        ObjectMapper mapper = new ObjectMapper();
+        Map<String, Object> configMap;
+        try {
+            configMap = mapper.readValue(adapter.getConfiguration(), Map.class);
+        } catch (Exception e) {
+            logger.error("Failed to parse adapter configuration JSON", e);
+            throw new RuntimeException("Invalid adapter configuration JSON", e);
+        }
+        
+        // Prepare configuration based on adapter type and mode
+        if (adapter.getMode() == com.integrixs.adapters.core.AdapterMode.RECEIVER) {
+            // Receiver mode - send data TO FTP server (upload)
+            com.integrixs.adapters.config.FtpReceiverAdapterConfig config = new com.integrixs.adapters.config.FtpReceiverAdapterConfig();
+            
+            // Set connection details from adapter config
+            config.setServerAddress((String) configMap.get("serverAddress"));
+            config.setPort((String) configMap.getOrDefault("port", "21"));
+            config.setUserName((String) configMap.get("userName"));
+            config.setPassword((String) configMap.get("password"));
+            config.setTargetDirectory((String) configMap.getOrDefault("targetDirectory", "/"));
+            config.setConnectionSecurity((String) configMap.getOrDefault("connectionSecurity", "plain-ftp"));
+            config.setEnablePassiveMode(Boolean.parseBoolean(configMap.getOrDefault("enablePassiveMode", "true").toString()));
+            
+            // File settings
+            config.setTargetFileName((String) configMap.get("targetFileName"));
+            config.setOverwriteExistingFile(Boolean.parseBoolean(configMap.getOrDefault("overwriteExistingFile", "false").toString()));
+            config.setFileConstructionMode((String) configMap.getOrDefault("fileConstructionMode", "create"));
+            config.setFileEncoding((String) configMap.getOrDefault("fileEncoding", "UTF-8"));
+            
+            // Create receiver adapter and execute
+            com.integrixs.adapters.core.ReceiverAdapter receiverAdapter = factory.createReceiver(
+                adapter.getType() == com.integrixs.shared.enums.AdapterType.FTP ? 
+                    com.integrixs.adapters.core.AdapterType.FTP : 
+                    com.integrixs.adapters.core.AdapterType.SFTP, 
+                config
+            );
+            
+            receiverAdapter.initialize();
+            try {
+                com.integrixs.adapters.core.AdapterResult result = receiverAdapter.receive(message);
+                if (result.isSuccess()) {
+                    logger.info("FTP upload successful: {}", result.getMessage());
+                    return "{\"status\":\"success\",\"message\":\"" + result.getMessage() + "\"}";
+                } else {
+                    logger.error("FTP upload failed: {}", result.getMessage());
+                    throw new RuntimeException("FTP upload failed: " + result.getMessage());
+                }
+            } finally {
+                receiverAdapter.destroy();
+            }
+            
+        } else {
+            // Sender mode - receive data FROM FTP server (download/poll)
+            com.integrixs.adapters.config.FtpSenderAdapterConfig config = new com.integrixs.adapters.config.FtpSenderAdapterConfig();
+            
+            // Set connection details from adapter config
+            config.setServerAddress((String) configMap.get("serverAddress"));
+            config.setPort((String) configMap.getOrDefault("port", "21"));
+            config.setUserName((String) configMap.get("userName"));
+            config.setPassword((String) configMap.get("password"));
+            config.setSourceDirectory((String) configMap.getOrDefault("sourceDirectory", "/"));
+            config.setConnectionSecurity((String) configMap.getOrDefault("connectionSecurity", "plain-ftp"));
+            config.setEnablePassiveMode(Boolean.parseBoolean(configMap.getOrDefault("enablePassiveMode", "true").toString()));
+            
+            // File pattern settings
+            String fileNamePattern = (String) configMap.getOrDefault("fileNamePattern", "*");
+            config.setFileName(fileNamePattern); // FtpSenderAdapterConfig uses fileName not fileNamePattern
+            
+            // Note: FtpSenderAdapterConfig handles exclusion patterns internally
+            // The adapter implementation checks for exclusionFileNamePattern
+            
+            config.setFileEncoding((String) configMap.getOrDefault("fileEncoding", "UTF-8"));
+            
+            // Processing settings
+            config.setProcessingMode((String) configMap.getOrDefault("processingMode", "test"));
+            String postProcessing = (String) configMap.getOrDefault("postProcessingCommand", "none");
+            // FtpSenderAdapterConfig doesn't have setPostProcessingCommand, it's handled internally
+            
+            // Create sender adapter and execute
+            com.integrixs.adapters.core.SenderAdapter senderAdapter = factory.createSender(
+                adapter.getType() == com.integrixs.shared.enums.AdapterType.FTP ? 
+                    com.integrixs.adapters.core.AdapterType.FTP : 
+                    com.integrixs.adapters.core.AdapterType.SFTP, 
+                config
+            );
+            
+            senderAdapter.initialize();
+            try {
+                com.integrixs.adapters.core.AdapterResult result = senderAdapter.send(null, context);
+                if (result.isSuccess()) {
+                    // Process the files received
+                    Object data = result.getData();
+                    if (data instanceof List) {
+                        List<?> files = (List<?>) data;
+                        logger.info("FTP poll successful, retrieved {} files", files.size());
+                        
+                        // Convert to JSON response
+                        return mapper.writeValueAsString(Map.of(
+                            "status", "success",
+                            "filesCount", files.size(),
+                            "files", files
+                        ));
+                    } else {
+                        return "{\"status\":\"success\",\"message\":\"" + result.getMessage() + "\"}";
+                    }
+                } else {
+                    logger.error("FTP poll failed: {}", result.getMessage());
+                    throw new RuntimeException("FTP poll failed: " + result.getMessage());
+                }
+            } finally {
+                senderAdapter.destroy();
+            }
+        }
     }
     
     private String extractSoapBody(String soapResponse) throws Exception {
