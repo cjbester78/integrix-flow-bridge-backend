@@ -1,7 +1,3 @@
--- Convert system_logs user_id back to character varying to match entity expectations
--- The SystemLog entity expects user_id as String, not UUID
-ALTER TABLE system_logs 
-    ALTER COLUMN user_id TYPE VARCHAR(36) USING CASE 
-        WHEN user_id IS NULL THEN NULL 
-        ELSE user_id::text 
-    END;
+-- This migration is no longer needed as system_logs.user_id is already UUID
+-- The SystemLog entity should use UUID type to match the database
+-- Skip this migration

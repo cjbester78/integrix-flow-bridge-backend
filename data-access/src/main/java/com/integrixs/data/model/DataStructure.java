@@ -37,7 +37,7 @@ public class DataStructure {
     @Column(name = "usage_type", nullable = false)
     private DataStructureUsage usage;
     
-    @Column(name = "structure", columnDefinition = "JSON", nullable = false)
+    @Column(name = "structure", columnDefinition = "JSONB", nullable = false)
     private String structure;
     
     @Column(name = "original_content", columnDefinition = "LONGTEXT")
@@ -46,13 +46,13 @@ public class DataStructure {
     @Column(name = "original_format", length = 20)
     private String originalFormat;
     
-    @Column(name = "namespace", columnDefinition = "JSON")
+    @Column(name = "namespace", columnDefinition = "JSONB")
     private String namespace;
     
-    @Column(name = "metadata", columnDefinition = "JSON")
+    @Column(name = "metadata", columnDefinition = "JSONB")
     private String metadata;
     
-    @Column(name = "tags", columnDefinition = "JSON")
+    @Column(name = "tags", columnDefinition = "JSONB")
     private String tags;
     
     @Column(name = "version")

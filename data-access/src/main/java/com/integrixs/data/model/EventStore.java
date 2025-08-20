@@ -52,9 +52,9 @@ public class EventStore {
     /**
      * ID of the aggregate this event belongs to
      */
-    @Column(name = "aggregate_id", nullable = false, columnDefinition = "char(36)")
-    @NotBlank(message = "Aggregate ID is required")
-    private String aggregateId;
+    @Column(name = "aggregate_id", nullable = false)
+    @NotNull(message = "Aggregate ID is required")
+    private UUID aggregateId;
     
     /**
      * Version of the aggregate when this event was created
@@ -93,8 +93,8 @@ public class EventStore {
     /**
      * User who triggered the event
      */
-    @Column(name = "triggered_by", columnDefinition = "char(36)")
-    private String triggeredBy;
+    @Column(name = "triggered_by")
+    private UUID triggeredBy;
     
     /**
      * When the event was stored
@@ -106,12 +106,12 @@ public class EventStore {
     /**
      * Correlation ID for tracking related events
      */
-    @Column(name = "correlation_id", columnDefinition = "char(36)")
-    private String correlationId;
+    @Column(name = "correlation_id")
+    private UUID correlationId;
     
     /**
      * Causation ID - ID of the event that caused this event
      */
-    @Column(name = "causation_id", columnDefinition = "char(36)")
-    private String causationId;
+    @Column(name = "causation_id")
+    private UUID causationId;
 }

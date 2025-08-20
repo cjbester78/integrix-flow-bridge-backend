@@ -42,8 +42,7 @@ public class Certificate {
     @Column(name = "uploaded_at", nullable = false)
     private LocalDateTime uploadedAt;
 
-    @Lob
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "BYTEA")
     private byte[] content;
 
     /**
