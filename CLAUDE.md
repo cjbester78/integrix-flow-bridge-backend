@@ -143,7 +143,7 @@ integrix-flow-bridge/
 
 4. **Data Model**
    - JPA entities in `data-access` module
-   - MySQL database with comprehensive schema
+   - PostgreSQL database with comprehensive schema
    - Audit logging and system monitoring
 
 ### Frontend Architecture
@@ -198,11 +198,11 @@ mvn test -Dtest=ClassName#methodName
 
 ### Database Commands
 ```bash
-# Connect to MySQL
-mysql -u root -p integrixflowbridge
+# Connect to PostgreSQL
+psql -U integrix -d integrixflowbridge
 
-# Run migrations manually
-mysql -u root -p integrixflowbridge < db/src/main/resources/db/migration/V1__initial_schema.sql
+# Run migrations manually (if needed)
+psql -U integrix -d integrixflowbridge < db/src/main/resources/db/migration/V1__initial_schema.sql
 ```
 
 ### Frontend Commands

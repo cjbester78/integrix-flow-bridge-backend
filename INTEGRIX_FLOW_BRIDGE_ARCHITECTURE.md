@@ -30,7 +30,7 @@ Integrix Flow Bridge is an enterprise integration middleware platform that enabl
 ### Technology Stack
 - **Backend**: Spring Boot 3.x, Java 21
 - **Frontend**: React 18, TypeScript, Vite
-- **Database**: MySQL 8.x
+- **Database**: PostgreSQL 15.x
 - **Message Processing**: XML/XSLT based transformation engine
 - **API**: RESTful services with JWT authentication
 
@@ -1093,7 +1093,7 @@ Each environment has:
     └───────────┬───────────┘
                 │
         ┌───────┴────────┐
-        │     MySQL      │
+        │   PostgreSQL   │
         │   Database     │
         └────────────────┘
 ```

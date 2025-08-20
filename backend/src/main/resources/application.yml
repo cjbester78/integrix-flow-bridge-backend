@@ -49,10 +49,23 @@ spring:
       allow-unquoted-control-chars: true
       allow-backslash-escaping-any-character: true
 
+# ✅ Flyway configuration
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    baseline-version: 121
+    locations: classpath:db/migration
+    sql-migration-prefix: V
+    sql-migration-separator: __
+    sql-migration-suffixes: .sql
+    validate-on-migrate: true
+    clean-disabled: true
+    schemas: integrixflowbridge
+
 # ✅ JPA default settings
   jpa:
     hibernate:
-      ddl-auto: none
+      ddl-auto: validate  # Changed from none to validate
     show-sql: false  # Set to true in dev profile only
     properties:
       hibernate:
