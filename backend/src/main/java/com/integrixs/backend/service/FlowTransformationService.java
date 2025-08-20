@@ -83,8 +83,7 @@ public class FlowTransformationService {
         transformation.setExecutionOrder(dto.getExecutionOrder());
         transformation.setActive(dto.isActive());
         
-        // TODO: Set audit fields properly - need to resolve User vs String inconsistency
-        // For now, the AuditEntityListener will handle setting timestamps
+        // Audit fields are handled by AuditEntityListener automatically
         
         return transformation;
     }

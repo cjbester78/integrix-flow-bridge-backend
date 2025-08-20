@@ -4,7 +4,9 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.integrixs.data.model.FlowStructure;
 import com.integrixs.data.model.FlowStructureMessage;
+import com.integrixs.data.model.FlowStructureNamespace;
 import com.integrixs.data.model.MessageStructure;
+import com.integrixs.data.model.MessageStructureNamespace;
 import com.integrixs.data.model.User;
 import com.integrixs.data.model.FlowStructure.ProcessingMode;
 import com.integrixs.data.model.FlowStructureMessage.MessageType;
@@ -697,15 +699,33 @@ public class FlowStructureService {
     private Map<String, Object> extractNamespaceData(FlowStructure entity) {
         Map<String, Object> namespaceData = new HashMap<>();
         
-        // Extract namespace from namespaces relationship or use default
+        // Extract namespace from namespaces relationship
         if (entity.getNamespaces() != null && !entity.getNamespaces().isEmpty()) {
-            // TODO: Load namespace data from FlowStructureNamespace entities
-            namespaceData.put("prefix", "tns");
-            namespaceData.put("uri", "http://integrixflowbridge.com/" + entity.getName());
+            // Find the default namespace or the first one
+            FlowStructureNamespace defaultNs = entity.getNamespaces().stream()
+                    .filter(FlowStructureNamespace::isDefault)
+                    .findFirst()
+                    .orElse(entity.getNamespaces().iterator().next());
+            
+            namespaceData.put("prefix", defaultNs.getPrefix() != null ? defaultNs.getPrefix() : "tns");
+            namespaceData.put("uri", defaultNs.getUri());
+            
+            // Add all namespaces to a list
+            List<Map<String, String>> allNamespaces = entity.getNamespaces().stream()
+                    .map(ns -> {
+                        Map<String, String> nsMap = new HashMap<>();
+                        nsMap.put("prefix", ns.getPrefix() != null ? ns.getPrefix() : "");
+                        nsMap.put("uri", ns.getUri());
+                        nsMap.put("isDefault", String.valueOf(ns.isDefault()));
+                        return nsMap;
+                    })
+                    .collect(Collectors.toList());
+            namespaceData.put("all", allNamespaces);
         } else {
             // Default namespace
             namespaceData.put("prefix", "tns");
             namespaceData.put("uri", "http://integrixflowbridge.com/" + entity.getName());
+            namespaceData.put("all", Collections.emptyList());
         }
         
         return namespaceData;
@@ -742,15 +762,33 @@ public class FlowStructureService {
     private Map<String, Object> extractMessageNamespaceData(MessageStructure entity) {
         Map<String, Object> namespaceData = new HashMap<>();
         
-        // Extract namespace from namespaces relationship or use default
+        // Extract namespace from namespaces relationship
         if (entity.getNamespaces() != null && !entity.getNamespaces().isEmpty()) {
-            // TODO: Load namespace data from MessageStructureNamespace entities
-            namespaceData.put("prefix", "msg");
-            namespaceData.put("uri", "http://integrixflowbridge.com/messages/" + entity.getName());
+            // Find the default namespace or the first one
+            MessageStructureNamespace defaultNs = entity.getNamespaces().stream()
+                    .filter(MessageStructureNamespace::isDefault)
+                    .findFirst()
+                    .orElse(entity.getNamespaces().iterator().next());
+            
+            namespaceData.put("prefix", defaultNs.getPrefix() != null ? defaultNs.getPrefix() : "msg");
+            namespaceData.put("uri", defaultNs.getUri());
+            
+            // Add all namespaces to a list
+            List<Map<String, String>> allNamespaces = entity.getNamespaces().stream()
+                    .map(ns -> {
+                        Map<String, String> nsMap = new HashMap<>();
+                        nsMap.put("prefix", ns.getPrefix() != null ? ns.getPrefix() : "");
+                        nsMap.put("uri", ns.getUri());
+                        nsMap.put("isDefault", String.valueOf(ns.isDefault()));
+                        return nsMap;
+                    })
+                    .collect(Collectors.toList());
+            namespaceData.put("all", allNamespaces);
         } else {
             // Default namespace
             namespaceData.put("prefix", "msg");
             namespaceData.put("uri", "http://integrixflowbridge.com/messages/" + entity.getName());
+            namespaceData.put("all", Collections.emptyList());
         }
         
         return namespaceData;

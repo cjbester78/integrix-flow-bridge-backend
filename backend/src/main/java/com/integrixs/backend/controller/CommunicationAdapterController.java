@@ -118,13 +118,6 @@ public class CommunicationAdapterController {
         return ResponseEntity.ok(result);
     }
     
-    @PostMapping("/test")
-    public ResponseEntity<AdapterTestResultDTO> testAdapterConfiguration(@RequestBody AdapterTestRequestDTO request) {
-        // AdapterConfigDTO config = request.getAdapterConfig(); TODO: Fix this
-        String testPayload = request.getPayload();
-        AdapterTestResultDTO result = adapterService.testAdapterConfiguration(null, testPayload); // TODO: Fix config parameter
-        return ResponseEntity.ok(result);
-    }
     
     @GetMapping("/{id}/logs")
     public ResponseEntity<Page<SystemLogDTO>> getAdapterLogs(@PathVariable String id, Pageable pageable) {
