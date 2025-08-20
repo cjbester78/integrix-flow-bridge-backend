@@ -84,12 +84,8 @@ public class FlowCompositionService {
         if (request.getTargetFlowStructureId() != null) {
             flow.setTargetFlowStructureId(UUID.fromString(request.getTargetFlowStructureId()));
         }
-        if (request.getSourceStructureId() != null) {
-            flow.setSourceStructureId(UUID.fromString(request.getSourceStructureId()));
-        }
-        if (request.getTargetStructureId() != null) {
-            flow.setTargetStructureId(UUID.fromString(request.getTargetStructureId()));
-        }
+        // Deprecated fields - no longer used
+        // Source and target structures are now handled through flow structures
         flow.setStatus(FlowStatus.DEVELOPED_INACTIVE);
         // Load user from createdBy string
         if (request.getCreatedBy() != null) {
@@ -280,12 +276,8 @@ public class FlowCompositionService {
             if (request.getTargetFlowStructureId() != null) {
                 flow.setTargetFlowStructureId(UUID.fromString(request.getTargetFlowStructureId()));
             }
-            if (request.getSourceStructureId() != null) {
-                flow.setSourceStructureId(UUID.fromString(request.getSourceStructureId()));
-            }
-            if (request.getTargetStructureId() != null) {
-                flow.setTargetStructureId(UUID.fromString(request.getTargetStructureId()));
-            }
+            // Deprecated fields - no longer used
+            // Source and target structures are now handled through flow structures
             
             return flowRepository.save(flow);
         });

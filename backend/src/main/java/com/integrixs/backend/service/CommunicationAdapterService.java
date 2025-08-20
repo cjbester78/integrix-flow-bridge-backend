@@ -4,6 +4,7 @@ import com.integrixs.data.model.CommunicationAdapter;
 import com.integrixs.data.model.BusinessComponent;
 import com.integrixs.data.repository.CommunicationAdapterRepository;
 import com.integrixs.data.repository.BusinessComponentRepository;
+import com.integrixs.data.repository.IntegrationFlowRepository;
 import com.integrixs.shared.dto.adapter.AdapterConfigDTO;
 import com.integrixs.shared.dto.adapter.AdapterTestResultDTO;
 import com.integrixs.shared.enums.AdapterType;
@@ -33,13 +34,16 @@ public class CommunicationAdapterService {
     
     private final CommunicationAdapterRepository repository;
     private final BusinessComponentRepository businessComponentRepository;
+    private final IntegrationFlowRepository integrationFlowRepository;
     private final ObjectMapper objectMapper;
     private final AdapterFactoryManager factoryManager;
 
     public CommunicationAdapterService(CommunicationAdapterRepository repository,
-                                     BusinessComponentRepository businessComponentRepository) {
+                                     BusinessComponentRepository businessComponentRepository,
+                                     IntegrationFlowRepository integrationFlowRepository) {
         this.repository = repository;
         this.businessComponentRepository = businessComponentRepository;
+        this.integrationFlowRepository = integrationFlowRepository;
         this.objectMapper = new ObjectMapper();
         this.factoryManager = AdapterFactoryManager.getInstance();
     }
@@ -183,7 +187,29 @@ public class CommunicationAdapterService {
     }
 
     public void deleteAdapter(String id) {
-        repository.deleteById(UUID.fromString(id));
+        UUID adapterId = UUID.fromString(id);
+        
+        // Check if adapter exists
+        CommunicationAdapter adapter = repository.findById(adapterId)
+            .orElseThrow(() -> new IllegalArgumentException("Adapter not found with id: " + id));
+        
+        // Check if adapter is used by any integration flows
+        long sourceCount = integrationFlowRepository.countBySourceAdapterIdAndIsActiveTrue(adapterId);
+        long targetCount = integrationFlowRepository.countByTargetAdapterIdAndIsActiveTrue(adapterId);
+        
+        if (sourceCount > 0 || targetCount > 0) {
+            String message = "Cannot delete adapter '" + adapter.getName() + "'. It is being used by ";
+            if (sourceCount > 0 && targetCount > 0) {
+                message += sourceCount + " integration flow(s) as source and " + targetCount + " integration flow(s) as target";
+            } else if (sourceCount > 0) {
+                message += sourceCount + " integration flow(s) as source";
+            } else {
+                message += targetCount + " integration flow(s) as target";
+            }
+            throw new IllegalStateException(message);
+        }
+        
+        repository.deleteById(adapterId);
     }
 
     public Optional<AdapterConfigDTO> activateAdapter(String id) {

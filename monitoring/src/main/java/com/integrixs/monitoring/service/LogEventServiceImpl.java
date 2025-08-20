@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Service
 /**
@@ -40,7 +41,7 @@ public class LogEventServiceImpl implements LogEventService {
         log.setMessage(message);
         log.setDomainType(domainType);
         log.setDomainReferenceId(domainReferenceId);
-        log.setUserId(userId);
+        log.setUserId(userId != null ? UUID.fromString(userId) : null);
         log.setSourceName(source.name());
 
         try {

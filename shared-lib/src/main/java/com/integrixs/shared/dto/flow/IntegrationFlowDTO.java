@@ -58,13 +58,27 @@ public class IntegrationFlowDTO {
     private String targetAdapterId;
     
     /**
-     * Source data structure ID
+     * Source flow structure ID (for WSDL/SOAP flows)
      */
+    private String sourceFlowStructureId;
+    
+    /**
+     * Target flow structure ID (for WSDL/SOAP flows)
+     */
+    private String targetFlowStructureId;
+    
+    /**
+     * Source data structure ID (deprecated - use sourceFlowStructureId)
+     * @deprecated Use sourceFlowStructureId instead
+     */
+    @Deprecated
     private String sourceStructureId;
     
     /**
-     * Target data structure ID
+     * Target data structure ID (deprecated - use targetFlowStructureId)
+     * @deprecated Use targetFlowStructureId instead
      */
+    @Deprecated
     private String targetStructureId;
     
     /**

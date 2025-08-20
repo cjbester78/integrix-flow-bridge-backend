@@ -4,6 +4,7 @@ package com.integrixs.monitoring.service;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
+import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -57,7 +58,7 @@ public class SystemLogServiceImpl implements SystemLogService {
             log.setSource("api");
             log.setComponent(controller);
             log.setDomainType("UserManagement");
-            log.setUserId(userId);
+            log.setUserId(userId != null ? UUID.fromString(userId) : null);
             log.setTimestamp(LocalDateTime.now());
             log.setCreatedAt(LocalDateTime.now());
 
@@ -94,7 +95,7 @@ public class SystemLogServiceImpl implements SystemLogService {
         log.setComponent("FlowEngine");
         log.setDomainType("FLOW");
         log.setDomainReferenceId(flowId);
-        log.setUserId(userId);
+        log.setUserId(userId != null ? UUID.fromString(userId) : null);
         log.setTimestamp(LocalDateTime.now());
         log.setCreatedAt(LocalDateTime.now());
         log.setDetails("{\"activity\": \"" + activity + "\"}");
@@ -112,7 +113,7 @@ public class SystemLogServiceImpl implements SystemLogService {
         log.setComponent("FlowEngine");
         log.setDomainType("FLOW");
         log.setDomainReferenceId(flowId);
-        log.setUserId(userId);
+        log.setUserId(userId != null ? UUID.fromString(userId) : null);
         log.setTimestamp(LocalDateTime.now());
         log.setCreatedAt(LocalDateTime.now());
         

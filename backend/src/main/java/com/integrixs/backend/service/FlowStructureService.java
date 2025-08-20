@@ -11,6 +11,7 @@ import com.integrixs.data.model.FlowStructureMessage.MessageType;
 import com.integrixs.data.repository.BusinessComponentRepository;
 import com.integrixs.data.repository.FlowStructureMessageRepository;
 import com.integrixs.data.repository.FlowStructureRepository;
+import com.integrixs.data.repository.IntegrationFlowRepository;
 import com.integrixs.data.repository.MessageStructureRepository;
 import com.integrixs.shared.dto.structure.*;
 import com.integrixs.shared.dto.business.BusinessComponentDTO;
@@ -47,6 +48,7 @@ public class FlowStructureService {
     private final FlowStructureMessageRepository flowStructureMessageRepository;
     private final BusinessComponentRepository businessComponentRepository;
     private final EnvironmentPermissionService environmentPermissionService;
+    private final IntegrationFlowRepository integrationFlowRepository;
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final EntityManager entityManager;
     
@@ -55,12 +57,14 @@ public class FlowStructureService {
                               FlowStructureMessageRepository flowStructureMessageRepository,
                               BusinessComponentRepository businessComponentRepository,
                               EnvironmentPermissionService environmentPermissionService,
+                              IntegrationFlowRepository integrationFlowRepository,
                               EntityManager entityManager) {
         this.flowStructureRepository = flowStructureRepository;
         this.messageStructureRepository = messageStructureRepository;
         this.flowStructureMessageRepository = flowStructureMessageRepository;
         this.businessComponentRepository = businessComponentRepository;
         this.environmentPermissionService = environmentPermissionService;
+        this.integrationFlowRepository = integrationFlowRepository;
         this.entityManager = entityManager;
     }
     
@@ -273,6 +277,23 @@ public class FlowStructureService {
         log.info("Deleting flow structure: {}", id);
         FlowStructure flowStructure = flowStructureRepository.findByIdAndIsActiveTrue(UUID.fromString(id))
                 .orElseThrow(() -> new RuntimeException("Flow structure not found"));
+        
+        // Check if this flow structure is referenced by any integration flows
+        UUID flowStructureUuid = UUID.fromString(id);
+        long sourceCount = integrationFlowRepository.countBySourceFlowStructureIdAndIsActiveTrue(flowStructureUuid);
+        long targetCount = integrationFlowRepository.countByTargetFlowStructureIdAndIsActiveTrue(flowStructureUuid);
+        
+        if (sourceCount > 0 || targetCount > 0) {
+            String message = "Cannot delete flow structure. It is being used by ";
+            if (sourceCount > 0 && targetCount > 0) {
+                message += sourceCount + " integration flow(s) as source and " + targetCount + " integration flow(s) as target";
+            } else if (sourceCount > 0) {
+                message += sourceCount + " integration flow(s) as source";
+            } else {
+                message += targetCount + " integration flow(s) as target";
+            }
+            throw new IllegalStateException(message);
+        }
         
         flowStructure.setIsActive(false);
         flowStructureRepository.save(flowStructure);

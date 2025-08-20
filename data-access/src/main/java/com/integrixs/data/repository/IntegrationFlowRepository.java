@@ -75,4 +75,14 @@ public interface IntegrationFlowRepository extends JpaRepository<IntegrationFlow
     // Find deployed flow with transformations eagerly loaded
     @EntityGraph(attributePaths = {"transformations"})
     Optional<IntegrationFlow> findByDeploymentEndpointContainingAndStatus(String path, FlowStatus status);
+    
+    // Count flows by flow structure references
+    long countBySourceFlowStructureIdAndIsActiveTrue(UUID sourceFlowStructureId);
+    
+    long countByTargetFlowStructureIdAndIsActiveTrue(UUID targetFlowStructureId);
+    
+    // Count flows by adapter references
+    long countBySourceAdapterIdAndIsActiveTrue(UUID sourceAdapterId);
+    
+    long countByTargetAdapterIdAndIsActiveTrue(UUID targetAdapterId);
 }
