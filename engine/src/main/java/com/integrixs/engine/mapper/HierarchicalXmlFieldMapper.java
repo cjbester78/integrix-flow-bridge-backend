@@ -230,8 +230,12 @@ public class HierarchicalXmlFieldMapper {
         // If no nodes found and the XPath doesn't contain a prefix, try with wildcard namespace
         if (sourceNodes.getLength() == 0 && !sourceXPath.contains(":")) {
             // Try with wildcard namespace prefix
-            String wildcardXPath = sourceXPath.replaceAll("//([^/\\[]+)", "//*[local-name()='$1']")
-                                              .replaceAll("/([^/\\[]+)", "/*[local-name()='$1']");
+            String wildcardXPath = sourceXPath;
+            // Handle //elementName pattern
+            wildcardXPath = wildcardXPath.replaceAll("//([^/\\[\\*]+)", "//*[local-name()='$1']");
+            // Handle /elementName pattern (but not /*[...])
+            wildcardXPath = wildcardXPath.replaceAll("(?<!\\*\\[local-name\\(\\)='[^']*'\\])/([^/\\[\\*]+)", "/*[local-name()='$1']");
+            
             logger.debug("No nodes found for '{}', trying wildcard XPath: '{}'", sourceXPath, wildcardXPath);
             sourceExpr = xpath.compile(wildcardXPath);
             sourceResult = sourceExpr.evaluate(sourceDoc, XPathConstants.NODESET);
