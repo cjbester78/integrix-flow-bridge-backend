@@ -133,8 +133,10 @@ public class FlowCompositionService {
             FlowTransformationDTO savedTransformation = transformationService.save(transformation);
             
             // Save field mappings
+            int mappingOrder = 1;
             for (FieldMappingDTO mapping : request.getFieldMappings()) {
                 mapping.setTransformationId(savedTransformation.getId().toString());
+                mapping.setMappingOrder(mappingOrder++);
                 fieldMappingService.save(mapping);
             }
         }
@@ -176,8 +178,10 @@ public class FlowCompositionService {
                     FlowTransformationDTO savedTransformation = transformationService.save(transformation);
                     
                     // Save field mappings for this additional mapping
+                    int fieldMappingOrder = 1;
                     for (FieldMappingDTO mapping : additionalMapping.getFieldMappings()) {
                         mapping.setTransformationId(savedTransformation.getId().toString());
+                        mapping.setMappingOrder(fieldMappingOrder++);
                         fieldMappingService.save(mapping);
                     }
                 }
