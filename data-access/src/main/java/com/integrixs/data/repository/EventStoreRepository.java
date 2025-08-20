@@ -27,7 +27,7 @@ public interface EventStoreRepository extends JpaRepository<EventStore, UUID> {
      * @param aggregateId the aggregate ID
      * @return list of events
      */
-    List<EventStore> findByAggregateIdOrderByAggregateVersionAsc(String aggregateId);
+    List<EventStore> findByAggregateIdOrderByAggregateVersionAsc(UUID aggregateId);
     
     /**
      * Finds events by aggregate ID and type.
@@ -37,7 +37,7 @@ public interface EventStoreRepository extends JpaRepository<EventStore, UUID> {
      * @return list of events
      */
     List<EventStore> findByAggregateIdAndAggregateTypeOrderByAggregateVersionAsc(
-        String aggregateId, String aggregateType);
+        UUID aggregateId, String aggregateType);
     
     /**
      * Finds events by type within a time range.
@@ -61,7 +61,7 @@ public interface EventStoreRepository extends JpaRepository<EventStore, UUID> {
      * @return page of events
      */
     Page<EventStore> findByTriggeredByAndOccurredAtBetween(
-        String triggeredBy, LocalDateTime startTime, LocalDateTime endTime, Pageable pageable);
+        UUID triggeredBy, LocalDateTime startTime, LocalDateTime endTime, Pageable pageable);
     
     /**
      * Gets the latest version for an aggregate.
@@ -70,7 +70,7 @@ public interface EventStoreRepository extends JpaRepository<EventStore, UUID> {
      * @return latest version or 0
      */
     @Query("SELECT COALESCE(MAX(e.aggregateVersion), 0) FROM EventStore e WHERE e.aggregateId = :aggregateId")
-    Long getLatestVersionForAggregate(@Param("aggregateId") String aggregateId);
+    Long getLatestVersionForAggregate(@Param("aggregateId") UUID aggregateId);
     
     /**
      * Finds events by correlation ID.
@@ -78,5 +78,5 @@ public interface EventStoreRepository extends JpaRepository<EventStore, UUID> {
      * @param correlationId the correlation ID
      * @return list of related events
      */
-    List<EventStore> findByCorrelationIdOrderByOccurredAtAsc(String correlationId);
+    List<EventStore> findByCorrelationIdOrderByOccurredAtAsc(UUID correlationId);
 }

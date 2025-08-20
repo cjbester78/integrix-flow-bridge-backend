@@ -50,20 +50,20 @@ public class EventSourcingService {
             }
             
             // Get latest version for aggregate
-            Long latestVersion = eventStoreRepository.getLatestVersionForAggregate(event.getAggregateId());
+            Long latestVersion = eventStoreRepository.getLatestVersionForAggregate(UUID.fromString(event.getAggregateId()));
             
             // Create event store entry
             EventStore eventStore = EventStore.builder()
                 .eventId(UUID.fromString(event.getEventId()))
                 .aggregateType(getAggregateType(event))
-                .aggregateId(event.getAggregateId())
+                .aggregateId(UUID.fromString(event.getAggregateId()))
                 .aggregateVersion(latestVersion + 1)
                 .eventType(event.getEventType())
                 .eventData(serializeEvent(event))
                 .eventMetadata(createMetadata(event))
                 .occurredAt(event.getOccurredAt())
-                .triggeredBy(event.getTriggeredBy())
-                .correlationId(corrId)
+                .triggeredBy(event.getTriggeredBy() != null ? UUID.fromString(event.getTriggeredBy()) : null)
+                .correlationId(UUID.fromString(corrId))
                 .build();
             
             eventStoreRepository.save(eventStore);
@@ -85,7 +85,7 @@ public class EventSourcingService {
      * @return list of events
      */
     public List<EventStore> getEventHistory(String aggregateId) {
-        return eventStoreRepository.findByAggregateIdOrderByAggregateVersionAsc(aggregateId);
+        return eventStoreRepository.findByAggregateIdOrderByAggregateVersionAsc(UUID.fromString(aggregateId));
     }
     
     /**
@@ -97,7 +97,7 @@ public class EventSourcingService {
      */
     public List<EventStore> getEventHistory(String aggregateId, String aggregateType) {
         return eventStoreRepository.findByAggregateIdAndAggregateTypeOrderByAggregateVersionAsc(
-            aggregateId, aggregateType);
+            UUID.fromString(aggregateId), aggregateType);
     }
     
     /**
@@ -147,7 +147,7 @@ public class EventSourcingService {
      */
     public List<EventStore> getUserActivityAudit(String userId, LocalDateTime startTime, LocalDateTime endTime) {
         return eventStoreRepository.findByTriggeredByAndOccurredAtBetween(
-            userId, startTime, endTime, org.springframework.data.domain.Pageable.unpaged()).getContent();
+            UUID.fromString(userId), startTime, endTime, org.springframework.data.domain.Pageable.unpaged()).getContent();
     }
     
     /**
