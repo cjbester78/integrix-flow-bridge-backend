@@ -1,556 +1,336 @@
--- ============================================
--- Integrix Flow Bridge Database Schema
--- MySQL 8.0+ Compatible
--- ============================================
+-- PostgreSQL Migration V1: Complete XML-Native Schema
+-- This consolidates all necessary tables without JSON columns
 
--- Create database
-CREATE DATABASE IF NOT EXISTS integrixflowbridge 
-DEFAULT CHARACTER SET utf8mb4 
-COLLATE utf8mb4_unicode_ci;
-
-USE integrixflowbridge;
-
--- Set SQL mode for strict compliance
-SET SQL_MODE = 'STRICT_TRANS_TABLES,NO_ZERO_DATE,NO_ZERO_IN_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION';
-
--- ============================================
--- SECTION 1: CORE USER & AUTHENTICATION
--- ============================================
-
--- Roles table
-CREATE TABLE IF NOT EXISTS roles (
-    id VARCHAR(36) PRIMARY KEY,
-    name VARCHAR(50) UNIQUE NOT NULL,
-    description TEXT,
-    permissions JSON NOT NULL COMMENT 'Array of permission strings',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    
-    INDEX idx_roles_name (name)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+-- Enable UUID extension
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- Users table
-CREATE TABLE IF NOT EXISTS users (
-    id VARCHAR(36) PRIMARY KEY,
-    username VARCHAR(50) UNIQUE NOT NULL,
-    email VARCHAR(255) UNIQUE NOT NULL,
-    password_hash VARCHAR(255) NOT NULL,
-    first_name VARCHAR(100),
-    last_name VARCHAR(100),
-    role_id VARCHAR(36),
-    status ENUM('active', 'inactive', 'pending', 'locked') NOT NULL DEFAULT 'active',
-    email_verified BOOLEAN DEFAULT FALSE,
-    email_verification_token VARCHAR(255),
-    password_reset_token VARCHAR(255),
-    password_reset_expires_at TIMESTAMP NULL,
-    last_login_at TIMESTAMP NULL,
-    login_attempts INT DEFAULT 0,
-    locked_until TIMESTAMP NULL,
+CREATE TABLE users (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    username VARCHAR(50) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL,
+    email VARCHAR(100) UNIQUE,
+    role VARCHAR(50) NOT NULL,
+    is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    
-    CONSTRAINT fk_users_role FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE SET NULL,
-    INDEX idx_users_username (username),
-    INDEX idx_users_email (email),
-    INDEX idx_users_role_id (role_id),
-    INDEX idx_users_status (status)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 
--- User sessions
-CREATE TABLE IF NOT EXISTS user_sessions (
-    id VARCHAR(36) PRIMARY KEY,
-    user_id VARCHAR(36) NOT NULL,
-    refresh_token VARCHAR(500) UNIQUE NOT NULL,
-    access_token_jti VARCHAR(255),
-    expires_at TIMESTAMP NOT NULL,
-    ip_address VARCHAR(45),
-    user_agent TEXT,
-    device_info JSON,
+-- Roles table
+CREATE TABLE roles (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    name VARCHAR(50) NOT NULL UNIQUE,
+    description TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- User roles mapping
+CREATE TABLE user_roles (
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    role_id UUID NOT NULL REFERENCES roles(id) ON DELETE CASCADE,
+    PRIMARY KEY (user_id, role_id)
+);
+
+-- Business components
+CREATE TABLE business_components (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    name VARCHAR(255) NOT NULL UNIQUE,
+    description TEXT,
+    status VARCHAR(50) NOT NULL DEFAULT 'ACTIVE',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    last_used_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    
-    CONSTRAINT fk_sessions_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-    INDEX idx_sessions_user_id (user_id),
-    INDEX idx_sessions_expires_at (expires_at),
-    INDEX idx_sessions_refresh_token (refresh_token)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_by UUID REFERENCES users(id),
+    updated_by UUID REFERENCES users(id)
+);
 
--- ============================================
--- SECTION 2: BUSINESS ENTITIES
--- ============================================
+-- Message structures (XML-native)
+CREATE TABLE message_structures (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    name VARCHAR(255) NOT NULL UNIQUE,
+    description TEXT,
+    xsd_content XML NOT NULL,
+    business_component_id UUID NOT NULL REFERENCES business_components(id),
+    version VARCHAR(50) DEFAULT '1.0',
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_by UUID REFERENCES users(id),
+    updated_by UUID REFERENCES users(id),
+    CONSTRAINT valid_xsd CHECK (xml_is_well_formed_document(xsd_content::text))
+);
 
--- Business Components (Organizations/Customers)
-CREATE TABLE IF NOT EXISTS business_components (
-    id VARCHAR(36) PRIMARY KEY,
+-- Message structure namespaces
+CREATE TABLE message_structure_namespaces (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    message_structure_id UUID NOT NULL REFERENCES message_structures(id) ON DELETE CASCADE,
+    prefix VARCHAR(50),
+    uri VARCHAR(500) NOT NULL,
+    is_default BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (message_structure_id, prefix)
+);
+
+-- Flow structures (XML-native)
+CREATE TABLE flow_structures (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     name VARCHAR(255) NOT NULL,
     description TEXT,
-    industry VARCHAR(100),
-    contact_email VARCHAR(255),
-    contact_phone VARCHAR(50),
-    address JSON,
-    metadata JSON,
+    processing_mode VARCHAR(20) NOT NULL CHECK (processing_mode IN ('SYNC', 'ASYNC')),
+    direction VARCHAR(20) NOT NULL CHECK (direction IN ('INBOUND', 'OUTBOUND', 'BIDIRECTIONAL')),
+    wsdl_content XML,
+    business_component_id UUID NOT NULL REFERENCES business_components(id),
+    version VARCHAR(50) DEFAULT '1.0',
     is_active BOOLEAN DEFAULT TRUE,
-    created_by VARCHAR(36),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    
-    CONSTRAINT fk_business_components_created_by FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
-    INDEX idx_business_components_name (name),
-    INDEX idx_business_components_active (is_active)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_by UUID REFERENCES users(id),
+    updated_by UUID REFERENCES users(id),
+    CONSTRAINT valid_wsdl CHECK (wsdl_content IS NULL OR xml_is_well_formed_document(wsdl_content::text))
+);
 
--- ============================================
--- SECTION 3: SECURITY & CERTIFICATES
--- ============================================
-
--- Certificates
-CREATE TABLE IF NOT EXISTS certificates (
-    id VARCHAR(36) PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    type VARCHAR(50) NOT NULL COMMENT 'SSL Certificate, Client Certificate, Code Signing, etc',
-    issuer VARCHAR(255) NOT NULL,
-    subject VARCHAR(500),
-    serial_number VARCHAR(100),
-    thumbprint VARCHAR(128),
-    valid_from DATE NOT NULL,
-    valid_to DATE NOT NULL,
-    status ENUM('active', 'expiring', 'expired', 'revoked') DEFAULT 'active',
-    `usage` TEXT COMMENT 'Description of certificate usage',
-    content LONGBLOB COMMENT 'Certificate file content',
-    private_key LONGBLOB COMMENT 'Encrypted private key if applicable',
-    password_hint VARCHAR(255),
-    created_by VARCHAR(36) NOT NULL,
+-- Flow structure namespaces
+CREATE TABLE flow_structure_namespaces (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    flow_structure_id UUID NOT NULL REFERENCES flow_structures(id) ON DELETE CASCADE,
+    prefix VARCHAR(50),
+    uri VARCHAR(500) NOT NULL,
+    is_default BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    
-    CONSTRAINT fk_certificates_created_by FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE RESTRICT,
-    INDEX idx_certificates_status (status),
-    INDEX idx_certificates_valid_to (valid_to),
-    INDEX idx_certificates_type (type)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    UNIQUE (flow_structure_id, prefix)
+);
 
--- JAR Files
-CREATE TABLE IF NOT EXISTS jar_files (
-    id VARCHAR(36) PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    version VARCHAR(50),
+-- Flow structure operations
+CREATE TABLE flow_structure_operations (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    flow_structure_id UUID NOT NULL REFERENCES flow_structures(id) ON DELETE CASCADE,
+    operation_name VARCHAR(255) NOT NULL,
+    soap_action VARCHAR(500),
+    input_element_name VARCHAR(255),
+    input_element_namespace VARCHAR(500),
+    output_element_name VARCHAR(255),
+    output_element_namespace VARCHAR(500),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (flow_structure_id, operation_name)
+);
+
+-- Communication adapters
+CREATE TABLE communication_adapters (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    name VARCHAR(255) NOT NULL UNIQUE,
+    adapter_type VARCHAR(50) NOT NULL,
+    direction VARCHAR(20) NOT NULL CHECK (direction IN ('SENDER', 'RECEIVER')),
+    connection_config TEXT, -- Will store XML configuration
+    business_component_id UUID NOT NULL REFERENCES business_components(id),
+    status VARCHAR(50) DEFAULT 'ACTIVE',
+    is_deployed BOOLEAN DEFAULT FALSE,
+    deployment_info TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_by UUID REFERENCES users(id),
+    updated_by UUID REFERENCES users(id)
+);
+
+-- Integration flows
+CREATE TABLE integration_flows (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    name VARCHAR(255) NOT NULL UNIQUE,
     description TEXT,
-    file_name VARCHAR(255) NOT NULL,
-    file_path VARCHAR(500),
-    size_bytes BIGINT,
-    checksum VARCHAR(64),
-    driver_type VARCHAR(100) COMMENT 'Database, Message Queue, File Processing, etc',
-    vendor VARCHAR(100),
-    license_info TEXT,
-    dependencies JSON,
-    is_active BOOLEAN DEFAULT TRUE,
-    upload_date DATE DEFAULT (CURRENT_DATE),
-    uploaded_by VARCHAR(36),
+    source_adapter_id UUID REFERENCES communication_adapters(id),
+    target_adapter_id UUID REFERENCES communication_adapters(id),
+    business_component_id UUID NOT NULL REFERENCES business_components(id),
+    status VARCHAR(50) DEFAULT 'DRAFT',
+    version VARCHAR(50) DEFAULT '1.0',
+    is_deployed BOOLEAN DEFAULT FALSE,
+    deployment_info TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    
-    CONSTRAINT fk_jar_files_uploaded_by FOREIGN KEY (uploaded_by) REFERENCES users(id) ON DELETE SET NULL,
-    INDEX idx_jar_files_driver_type (driver_type),
-    INDEX idx_jar_files_active (is_active)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_by UUID REFERENCES users(id),
+    updated_by UUID REFERENCES users(id)
+);
 
--- ============================================
--- SECTION 4: SYSTEM CONFIGURATION
--- ============================================
+-- Flow transformations
+CREATE TABLE flow_transformations (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    name VARCHAR(255) NOT NULL,
+    flow_id UUID NOT NULL REFERENCES integration_flows(id) ON DELETE CASCADE,
+    source_structure_id UUID REFERENCES message_structures(id),
+    target_structure_id UUID REFERENCES message_structures(id),
+    execution_order INT DEFAULT 1,
+    is_xml_transformation BOOLEAN DEFAULT TRUE,
+    namespace_aware BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_by UUID REFERENCES users(id),
+    updated_by UUID REFERENCES users(id)
+);
 
--- System Settings
-CREATE TABLE IF NOT EXISTS system_settings (
-    id VARCHAR(36) PRIMARY KEY,
-    category VARCHAR(50) NOT NULL COMMENT 'integration, security, email, monitoring, etc',
-    `key` VARCHAR(100) NOT NULL,
-    `value` TEXT NOT NULL,
+-- XML field mappings (replacing JSON-based field_mappings)
+CREATE TABLE xml_field_mappings (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    transformation_id UUID NOT NULL REFERENCES flow_transformations(id) ON DELETE CASCADE,
+    source_xpath VARCHAR(2000) NOT NULL,
+    target_xpath VARCHAR(2000) NOT NULL,
+    mapping_type VARCHAR(20) NOT NULL CHECK (mapping_type IN ('ELEMENT', 'ATTRIBUTE', 'TEXT', 'STRUCTURE')),
+    is_repeating BOOLEAN DEFAULT FALSE,
+    repeat_context_xpath VARCHAR(1000),
+    transform_function TEXT,
+    mapping_order INT DEFAULT 0,
     description VARCHAR(500),
-    data_type ENUM('string', 'number', 'boolean', 'json', 'encrypted') DEFAULT 'string',
-    is_encrypted BOOLEAN DEFAULT FALSE,
-    is_editable BOOLEAN DEFAULT TRUE,
-    validation_rules JSON,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    updated_by VARCHAR(36),
-    
-    CONSTRAINT fk_settings_updated_by FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL,
-    UNIQUE KEY uk_settings_category_key (category, `key`),
-    INDEX idx_settings_category (category)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_by UUID REFERENCES users(id),
+    updated_by UUID REFERENCES users(id)
+);
 
--- ============================================
--- SECTION 5: DATA STRUCTURES & TRANSFORMATIONS
--- ============================================
-
--- Data Structures
-CREATE TABLE IF NOT EXISTS data_structures (
-    id VARCHAR(36) PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    type ENUM('json', 'xml', 'xsd', 'wsdl', 'edmx', 'custom') NOT NULL,
-    description TEXT,
-    `usage` ENUM('source', 'target', 'both') NOT NULL,
-    structure JSON NOT NULL COMMENT 'The actual structure definition',
-    namespace JSON COMMENT 'Namespace information for XML-based structures',
-    tags JSON COMMENT 'Array of tags for categorization',
-    version INT DEFAULT 1,
-    is_active BOOLEAN DEFAULT TRUE,
-    business_component_id VARCHAR(36),
-    created_by VARCHAR(36),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    
-    CONSTRAINT fk_structures_business_component FOREIGN KEY (business_component_id) REFERENCES business_components(id) ON DELETE CASCADE,
-    CONSTRAINT fk_structures_created_by FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
-    INDEX idx_structures_type (type),
-    INDEX idx_structures_usage (`usage`),
-    INDEX idx_structures_business_component (business_component_id),
-    INDEX idx_structures_active (is_active)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- Communication Adapters
-CREATE TABLE IF NOT EXISTS communication_adapters (
-    id VARCHAR(36) PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    type ENUM('HTTP', 'HTTPS', 'REST', 'SOAP', 'FTP', 'SFTP', 'FILE', 'JDBC', 'JMS', 'MAIL', 'ODATA', 'RFC', 'IDOC', 'KAFKA', 'RABBITMQ', 'ACTIVEMQ', 'SMS', 'LDAP') NOT NULL,
-    mode ENUM('SENDER', 'RECEIVER', 'BIDIRECTIONAL') NOT NULL,
-    direction ENUM('INBOUND', 'OUTBOUND', 'BIDIRECTIONAL') NOT NULL,
-    description TEXT,
-    configuration JSON NOT NULL COMMENT 'Adapter-specific configuration',
-    status ENUM('active', 'inactive', 'error', 'testing') DEFAULT 'active',
-    is_active BOOLEAN DEFAULT TRUE,
-    last_test_date TIMESTAMP NULL,
-    last_test_result JSON,
-    business_component_id VARCHAR(36),
-    created_by VARCHAR(36),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    
-    CONSTRAINT fk_adapters_business_component FOREIGN KEY (business_component_id) REFERENCES business_components(id) ON DELETE CASCADE,
-    CONSTRAINT fk_adapters_created_by FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
-    INDEX idx_adapters_type (type),
-    INDEX idx_adapters_mode (mode),
-    INDEX idx_adapters_direction (direction),
-    INDEX idx_adapters_business_component (business_component_id),
-    INDEX idx_adapters_status (status),
-    INDEX idx_adapters_active (is_active)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- ============================================
--- SECTION 6: INTEGRATION FLOWS
--- ============================================
-
--- Integration Flows
-CREATE TABLE IF NOT EXISTS integration_flows (
-    id VARCHAR(36) PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    description TEXT,
-    flow_type ENUM('DIRECT_MAPPING', 'ORCHESTRATION') DEFAULT 'DIRECT_MAPPING',
-    source_adapter_id VARCHAR(36) NOT NULL,
-    target_adapter_id VARCHAR(36) NOT NULL,
-    source_structure_id VARCHAR(36),
-    target_structure_id VARCHAR(36),
-    status ENUM('DRAFT', 'ACTIVE', 'INACTIVE', 'ERROR', 'TESTING', 'DEPLOYED') DEFAULT 'DRAFT',
-    configuration JSON COMMENT 'Flow-specific settings',
-    schedule JSON COMMENT 'Scheduling configuration',
-    error_handling JSON COMMENT 'Error handling rules',
-    is_active BOOLEAN DEFAULT TRUE,
-    version INT DEFAULT 1,
-    deployed_version INT,
-    business_component_id VARCHAR(36),
-    created_by VARCHAR(36),
-    last_modified_by VARCHAR(36),
-    deployed_by VARCHAR(36),
-    deployed_at TIMESTAMP NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    
-    CONSTRAINT fk_flows_source_adapter FOREIGN KEY (source_adapter_id) REFERENCES communication_adapters(id) ON DELETE RESTRICT,
-    CONSTRAINT fk_flows_target_adapter FOREIGN KEY (target_adapter_id) REFERENCES communication_adapters(id) ON DELETE RESTRICT,
-    CONSTRAINT fk_flows_source_structure FOREIGN KEY (source_structure_id) REFERENCES data_structures(id) ON DELETE SET NULL,
-    CONSTRAINT fk_flows_target_structure FOREIGN KEY (target_structure_id) REFERENCES data_structures(id) ON DELETE SET NULL,
-    CONSTRAINT fk_flows_business_component FOREIGN KEY (business_component_id) REFERENCES business_components(id) ON DELETE CASCADE,
-    CONSTRAINT fk_flows_created_by FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
-    CONSTRAINT fk_flows_modified_by FOREIGN KEY (last_modified_by) REFERENCES users(id) ON DELETE SET NULL,
-    CONSTRAINT fk_flows_deployed_by FOREIGN KEY (deployed_by) REFERENCES users(id) ON DELETE SET NULL,
-    INDEX idx_flows_status (status),
-    INDEX idx_flows_type (flow_type),
-    INDEX idx_flows_business_component (business_component_id),
-    INDEX idx_flows_active (is_active)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- Flow Transformations
-CREATE TABLE IF NOT EXISTS flow_transformations (
-    id VARCHAR(36) PRIMARY KEY,
-    flow_id VARCHAR(36) NOT NULL,
-    type ENUM('FIELD_MAPPING', 'CUSTOM_FUNCTION', 'FILTER', 'ENRICHMENT', 'VALIDATION', 'AGGREGATION', 'SPLIT', 'MERGE') NOT NULL,
-    name VARCHAR(255),
-    description TEXT,
-    configuration JSON NOT NULL,
-    execution_order INT NOT NULL DEFAULT 0,
-    is_active BOOLEAN DEFAULT TRUE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    
-    CONSTRAINT fk_transformations_flow FOREIGN KEY (flow_id) REFERENCES integration_flows(id) ON DELETE CASCADE,
-    INDEX idx_transformations_flow (flow_id),
-    INDEX idx_transformations_type (type),
-    INDEX idx_transformations_order (flow_id, execution_order)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- Field Mappings
-CREATE TABLE IF NOT EXISTS field_mappings (
-    id VARCHAR(36) PRIMARY KEY,
-    transformation_id VARCHAR(36) NOT NULL,
-    source_fields JSON NOT NULL COMMENT 'Array of source field paths',
-    target_field VARCHAR(500) NOT NULL,
-    mapping_type ENUM('DIRECT', 'FUNCTION', 'CONSTANT', 'CONDITIONAL') DEFAULT 'DIRECT',
-    transformation_function TEXT COMMENT 'JavaScript or Java function',
-    function_type ENUM('JAVASCRIPT', 'JAVA', 'BUILTIN') DEFAULT 'JAVASCRIPT',
-    constant_value TEXT,
-    conditions JSON,
-    data_type_conversion JSON,
-    default_value TEXT,
-    is_required BOOLEAN DEFAULT FALSE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    
-    CONSTRAINT fk_mappings_transformation FOREIGN KEY (transformation_id) REFERENCES flow_transformations(id) ON DELETE CASCADE,
-    INDEX idx_mappings_transformation (transformation_id),
-    INDEX idx_mappings_target_field (target_field)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- ============================================
--- SECTION 7: EXECUTION & MONITORING
--- ============================================
-
--- Flow Executions
-CREATE TABLE IF NOT EXISTS flow_executions (
-    id VARCHAR(36) PRIMARY KEY,
-    flow_id VARCHAR(36) NOT NULL,
-    execution_number BIGINT,
-    status ENUM('RUNNING', 'SUCCESS', 'FAILED', 'CANCELLED', 'TIMEOUT', 'PARTIAL') NOT NULL,
-    trigger_type ENUM('MANUAL', 'SCHEDULED', 'WEBHOOK', 'EVENT', 'API') DEFAULT 'MANUAL',
-    triggered_by VARCHAR(36),
-    started_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    completed_at TIMESTAMP NULL,
-    execution_time_ms BIGINT,
-    processed_records INT DEFAULT 0,
-    failed_records INT DEFAULT 0,
-    skipped_records INT DEFAULT 0,
-    input_message_id VARCHAR(36),
-    output_message_id VARCHAR(36),
+-- Flow executions
+CREATE TABLE flow_executions (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    flow_id UUID NOT NULL REFERENCES integration_flows(id),
+    execution_start TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    execution_end TIMESTAMP,
+    status VARCHAR(50) NOT NULL,
     error_message TEXT,
-    error_stack_trace TEXT,
-    retry_count INT DEFAULT 0,
-    parent_execution_id VARCHAR(36),
-    business_component_id VARCHAR(36),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    
-    CONSTRAINT fk_executions_flow FOREIGN KEY (flow_id) REFERENCES integration_flows(id) ON DELETE CASCADE,
-    CONSTRAINT fk_executions_triggered_by FOREIGN KEY (triggered_by) REFERENCES users(id) ON DELETE SET NULL,
-    CONSTRAINT fk_executions_parent FOREIGN KEY (parent_execution_id) REFERENCES flow_executions(id) ON DELETE CASCADE,
-    CONSTRAINT fk_executions_business_component FOREIGN KEY (business_component_id) REFERENCES business_components(id) ON DELETE SET NULL,
-    INDEX idx_executions_flow (flow_id),
-    INDEX idx_executions_status (status),
-    INDEX idx_executions_started_at (started_at),
-    INDEX idx_executions_business_component (business_component_id),
-    UNIQUE KEY uk_executions_flow_number (flow_id, execution_number)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    input_message_id UUID,
+    output_message_id UUID,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 
 -- Messages
-CREATE TABLE IF NOT EXISTS messages (
-    id VARCHAR(36) PRIMARY KEY,
-    flow_id VARCHAR(36),
-    execution_id VARCHAR(36),
-    adapter_id VARCHAR(36),
-    message_type ENUM('REQUEST', 'RESPONSE', 'ERROR', 'ACKNOWLEDGMENT', 'NOTIFICATION') NOT NULL,
-    direction ENUM('INBOUND', 'OUTBOUND') NOT NULL,
-    status ENUM('RECEIVED', 'PROCESSING', 'PROCESSED', 'FAILED', 'RETRY', 'ARCHIVED') NOT NULL,
+CREATE TABLE messages (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    flow_id UUID REFERENCES integration_flows(id),
+    adapter_id UUID REFERENCES communication_adapters(id),
+    message_type VARCHAR(50) NOT NULL,
+    direction VARCHAR(20) NOT NULL CHECK (direction IN ('INBOUND', 'OUTBOUND')),
+    content XML NOT NULL,
+    status VARCHAR(50) NOT NULL,
+    error_message TEXT,
     correlation_id VARCHAR(255),
-    parent_message_id VARCHAR(36),
-    content_type VARCHAR(100),
-    content LONGTEXT,
-    content_size BIGINT,
-    headers JSON,
-    metadata JSON,
-    error_details JSON,
-    retry_count INT DEFAULT 0,
-    next_retry_at TIMESTAMP NULL,
-    received_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    processed_at TIMESTAMP NULL,
-    business_component_id VARCHAR(36),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    
-    CONSTRAINT fk_messages_flow FOREIGN KEY (flow_id) REFERENCES integration_flows(id) ON DELETE SET NULL,
-    CONSTRAINT fk_messages_execution FOREIGN KEY (execution_id) REFERENCES flow_executions(id) ON DELETE CASCADE,
-    CONSTRAINT fk_messages_adapter FOREIGN KEY (adapter_id) REFERENCES communication_adapters(id) ON DELETE SET NULL,
-    CONSTRAINT fk_messages_parent FOREIGN KEY (parent_message_id) REFERENCES messages(id) ON DELETE CASCADE,
-    CONSTRAINT fk_messages_business_component FOREIGN KEY (business_component_id) REFERENCES business_components(id) ON DELETE SET NULL,
-    INDEX idx_messages_flow (flow_id),
-    INDEX idx_messages_execution (execution_id),
-    INDEX idx_messages_status (status),
-    INDEX idx_messages_correlation (correlation_id),
-    INDEX idx_messages_received_at (received_at),
-    INDEX idx_messages_business_component (business_component_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    CONSTRAINT valid_message_xml CHECK (xml_is_well_formed_document(content::text))
+);
 
--- System Logs
-CREATE TABLE IF NOT EXISTS system_logs (
-    id VARCHAR(36) PRIMARY KEY,
-    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    level ENUM('DEBUG', 'INFO', 'WARN', 'ERROR', 'FATAL') NOT NULL,
-    logger VARCHAR(255),
-    message VARCHAR(1000) NOT NULL,
-    details JSON,
-    exception_class VARCHAR(255),
-    exception_message TEXT,
-    stack_trace TEXT,
-    source VARCHAR(100) COMMENT 'system, adapter, flow, channel, etc',
-    source_id VARCHAR(36),
-    source_name VARCHAR(255),
-    user_id VARCHAR(36),
-    correlation_id VARCHAR(255),
-    business_component_id VARCHAR(36),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    
-    CONSTRAINT fk_logs_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
-    CONSTRAINT fk_logs_business_component FOREIGN KEY (business_component_id) REFERENCES business_components(id) ON DELETE SET NULL,
-    INDEX idx_logs_timestamp (timestamp),
-    INDEX idx_logs_level (level),
-    INDEX idx_logs_source (source, source_id),
-    INDEX idx_logs_correlation (correlation_id),
-    INDEX idx_logs_business_component (business_component_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+-- System logs
+CREATE TABLE system_logs (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    timestamp TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    level VARCHAR(10) NOT NULL,
+    logger_name VARCHAR(255),
+    message TEXT,
+    exception TEXT,
+    thread_name VARCHAR(255),
+    correlation_id VARCHAR(100),
+    user_id UUID REFERENCES users(id),
+    flow_id UUID REFERENCES integration_flows(id),
+    adapter_id UUID REFERENCES communication_adapters(id)
+);
 
--- ============================================
--- SECTION 8: STATISTICS & ANALYTICS
--- ============================================
-
--- Flow Statistics
-CREATE TABLE IF NOT EXISTS flow_statistics (
-    id VARCHAR(36) PRIMARY KEY,
-    flow_id VARCHAR(36) NOT NULL,
-    date DATE NOT NULL,
-    hour INT DEFAULT NULL COMMENT 'NULL for daily stats, 0-23 for hourly',
-    total_executions INT DEFAULT 0,
-    successful_executions INT DEFAULT 0,
-    failed_executions INT DEFAULT 0,
-    cancelled_executions INT DEFAULT 0,
-    total_execution_time_ms BIGINT DEFAULT 0,
-    avg_execution_time_ms BIGINT DEFAULT 0,
-    min_execution_time_ms BIGINT DEFAULT 0,
-    max_execution_time_ms BIGINT DEFAULT 0,
-    total_records_processed BIGINT DEFAULT 0,
-    total_records_failed BIGINT DEFAULT 0,
-    total_data_volume_mb DECIMAL(10,2) DEFAULT 0,
-    error_rate DECIMAL(5,2) DEFAULT 0,
-    business_component_id VARCHAR(36),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    
-    CONSTRAINT fk_flow_stats_flow FOREIGN KEY (flow_id) REFERENCES integration_flows(id) ON DELETE CASCADE,
-    CONSTRAINT fk_flow_stats_business_component FOREIGN KEY (business_component_id) REFERENCES business_components(id) ON DELETE SET NULL,
-    UNIQUE KEY uk_flow_stats_date_hour (flow_id, date, hour),
-    INDEX idx_flow_stats_date (date),
-    INDEX idx_flow_stats_business_component (business_component_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- Adapter Statistics
-CREATE TABLE IF NOT EXISTS adapter_statistics (
-    id VARCHAR(36) PRIMARY KEY,
-    adapter_id VARCHAR(36) NOT NULL,
-    date DATE NOT NULL,
-    hour INT DEFAULT NULL COMMENT 'NULL for daily stats, 0-23 for hourly',
-    total_messages INT DEFAULT 0,
-    successful_messages INT DEFAULT 0,
-    failed_messages INT DEFAULT 0,
-    total_response_time_ms BIGINT DEFAULT 0,
-    avg_response_time_ms BIGINT DEFAULT 0,
-    min_response_time_ms BIGINT DEFAULT 0,
-    max_response_time_ms BIGINT DEFAULT 0,
-    total_data_volume_mb DECIMAL(10,2) DEFAULT 0,
-    error_rate DECIMAL(5,2) DEFAULT 0,
-    availability_percentage DECIMAL(5,2) DEFAULT 100,
-    business_component_id VARCHAR(36),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    
-    CONSTRAINT fk_adapter_stats_adapter FOREIGN KEY (adapter_id) REFERENCES communication_adapters(id) ON DELETE CASCADE,
-    CONSTRAINT fk_adapter_stats_business_component FOREIGN KEY (business_component_id) REFERENCES business_components(id) ON DELETE SET NULL,
-    UNIQUE KEY uk_adapter_stats_date_hour (adapter_id, date, hour),
-    INDEX idx_adapter_stats_date (date),
-    INDEX idx_adapter_stats_business_component (business_component_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- ============================================
--- SECTION 9: ADDITIONAL FEATURES
--- ============================================
-
--- Channels (for grouping adapters)
-CREATE TABLE IF NOT EXISTS channels (
-    id VARCHAR(36) PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    type VARCHAR(100) NOT NULL,
+-- System configuration
+CREATE TABLE system_configuration (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    config_key VARCHAR(255) NOT NULL UNIQUE,
+    config_value TEXT NOT NULL,
+    config_type VARCHAR(50) NOT NULL,
     description TEXT,
-    configuration JSON,
-    status ENUM('active', 'inactive', 'maintenance') DEFAULT 'active',
-    business_component_id VARCHAR(36),
-    created_by VARCHAR(36),
+    is_encrypted BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    
-    CONSTRAINT fk_channels_business_component FOREIGN KEY (business_component_id) REFERENCES business_components(id) ON DELETE CASCADE,
-    CONSTRAINT fk_channels_created_by FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
-    INDEX idx_channels_type (type),
-    INDEX idx_channels_status (status),
-    INDEX idx_channels_business_component (business_component_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_by UUID REFERENCES users(id),
+    updated_by UUID REFERENCES users(id)
+);
 
--- Audit Trail
-CREATE TABLE IF NOT EXISTS audit_trail (
-    id VARCHAR(36) PRIMARY KEY,
-    entity_type VARCHAR(100) NOT NULL,
-    entity_id VARCHAR(36) NOT NULL,
-    action ENUM('CREATE', 'UPDATE', 'DELETE', 'DEPLOY', 'ACTIVATE', 'DEACTIVATE', 'EXECUTE', 'LOGIN', 'LOGOUT') NOT NULL,
-    changes JSON COMMENT 'Before and after values for updates',
-    user_id VARCHAR(36),
-    user_ip VARCHAR(45),
-    user_agent TEXT,
-    business_component_id VARCHAR(36),
+-- Flow structure messages (link table)
+CREATE TABLE flow_structure_messages (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    flow_structure_id UUID NOT NULL REFERENCES flow_structures(id) ON DELETE CASCADE,
+    message_structure_id UUID NOT NULL REFERENCES message_structures(id),
+    message_type VARCHAR(50) NOT NULL CHECK (message_type IN ('REQUEST', 'RESPONSE')),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    
-    CONSTRAINT fk_audit_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
-    CONSTRAINT fk_audit_business_component FOREIGN KEY (business_component_id) REFERENCES business_components(id) ON DELETE SET NULL,
-    INDEX idx_audit_entity (entity_type, entity_id),
-    INDEX idx_audit_user (user_id),
-    INDEX idx_audit_created_at (created_at),
-    INDEX idx_audit_action (action),
-    INDEX idx_audit_business_component (business_component_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    UNIQUE (flow_structure_id, message_structure_id, message_type)
+);
 
--- Scheduled Jobs
-CREATE TABLE IF NOT EXISTS scheduled_jobs (
-    id VARCHAR(36) PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    job_type ENUM('FLOW_EXECUTION', 'CLEANUP', 'REPORT', 'MAINTENANCE') NOT NULL,
-    target_id VARCHAR(36) COMMENT 'Flow ID or other target',
-    schedule_expression VARCHAR(255) NOT NULL COMMENT 'Cron expression or interval',
-    timezone VARCHAR(50) DEFAULT 'UTC',
-    is_active BOOLEAN DEFAULT TRUE,
-    last_run_at TIMESTAMP NULL,
-    last_run_status ENUM('SUCCESS', 'FAILED', 'SKIPPED'),
-    next_run_at TIMESTAMP NULL,
-    configuration JSON,
-    created_by VARCHAR(36),
+-- Adapter payloads
+CREATE TABLE adapter_payloads (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    adapter_id UUID NOT NULL REFERENCES communication_adapters(id) ON DELETE CASCADE,
+    message_structure_id UUID NOT NULL REFERENCES message_structures(id),
+    payload_type VARCHAR(50) NOT NULL CHECK (payload_type IN ('INPUT', 'OUTPUT')),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    
-    CONSTRAINT fk_jobs_created_by FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
-    INDEX idx_jobs_type (job_type),
-    INDEX idx_jobs_active (is_active),
-    INDEX idx_jobs_next_run (next_run_at)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    UNIQUE (adapter_id, message_structure_id, payload_type)
+);
 
--- ============================================
--- END OF SCHEMA
--- ============================================
+-- Create indexes for performance
+CREATE INDEX idx_message_structures_name ON message_structures(name);
+CREATE INDEX idx_flow_structures_name ON flow_structures(name);
+CREATE INDEX idx_integration_flows_name ON integration_flows(name);
+CREATE INDEX idx_messages_flow_id ON messages(flow_id);
+CREATE INDEX idx_messages_created_at ON messages(created_at);
+CREATE INDEX idx_flow_executions_flow_id ON flow_executions(flow_id);
+CREATE INDEX idx_flow_executions_status ON flow_executions(status);
+CREATE INDEX idx_system_logs_timestamp ON system_logs(timestamp);
+CREATE INDEX idx_system_logs_level ON system_logs(level);
+CREATE INDEX idx_xml_field_mappings_transformation ON xml_field_mappings(transformation_id);
+CREATE INDEX idx_xml_field_mappings_order ON xml_field_mappings(transformation_id, mapping_order);
+
+-- XML-specific indexes using PostgreSQL GIN
+CREATE INDEX idx_message_structures_xml ON message_structures USING GIN ((
+    xpath('//xs:element/@name', xsd_content, 
+    ARRAY[ARRAY['xs', 'http://www.w3.org/2001/XMLSchema']])
+));
+
+CREATE INDEX idx_flow_structures_xml ON flow_structures USING GIN ((
+    xpath('//wsdl:operation/@name', wsdl_content,
+    ARRAY[ARRAY['wsdl', 'http://schemas.xmlsoap.org/wsdl/']])
+)) WHERE wsdl_content IS NOT NULL;
+
+-- Create update timestamp trigger function
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = CURRENT_TIMESTAMP;
+    RETURN NEW;
+END;
+$$ language 'plpgsql';
+
+-- Apply update trigger to all relevant tables
+CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON users
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_business_components_updated_at BEFORE UPDATE ON business_components
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_message_structures_updated_at BEFORE UPDATE ON message_structures
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_flow_structures_updated_at BEFORE UPDATE ON flow_structures
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_communication_adapters_updated_at BEFORE UPDATE ON communication_adapters
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_integration_flows_updated_at BEFORE UPDATE ON integration_flows
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_flow_transformations_updated_at BEFORE UPDATE ON flow_transformations
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_xml_field_mappings_updated_at BEFORE UPDATE ON xml_field_mappings
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_system_configuration_updated_at BEFORE UPDATE ON system_configuration
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- Insert default roles
+INSERT INTO roles (name, description) VALUES 
+('ADMINISTRATOR', 'Full system access'),
+('DEVELOPER', 'Development access'),
+('INTEGRATOR', 'Integration configuration access'),
+('VIEWER', 'Read-only access');
+
+-- Insert default system configuration (no created_by/updated_by since no users exist yet)
+INSERT INTO system_configuration (id, config_key, config_value, config_type, description) VALUES
+(uuid_generate_v4(), 'environment.type', 'DEVELOPMENT', 'STRING', 'Environment type: DEVELOPMENT, QA, or PRODUCTION'),
+(uuid_generate_v4(), 'xml.namespace.aware', 'true', 'BOOLEAN', 'Whether XML processing should be namespace aware'),
+(uuid_generate_v4(), 'xml.validation.enabled', 'true', 'BOOLEAN', 'Whether to validate XML against schemas'),
+(uuid_generate_v4(), 'flow.execution.timeout', '300000', 'INTEGER', 'Flow execution timeout in milliseconds'),
+(uuid_generate_v4(), 'adapter.connection.timeout', '30000', 'INTEGER', 'Adapter connection timeout in milliseconds');
