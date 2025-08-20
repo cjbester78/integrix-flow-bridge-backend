@@ -179,7 +179,7 @@ public class FlowExecutionAsyncService {
             // Step 3: Send to target adapter
             Map<String, Object> context = new HashMap<>();
             context.put("correlationId", correlationId);
-            context.put("flowId", flow.getId());
+            context.put("flowId", flow.getId().toString());
             
             adapterExecutor.sendData(flow.getTargetAdapterId().toString(), processedData, context);
             logger.info("Sent data to target adapter: {}", targetAdapter.getName());

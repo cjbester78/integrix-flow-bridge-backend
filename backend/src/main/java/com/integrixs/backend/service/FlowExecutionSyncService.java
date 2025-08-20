@@ -79,7 +79,7 @@ public class FlowExecutionSyncService {
         
         // Track processing context
         Map<String, Object> context = new HashMap<>();
-        context.put("flowId", flow.getId());
+        context.put("flowId", flow.getId().toString());
         context.put("flowName", flow.getName());
         context.put("protocol", protocol);
         context.put("headers", headers);
@@ -103,7 +103,7 @@ public class FlowExecutionSyncService {
             }
         }
         context.put("correlationId", correlationId);
-        context.put("flowId", flow.getId());
+        context.put("flowId", flow.getId().toString());
         // Pass through the isEndpointFlow flag if present
         if (headers.containsKey("isEndpointFlow")) {
             context.put("isEndpointFlow", "true".equals(headers.get("isEndpointFlow")));
