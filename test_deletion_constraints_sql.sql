@@ -59,8 +59,8 @@ BEGIN
     RAISE NOTICE 'Created transformation with ID: %', v_transformation_id;
     
     -- Create field mapping
-    INSERT INTO field_mappings (transformation_id, source_fields, target_field, mapping_order, is_active)
-    VALUES (v_transformation_id, '["source1"]', 'target1', 1, true)
+    INSERT INTO field_mappings (transformation_id, source_fields, target_field, mapping_order, is_active, is_array_mapping, namespace_aware)
+    VALUES (v_transformation_id, '["source1"]', 'target1', 1, true, false, false)
     RETURNING id INTO v_field_mapping_id;
     RAISE NOTICE 'Created field mapping with ID: %', v_field_mapping_id;
     
