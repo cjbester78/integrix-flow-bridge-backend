@@ -7,6 +7,7 @@ import com.integrixs.shared.dto.FieldMappingDTO;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,6 +18,7 @@ import java.util.HashMap;
 import java.util.Optional;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @Transactional
 public class FlowCompositionService {
@@ -195,6 +197,146 @@ public class FlowCompositionService {
                     
                     transformation.setExecutionOrder(order++);
                     transformation.setActive(true);
+                    
+                    FlowTransformationDTO savedTransformation = transformationService.save(transformation);
+                    
+                    // Save field mappings for this additional mapping
+                    int fieldMappingOrder = 1;
+                    for (FieldMappingDTO mapping : additionalMapping.getFieldMappings()) {
+                        mapping.setTransformationId(savedTransformation.getId().toString());
+                        mapping.setMappingOrder(fieldMappingOrder++);
+                        fieldMappingService.save(mapping);
+                    }
+                }
+            }
+        }
+        
+        return savedFlow;
+    }
+
+    /**
+     * Update an existing direct mapping flow
+     */
+    @Transactional
+    public IntegrationFlow updateDirectMappingFlow(String flowId, DirectMappingFlowRequest request) {
+        // Find existing flow
+        IntegrationFlow existingFlow = flowRepository.findById(UUID.fromString(flowId))
+            .orElseThrow(() -> new IllegalArgumentException("Flow not found: " + flowId));
+        
+        // Validate that we're not creating a duplicate name
+        if (flowRepository.existsByNameAndIdNot(request.getFlowName(), UUID.fromString(flowId))) {
+            throw new IllegalArgumentException("A flow with the name '" + request.getFlowName() + "' already exists");
+        }
+        
+        // Update basic flow properties
+        existingFlow.setName(request.getFlowName());
+        existingFlow.setDescription(request.getDescription());
+        
+        // Update business component (IntegrationFlow has a single businessComponent field)
+        if (request.getSourceBusinessComponentId() != null) {
+            BusinessComponent businessComponent = businessComponentRepository.findById(UUID.fromString(request.getSourceBusinessComponentId())).orElse(null);
+            if (businessComponent != null) {
+                existingFlow.setBusinessComponent(businessComponent);
+            }
+        }
+        
+        // Update adapters
+        if (request.getSourceAdapterId() != null) {
+            validateAdapter(request.getSourceAdapterId());
+            existingFlow.setSourceAdapterId(UUID.fromString(request.getSourceAdapterId()));
+        }
+        if (request.getTargetAdapterId() != null) {
+            validateAdapter(request.getTargetAdapterId());
+            existingFlow.setTargetAdapterId(UUID.fromString(request.getTargetAdapterId()));
+        }
+        
+        // Update flow structures
+        if (request.getSourceFlowStructureId() != null) {
+            existingFlow.setSourceFlowStructureId(UUID.fromString(request.getSourceFlowStructureId()));
+        }
+        if (request.getTargetFlowStructureId() != null) {
+            existingFlow.setTargetFlowStructureId(UUID.fromString(request.getTargetFlowStructureId()));
+        }
+        
+        // Note: IntegrationFlow entity doesn't have sourceStructureId/targetStructureId fields
+        // Those would need to be added to the entity if required
+        
+        // Update mapping mode
+        if (request.getMappingMode() != null) {
+            existingFlow.setMappingMode(MappingMode.valueOf(request.getMappingMode()));
+        }
+        
+        existingFlow.setSkipXmlConversion(request.isSkipXmlConversion());
+        
+        // Save the updated flow
+        IntegrationFlow savedFlow = flowRepository.save(existingFlow);
+        
+        // Delete existing transformations and mappings
+        List<FlowTransformationDTO> existingTransformations = transformationService.getByFlowId(flowId);
+        for (FlowTransformationDTO transformation : existingTransformations) {
+            // Delete field mappings for this transformation
+            List<FieldMapping> mappings = fieldMappingRepository.findByTransformationId(UUID.fromString(transformation.getId()));
+            for (FieldMapping mapping : mappings) {
+                fieldMappingRepository.delete(mapping);
+            }
+            // Delete the transformation
+            transformationService.delete(transformation.getId());
+        }
+        
+        // Recreate transformations and mappings if mapping is required
+        if (existingFlow.getMappingMode() == MappingMode.WITH_MAPPING && request.getFieldMappings() != null) {
+            // Create request transformation
+            FlowTransformationDTO requestTransformation = new FlowTransformationDTO();
+            requestTransformation.setFlowId(savedFlow.getId().toString());
+            requestTransformation.setName(request.getRequestMappingName() != null ? request.getRequestMappingName() : "Request Mapping");
+            requestTransformation.setType("MAPPING");
+            requestTransformation.setExecutionOrder(1);
+            requestTransformation.setActive(true);
+            
+            // Set WSDL operations
+            if (request.getSourceWsdlOperation() != null) {
+                Map<String, Object> config = new HashMap<>();
+                config.put("sourceWsdlOperation", request.getSourceWsdlOperation());
+                config.put("targetWsdlOperation", request.getTargetWsdlOperation());
+                try {
+                    requestTransformation.setConfiguration(objectMapper.writeValueAsString(config));
+                } catch (JsonProcessingException e) {
+                    log.error("Error serializing configuration", e);
+                }
+            }
+            
+            FlowTransformationDTO savedRequestTransformation = transformationService.save(requestTransformation);
+            
+            // Save field mappings for request
+            int mappingOrder = 1;
+            for (FieldMappingDTO mapping : request.getFieldMappings()) {
+                mapping.setTransformationId(savedRequestTransformation.getId().toString());
+                mapping.setMappingOrder(mappingOrder++);
+                fieldMappingService.save(mapping);
+            }
+            
+            // Handle additional mappings (e.g., response mappings for synchronous flows)
+            if (request.getAdditionalMappings() != null) {
+                int transformationOrder = 2;
+                for (AdditionalMapping additionalMapping : request.getAdditionalMappings()) {
+                    FlowTransformationDTO transformation = new FlowTransformationDTO();
+                    transformation.setFlowId(savedFlow.getId().toString());
+                    transformation.setName(additionalMapping.getName());
+                    transformation.setType("MAPPING");
+                    transformation.setExecutionOrder(transformationOrder++);
+                    transformation.setActive(true);
+                    
+                    // Set WSDL operations for additional mapping
+                    if (additionalMapping.getSourceWsdlOperation() != null) {
+                        Map<String, Object> config = new HashMap<>();
+                        config.put("sourceWsdlOperation", additionalMapping.getSourceWsdlOperation());
+                        config.put("targetWsdlOperation", additionalMapping.getTargetWsdlOperation());
+                        try {
+                            transformation.setConfiguration(objectMapper.writeValueAsString(config));
+                        } catch (JsonProcessingException e) {
+                            log.error("Error serializing configuration", e);
+                        }
+                    }
                     
                     FlowTransformationDTO savedTransformation = transformationService.save(transformation);
                     

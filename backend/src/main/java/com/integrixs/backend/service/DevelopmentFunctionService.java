@@ -418,6 +418,10 @@ public class DevelopmentFunctionService {
             case "count":
                 return toList(inputs.get("values")).size();
                 
+            // Constants functions
+            case "constant":
+                return inputs.get("value");
+                
             default:
                 throw new BusinessException("Built-in function not implemented for testing: " + functionName);
         }

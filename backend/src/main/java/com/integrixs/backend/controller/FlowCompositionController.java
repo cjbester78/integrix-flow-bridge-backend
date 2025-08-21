@@ -47,6 +47,22 @@ public class FlowCompositionController {
     }
 
     /**
+     * Update an existing direct mapping flow
+     */
+    @PutMapping("/direct-mapping/{flowId}")
+    public ResponseEntity<?> updateDirectMappingFlow(@PathVariable String flowId, @RequestBody DirectMappingFlowRequest request) {
+        try {
+            IntegrationFlow flow = flowCompositionService.updateDirectMappingFlow(flowId, request);
+            return ResponseEntity.ok(flow);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(new ErrorResponse("Validation Error", e.getMessage()));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().body(new ErrorResponse("Internal Server Error", e.getMessage()));
+        }
+    }
+
+    /**
      * Update an existing flow composition
      */
     @PutMapping("/{flowId}")
