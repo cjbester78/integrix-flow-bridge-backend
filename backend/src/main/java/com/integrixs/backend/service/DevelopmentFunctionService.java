@@ -124,7 +124,8 @@ public class DevelopmentFunctionService {
                 func.getName(),
                 func.getCategory() != null ? func.getCategory() : "general",
                 func.getDescription(),
-                func.getFunctionSignature()
+                func.getFunctionSignature(),
+                func.getParameters()
             ))
             .collect(java.util.stream.Collectors.toList());
     }
@@ -483,6 +484,12 @@ public class DevelopmentFunctionService {
                 throw new BusinessException("Invalid JavaScript syntax: " + e.getMessage());
             }
         } else if (language == TransformationCustomFunction.FunctionLanguage.JAVA) {
+            // Skip compilation for built-in functions since they are pre-compiled
+            if (functionBody != null && functionBody.contains("// Built-in function")) {
+                log.debug("Skipping compilation for built-in function");
+                return;
+            }
+            
             // Compile Java code to validate syntax
             JavaCompilationService.CompilationResult result = 
                 compilationService.compileFunction("TestFunction", functionBody);
@@ -620,12 +627,21 @@ public class DevelopmentFunctionService {
         private String category;
         private String description;
         private String signature;
+        private String parameters; // JSON string of parameters
         
         public BuiltInFunction(String name, String category, String description, String signature) {
             this.name = name;
             this.category = category;
             this.description = description;
             this.signature = signature;
+        }
+        
+        public BuiltInFunction(String name, String category, String description, String signature, String parameters) {
+            this.name = name;
+            this.category = category;
+            this.description = description;
+            this.signature = signature;
+            this.parameters = parameters;
         }
     }
     
