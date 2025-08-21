@@ -65,7 +65,15 @@ public class TransformationCustomFunction {
     private boolean isPublic = true;
     
     @Column(name = "is_built_in", nullable = false)
-    private boolean isBuiltIn = false;
+    private boolean builtIn = false;
+    
+    public boolean isBuiltIn() {
+        return builtIn;
+    }
+    
+    public void setBuiltIn(boolean builtIn) {
+        this.builtIn = builtIn;
+    }
 
     @Enumerated(EnumType.STRING)
     @Column(name = "performance_class", nullable = false, length = 20)

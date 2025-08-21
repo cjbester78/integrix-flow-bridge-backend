@@ -159,7 +159,7 @@ public class DevelopmentFunctionService {
                 .testCases(request.getTestCases())
                 .isSafe(request.getIsSafe() != null ? request.getIsSafe() : false)
                 .isPublic(request.getIsPublic() != null ? request.getIsPublic() : true)
-                .isBuiltIn(false) // Custom functions are never built-in
+                .builtIn(false) // Custom functions are never built-in
                 .performanceClass(request.getPerformanceClass() != null ? 
                         request.getPerformanceClass() : TransformationCustomFunction.PerformanceClass.NORMAL)
                 .version(1)
