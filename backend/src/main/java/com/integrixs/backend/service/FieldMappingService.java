@@ -11,11 +11,14 @@ import com.integrixs.shared.dto.FieldMappingDTO;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.core.JsonProcessingException;
 
+import lombok.extern.slf4j.Slf4j;
+
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.UUID;
 
+@Slf4j
 @Service
 public class FieldMappingService {
 
@@ -46,8 +49,29 @@ public class FieldMappingService {
     }
 
     public FieldMappingDTO save(FieldMappingDTO mappingDTO) {
+        // Debug logging for visualFlowData
+        if (mappingDTO.getVisualFlowData() != null) {
+            log.info("Saving field mapping with visualFlowData for target field: {}", mappingDTO.getTargetField());
+            log.debug("VisualFlowData content: {}", mappingDTO.getVisualFlowData());
+        } else {
+            log.info("Saving field mapping WITHOUT visualFlowData for target field: {}", mappingDTO.getTargetField());
+        }
+        
+        if (mappingDTO.getFunctionNode() != null) {
+            log.info("Field mapping has functionNode: {}", mappingDTO.getFunctionNode());
+        }
+        
         FieldMapping mapping = fromDTO(mappingDTO);
-        return toDTO(mappingRepository.save(mapping));
+        FieldMapping savedMapping = mappingRepository.save(mapping);
+        
+        // Log what was actually saved
+        if (savedMapping.getVisualFlowData() != null) {
+            log.info("Successfully saved visualFlowData to database for field: {}", savedMapping.getTargetField());
+        } else {
+            log.warn("VisualFlowData was NOT saved to database for field: {}", savedMapping.getTargetField());
+        }
+        
+        return toDTO(savedMapping);
     }
 
     public Optional<FieldMappingDTO> getById(String id) {
@@ -133,16 +157,24 @@ public class FieldMappingService {
         // Convert visualFlowData and functionNode to JSON strings for storage
         if (dto.getVisualFlowData() != null) {
             try {
-                mapping.setVisualFlowData(objectMapper.writeValueAsString(dto.getVisualFlowData()));
+                String visualFlowDataJson = objectMapper.writeValueAsString(dto.getVisualFlowData());
+                mapping.setVisualFlowData(visualFlowDataJson);
+                log.debug("Converted visualFlowData to JSON: {}", visualFlowDataJson);
             } catch (JsonProcessingException e) {
+                log.error("Failed to convert visualFlowData to JSON", e);
                 mapping.setVisualFlowData(null);
             }
+        } else {
+            log.debug("No visualFlowData to convert for field: {}", dto.getTargetField());
         }
         
         if (dto.getFunctionNode() != null) {
             try {
-                mapping.setFunctionNode(objectMapper.writeValueAsString(dto.getFunctionNode()));
+                String functionNodeJson = objectMapper.writeValueAsString(dto.getFunctionNode());
+                mapping.setFunctionNode(functionNodeJson);
+                log.debug("Converted functionNode to JSON: {}", functionNodeJson);
             } catch (JsonProcessingException e) {
+                log.error("Failed to convert functionNode to JSON", e);
                 mapping.setFunctionNode(null);
             }
         }
