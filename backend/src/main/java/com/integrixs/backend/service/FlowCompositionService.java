@@ -289,7 +289,7 @@ public class FlowCompositionService {
             FlowTransformationDTO requestTransformation = new FlowTransformationDTO();
             requestTransformation.setFlowId(savedFlow.getId().toString());
             requestTransformation.setName(request.getRequestMappingName() != null ? request.getRequestMappingName() : "Request Mapping");
-            requestTransformation.setType("MAPPING");
+            requestTransformation.setType("FIELD_MAPPING");
             requestTransformation.setExecutionOrder(1);
             requestTransformation.setActive(true);
             
