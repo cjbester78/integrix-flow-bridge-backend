@@ -3,6 +3,8 @@ package com.integrixs.data.model;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.GenericGenerator;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -43,6 +45,7 @@ public class TransformationCustomFunction {
     @Column(name = "function_signature", nullable = false, length = 500)
     private String functionSignature;
     
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "parameters", columnDefinition = "json")
     private String parameters; // JSON representation of function parameters
 
