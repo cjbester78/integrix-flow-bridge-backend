@@ -3,6 +3,7 @@ package com.integrixs.backend.controller;
 import com.integrixs.data.model.IntegrationFlow;
 import com.integrixs.backend.service.FlowCompositionService;
 import com.integrixs.backend.service.FlowCompositionService.*;
+import com.integrixs.backend.service.IntegrationFlowService;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -14,6 +15,9 @@ public class FlowCompositionController {
 
     @Autowired
     private FlowCompositionService flowCompositionService;
+    
+    @Autowired
+    private IntegrationFlowService integrationFlowService;
 
     /**
      * Create a complete direct mapping flow
@@ -22,7 +26,10 @@ public class FlowCompositionController {
     public ResponseEntity<?> createDirectMappingFlow(@RequestBody DirectMappingFlowRequest request) {
         try {
             IntegrationFlow flow = flowCompositionService.createDirectMappingFlow(request);
-            return ResponseEntity.ok(flow);
+            // Convert to DTO to avoid Hibernate proxy serialization issues
+            return integrationFlowService.getFlowByIdAsDTO(flow.getId().toString())
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(new ErrorResponse("Validation Error", e.getMessage()));
         } catch (Exception e) {
@@ -53,7 +60,10 @@ public class FlowCompositionController {
     public ResponseEntity<?> updateDirectMappingFlow(@PathVariable String flowId, @RequestBody DirectMappingFlowRequest request) {
         try {
             IntegrationFlow flow = flowCompositionService.updateDirectMappingFlow(flowId, request);
-            return ResponseEntity.ok(flow);
+            // Convert to DTO to avoid Hibernate proxy serialization issues
+            return integrationFlowService.getFlowByIdAsDTO(flow.getId().toString())
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(new ErrorResponse("Validation Error", e.getMessage()));
         } catch (Exception e) {
