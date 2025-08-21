@@ -81,10 +81,22 @@ public class FieldMappingService {
         dto.setCreatedAt(mapping.getCreatedAt());
         dto.setUpdatedAt(mapping.getUpdatedAt());
         
-        // Note: visualFlowData and functionNode are not in the entity, 
-        // they are frontend-specific fields that will be null
-        dto.setVisualFlowData(null);
-        dto.setFunctionNode(null);
+        // Parse visualFlowData and functionNode from JSON strings in entity
+        if (mapping.getVisualFlowData() != null) {
+            try {
+                dto.setVisualFlowData(objectMapper.readValue(mapping.getVisualFlowData(), Object.class));
+            } catch (JsonProcessingException e) {
+                dto.setVisualFlowData(null);
+            }
+        }
+        
+        if (mapping.getFunctionNode() != null) {
+            try {
+                dto.setFunctionNode(objectMapper.readValue(mapping.getFunctionNode(), Object.class));
+            } catch (JsonProcessingException e) {
+                dto.setFunctionNode(null);
+            }
+        }
         
         return dto;
     }
@@ -118,8 +130,22 @@ public class FieldMappingService {
         mapping.setTargetXPath(dto.getTargetXPath());
         mapping.setMappingOrder(dto.getMappingOrder());
         
-        // Note: visualFlowData and functionNode are frontend-specific fields
-        // not stored in the entity
+        // Convert visualFlowData and functionNode to JSON strings for storage
+        if (dto.getVisualFlowData() != null) {
+            try {
+                mapping.setVisualFlowData(objectMapper.writeValueAsString(dto.getVisualFlowData()));
+            } catch (JsonProcessingException e) {
+                mapping.setVisualFlowData(null);
+            }
+        }
+        
+        if (dto.getFunctionNode() != null) {
+            try {
+                mapping.setFunctionNode(objectMapper.writeValueAsString(dto.getFunctionNode()));
+            } catch (JsonProcessingException e) {
+                mapping.setFunctionNode(null);
+            }
+        }
         
         return mapping;
     }
