@@ -58,12 +58,12 @@ public interface TransformationCustomFunctionRepository extends JpaRepository<Tr
     /**
      * Find all built-in functions
      */
-    List<TransformationCustomFunction> findByIsBuiltInTrue();
+    List<TransformationCustomFunction> findByBuiltInTrue();
     
     /**
      * Find all custom (non-built-in) functions
      */
-    List<TransformationCustomFunction> findByIsBuiltInFalse();
+    List<TransformationCustomFunction> findByBuiltInFalse();
     
     /**
      * Find functions by category
@@ -73,5 +73,5 @@ public interface TransformationCustomFunctionRepository extends JpaRepository<Tr
     /**
      * Find built-in functions by category
      */
-    List<TransformationCustomFunction> findByIsBuiltInTrueAndCategory(String category);
+    List<TransformationCustomFunction> findByBuiltInTrueAndCategory(String category);
 }

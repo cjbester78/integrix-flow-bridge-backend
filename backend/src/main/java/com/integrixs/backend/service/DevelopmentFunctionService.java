@@ -96,13 +96,13 @@ public class DevelopmentFunctionService {
             response.setDevelopmentMode(isDevelopmentMode());
             
             // Get built-in functions from database
-            List<TransformationCustomFunction> builtInFunctions = functionRepository.findByIsBuiltInTrue();
+            List<TransformationCustomFunction> builtInFunctions = functionRepository.findByBuiltInTrue();
             log.debug("Found {} built-in functions", builtInFunctions.size());
             response.setBuiltInFunctions(convertToBuiltInFunctions(builtInFunctions));
             
             // Get custom functions from database (non-built-in)
             Specification<TransformationCustomFunction> spec = (root, query, criteriaBuilder) -> 
-                criteriaBuilder.equal(root.get("isBuiltIn"), false);
+                criteriaBuilder.equal(root.get("builtIn"), false);
             
             Page<TransformationCustomFunction> customFunctions = functionRepository.findAll(spec, pageable);
             log.debug("Found {} custom functions", customFunctions.getTotalElements());
