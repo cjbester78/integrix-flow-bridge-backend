@@ -1,7 +1,6 @@
 package com.integrixs.backend.service;
 
 import com.integrixs.backend.exception.BusinessException;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -15,10 +14,16 @@ import java.util.*;
  */
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class JavaCompilationService {
     
-    private final JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
+    private final JavaCompiler compiler;
+    
+    public JavaCompilationService() {
+        this.compiler = ToolProvider.getSystemJavaCompiler();
+        if (this.compiler == null) {
+            log.warn("Java compiler not available. Ensure JDK is installed. Function compilation will not work.");
+        }
+    }
     
     /**
      * Compile and validate Java function code
