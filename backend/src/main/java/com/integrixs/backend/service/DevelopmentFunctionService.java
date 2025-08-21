@@ -219,7 +219,10 @@ public class DevelopmentFunctionService {
         }
         
         if (request.getFunctionBody() != null) {
-            validateFunctionSyntax(function.getLanguage(), request.getFunctionBody());
+            // Skip validation for built-in functions as they have pre-compiled code
+            if (!function.isBuiltIn()) {
+                validateFunctionSyntax(function.getLanguage(), request.getFunctionBody());
+            }
             function.setFunctionBody(request.getFunctionBody());
         }
         
