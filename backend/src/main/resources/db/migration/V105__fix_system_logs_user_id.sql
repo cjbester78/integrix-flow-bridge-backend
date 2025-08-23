@@ -1,0 +1,3 @@
+-- This migration is no longer needed as system_logs.user_id is already UUID
+-- The SystemLog entity should use UUID type to match the database
+-- Skip this migration

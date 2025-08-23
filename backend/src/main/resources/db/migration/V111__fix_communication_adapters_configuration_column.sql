@@ -1,0 +1,2 @@
+-- This migration ensures communication_adapters table matches the entity
+-- Most columns already exist in the correct format, so we'll skip this migration

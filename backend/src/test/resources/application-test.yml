@@ -1,0 +1,32 @@
+spring:
+  datasource:
+    # H2 in-memory database in PostgreSQL compatibility mode for testing
+    url: jdbc:h2:mem:testdb;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+    hikari:
+      maximum-pool-size: 5
+
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+    properties:
+      hibernate:
+        # H2 dialect in PostgreSQL mode
+        dialect: org.hibernate.dialect.H2Dialect
+        format_sql: true
+
+  # Disable Flyway for tests
+  flyway:
+    enabled: false
+
+  # Disable WebSocket for tests
+  websocket:
+    enabled: false
+
+logging:
+  level:
+    root: INFO
+    com.integrixs: DEBUG

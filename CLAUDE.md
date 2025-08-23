@@ -2,11 +2,19 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## CRITICAL PRINCIPLES
+
+1. **Never do work arounds - always fix the root issue**
+2. **Never do place holders - implement the full solution**
+3. Always follow Java OO best practise for all code changes.
+
 ## Project Overview
 
 Integrix Flow Bridge is a comprehensive integration middleware platform built with Spring Boot backend and React/TypeScript frontend. It provides visual flow composition, adapter management, field mapping, and orchestration capabilities for enterprise integration scenarios.
 
 ## CRITICAL: Instruction Verification Process
+
+**CRITICAL**: Before making changes, always read the codebase to check if the solution to the problem may already exist elsewhere.  
 
 **CRITICAL**: After every fix do a git commit.
 **CRITICAL**: Frontend has it's own repository.
@@ -16,6 +24,9 @@ Integrix Flow Bridge is a comprehensive integration middleware platform built wi
 # Full deployment (frontend + backend)
 ./deploy.sh
 ```
+
+**CRITICAL**: When working with Flow Structures in field mapping, NEVER convert WSDL/XML content to XML. Flow structures already contain XML/WSDL content in their `wsdlContent` field. Always use the original XML content directly instead of trying to convert JSON to XML. The `/structures/{id}/convert-to-xml` endpoint is only for data structures (JSON), not flow structures.
+
 **IMPORTANT**: Before implementing any user request, follow this process:
 
 1. **Read** the user's instruction carefully
@@ -127,12 +138,12 @@ integrix-flow-bridge/
 
 3. **Security Layer**
    - JWT authentication with Spring Security
-   - Role-based access control (ADMIN, USER, VIEWER)
+   - Role-based access control (ADMINISTRATOR, DEVELOPER, INTEGRATOR, VIEWER)
    - Environment-based restrictions (Dev/QA/Prod)
 
 4. **Data Model**
    - JPA entities in `data-access` module
-   - MySQL database with comprehensive schema
+   - PostgreSQL database with comprehensive schema
    - Audit logging and system monitoring
 
 ### Frontend Architecture
@@ -187,11 +198,11 @@ mvn test -Dtest=ClassName#methodName
 
 ### Database Commands
 ```bash
-# Connect to MySQL
-mysql -u root -p integrixflowbridge
+# Connect to PostgreSQL
+psql -U integrix -d integrixflowbridge
 
-# Run migrations manually
-mysql -u root -p integrixflowbridge < db/src/main/resources/db/migration/V1__initial_schema.sql
+# Run migrations manually (if needed)
+psql -U integrix -d integrixflowbridge < db/src/main/resources/db/migration/V1__initial_schema.sql
 ```
 
 ### Frontend Commands

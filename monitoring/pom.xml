@@ -4,7 +4,7 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<parent>
-		<groupId>com.integrationlab</groupId>
+		<groupId>com.integrixs</groupId>
 		<artifactId>integrix-flow-bridge</artifactId>
 		<version>0.0.1-SNAPSHOT</version>
 		<relativePath>../pom.xml</relativePath>
@@ -30,13 +30,13 @@
 
 		<!-- Shared DTOs or common libraries -->
 		<dependency>
-			<groupId>com.integrationlab</groupId>
+			<groupId>com.integrixs</groupId>
 			<artifactId>shared-lib</artifactId>
 			<version>0.0.1-SNAPSHOT</version>
 		</dependency>
 
 		<dependency>
-			<groupId>com.integrationlab</groupId>
+			<groupId>com.integrixs</groupId>
 			<artifactId>data-access</artifactId>
 			<version>0.0.1-SNAPSHOT</version>
 		</dependency>

@@ -4,7 +4,7 @@
 
 ### ✅ Completed Items
 1. **Backend API Endpoints** - All dashboard, message, and channel endpoints implemented
-2. **Database Schema** - Complete MySQL schema with all tables and relationships
+2. **Database Schema** - Complete PostgreSQL schema with all tables and relationships
 3. **Security** - JWT authentication with Spring Security configured
 4. **Frontend-Backend Integration** - All mock data removed, using real APIs
 
@@ -15,7 +15,7 @@
   ```yaml
   spring:
     datasource:
-      url: jdbc:mysql://YOUR_PROD_DB_HOST:3306/integrixflowbridge
+      url: jdbc:postgresql://YOUR_PROD_DB_HOST:5432/integrixflowbridge
       username: YOUR_PROD_USER
       password: YOUR_SECURE_PASSWORD
   ```
@@ -45,8 +45,11 @@ mvn clean package -Pprod -DskipTests
 
 ### 2. Database Setup
 ```sql
-CREATE DATABASE integrixflowbridge DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
--- Run the schema from db/src/main/resources/db/schema/schema.sql
+-- Connect as PostgreSQL superuser
+CREATE DATABASE integrixflowbridge;
+CREATE USER integrix WITH PASSWORD 'your-secure-password';
+GRANT ALL PRIVILEGES ON DATABASE integrixflowbridge TO integrix;
+-- Run the migrations from db/src/main/resources/db/migration/
 ```
 
 ### 3. Run the Application
@@ -86,22 +89,23 @@ services:
       - "8080:8080"
     environment:
       - SPRING_PROFILES_ACTIVE=prod
-      - SPRING_DATASOURCE_URL=jdbc:mysql://db:3306/integrixflowbridge
-      - SPRING_DATASOURCE_USERNAME=root
-      - SPRING_DATASOURCE_PASSWORD=rootpassword
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/integrixflowbridge
+      - SPRING_DATASOURCE_USERNAME=integrix
+      - SPRING_DATASOURCE_PASSWORD=yourpassword
     depends_on:
       - db
       
   db:
-    image: mysql:8
+    image: postgres:15
     environment:
-      - MYSQL_ROOT_PASSWORD=rootpassword
-      - MYSQL_DATABASE=integrixflowbridge
+      - POSTGRES_PASSWORD=yourpassword
+      - POSTGRES_USER=integrix
+      - POSTGRES_DB=integrixflowbridge
     volumes:
-      - mysql_data:/var/lib/mysql
+      - postgres_data:/var/lib/postgresql/data
       
 volumes:
-  mysql_data:
+  postgres_data:
 ```
 
 ## Monitoring and Health Checks
@@ -145,7 +149,7 @@ engine:
 ## Backup and Recovery
 
 1. **Database Backups**
-   - Schedule regular MySQL backups
+   - Schedule regular PostgreSQL backups
    - Test restore procedures
 
 2. **Application Logs**
@@ -162,7 +166,7 @@ engine:
 1. **Database Connection Failed**
    - Check database host and credentials
    - Verify network connectivity
-   - Check MySQL user permissions
+   - Check PostgreSQL user permissions
 
 2. **JWT Authentication Issues**
    - Verify JWT secret is configured

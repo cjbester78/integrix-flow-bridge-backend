@@ -2,9 +2,11 @@ server:
   port: 8080
   address: 0.0.0.0
   tomcat:
-    max-http-form-post-size: 10MB
-    max-swallow-size: 10MB
-    connection-timeout: 30000
+    max-http-form-post-size: 100MB
+    max-swallow-size: 100MB
+    connection-timeout: 60000
+    max-connections: 10000
+    accept-count: 100
 
 spring:
   application:
@@ -15,8 +17,10 @@ spring:
     allow-bean-definition-overriding: true
   servlet:
     multipart:
-      max-file-size: 10MB
-      max-request-size: 10MB
+      enabled: true
+      max-file-size: 50MB
+      max-request-size: 100MB
+      resolve-lazily: false
   mvc:
     pathmatch:
       matching-strategy: ant_path_matcher
@@ -45,14 +49,27 @@ spring:
       allow-unquoted-control-chars: true
       allow-backslash-escaping-any-character: true
 
+# ✅ Flyway configuration
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    baseline-version: 121
+    locations: classpath:db/migration
+    sql-migration-prefix: V
+    sql-migration-separator: __
+    sql-migration-suffixes: .sql
+    validate-on-migrate: true
+    clean-disabled: true
+    schemas: integrixflowbridge
+
 # ✅ JPA default settings
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: validate  # Changed from none to validate
     show-sql: false  # Set to true in dev profile only
     properties:
       hibernate:
-        dialect: org.hibernate.dialect.MySQLDialect
+        dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
         # Performance optimizations
         jdbc:
@@ -80,16 +97,15 @@ spring:
         # Enable lazy loading outside transactions (use with caution)
         enable_lazy_load_no_trans: false
 
-# ✅ Logging (used by all profiles unless overridden)
+# ✅ Logging configuration is in logback-spring.xml
 logging:
+  file:
+    path: ./logs
+    name: ./logs/integrix-flow-bridge.log
   level:
     root: INFO
-    org.springframework.web: DEBUG
-    com.integrationlab.controller: DEBUG
-    com.integrationlab: DEBUG
-    com.integrationlab.monitoring: DEBUG
-    org.hibernate.SQL: DEBUG
-    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+    com.integrixs: DEBUG
+    org.springframework: INFO
 
 # ✅ Actuator settings
 management:

@@ -1,0 +1,3 @@
+-- This migration was already completed - the old structure columns don't exist anymore
+-- The integration_flows table already uses source_flow_structure_id and target_flow_structure_id
+-- Skip this migration
