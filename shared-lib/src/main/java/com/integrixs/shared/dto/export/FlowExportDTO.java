@@ -6,7 +6,6 @@ import com.integrixs.shared.dto.business.BusinessComponentDTO;
 import com.integrixs.shared.dto.CommunicationAdapterDTO;
 import com.integrixs.shared.dto.FlowTransformationDTO;
 import com.integrixs.shared.dto.FieldMappingDTO;
-import com.integrixs.shared.dto.certificate.CertificateDTO;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

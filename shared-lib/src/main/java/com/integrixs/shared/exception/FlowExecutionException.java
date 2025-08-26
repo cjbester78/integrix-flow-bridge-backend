@@ -1,7 +1,5 @@
 package com.integrixs.shared.exception;
 
-import java.util.Map;
-
 /**
  * Exception thrown during flow execution and orchestration.
  * 
