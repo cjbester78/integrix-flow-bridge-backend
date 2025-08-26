@@ -1,6 +1,5 @@
 package com.integrixs.backend.controller;
 
-import com.integrixs.backend.dto.ApiResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -30,7 +29,7 @@ public class IntegrationPackageController {
      */
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMINISTRATOR', 'DEVELOPER', 'INTEGRATOR', 'VIEWER')")
-    public ResponseEntity<ApiResponse<Page<Map<String, Object>>>> getAllPackages(
+    public ResponseEntity<Page<Map<String, Object>>> getAllPackages(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
         
@@ -41,7 +40,7 @@ public class IntegrationPackageController {
         Pageable pageable = PageRequest.of(page, size);
         Page<Map<String, Object>> packagePage = new PageImpl<>(packages, pageable, 0);
         
-        return ResponseEntity.ok(ApiResponse.success(packagePage));
+        return ResponseEntity.ok(packagePage);
     }
 
     /**
@@ -49,7 +48,7 @@ public class IntegrationPackageController {
      */
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMINISTRATOR', 'DEVELOPER', 'INTEGRATOR', 'VIEWER')")
-    public ResponseEntity<ApiResponse<Map<String, Object>>> getPackageById(@PathVariable String id) {
+    public ResponseEntity<Map<String, Object>> getPackageById(@PathVariable String id) {
         log.info("Getting integration package by id: {}", id);
         
         // Return empty package for now
@@ -59,7 +58,7 @@ public class IntegrationPackageController {
         packageData.put("version", "1.0.0");
         packageData.put("status", "ACTIVE");
         
-        return ResponseEntity.ok(ApiResponse.success(packageData));
+        return ResponseEntity.ok(packageData);
     }
 
     /**
@@ -67,7 +66,7 @@ public class IntegrationPackageController {
      */
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMINISTRATOR', 'DEVELOPER')")
-    public ResponseEntity<ApiResponse<Map<String, Object>>> createPackage(
+    public ResponseEntity<Map<String, Object>> createPackage(
             @RequestBody Map<String, Object> packageData) {
         log.info("Creating integration package");
         
@@ -75,7 +74,7 @@ public class IntegrationPackageController {
         packageData.put("id", "new-package-id");
         packageData.put("status", "ACTIVE");
         
-        return ResponseEntity.ok(ApiResponse.success(packageData));
+        return ResponseEntity.ok(packageData);
     }
 
     /**
@@ -83,7 +82,7 @@ public class IntegrationPackageController {
      */
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMINISTRATOR', 'DEVELOPER')")
-    public ResponseEntity<ApiResponse<Map<String, Object>>> updatePackage(
+    public ResponseEntity<Map<String, Object>> updatePackage(
             @PathVariable String id,
             @RequestBody Map<String, Object> packageData) {
         log.info("Updating integration package: {}", id);
@@ -91,7 +90,7 @@ public class IntegrationPackageController {
         // Return updated package for now
         packageData.put("id", id);
         
-        return ResponseEntity.ok(ApiResponse.success(packageData));
+        return ResponseEntity.ok(packageData);
     }
 
     /**
@@ -99,9 +98,9 @@ public class IntegrationPackageController {
      */
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMINISTRATOR')")
-    public ResponseEntity<ApiResponse<Void>> deletePackage(@PathVariable String id) {
+    public ResponseEntity<Void> deletePackage(@PathVariable String id) {
         log.info("Deleting integration package: {}", id);
         
-        return ResponseEntity.ok(ApiResponse.success(null));
+        return ResponseEntity.noContent().build();
     }
 }
