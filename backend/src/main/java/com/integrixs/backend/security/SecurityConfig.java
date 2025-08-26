@@ -99,6 +99,8 @@ public class SecurityConfig {
                                 "/auth/**",
                                 "/api/auth/**",
                                 "/api/auth/refresh",
+                                "/api/health/**",
+                                "/api/health",
                                 "/health",
                                 "/actuator/health",
                                 "/v3/api-docs/**",
