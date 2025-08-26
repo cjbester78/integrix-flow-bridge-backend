@@ -53,7 +53,8 @@ public class EnvironmentPermissionService {
             case "flow.create":
             case "adapter.create":
             case "businessComponent.create":
-            case "dataStructure.create":
+            case "messageStructure.create":
+            case "flowStructure.create":
             case "certificate.upload":
                 return environmentConfig.canCreateFlows();
                 
@@ -113,7 +114,8 @@ public class EnvironmentPermissionService {
         permissions.put("canImportFlows", environmentConfig.canImportFlows());
         permissions.put("canDeployFlows", environmentConfig.canDeployFlows());
         permissions.put("canCreateBusinessComponents", environmentConfig.canCreateBusinessComponents());
-        permissions.put("canCreateDataStructures", environmentConfig.canCreateDataStructures());
+        permissions.put("canCreateMessageStructures", environmentConfig.canCreateMessageStructures());
+        permissions.put("canCreateFlowStructures", environmentConfig.canCreateFlowStructures());
         
         // Add role-specific permissions
         String currentRole = SecurityUtils.getCurrentUserRole();
@@ -154,7 +156,8 @@ public class EnvironmentPermissionService {
             case "createFlowButton":
             case "createAdapterButton":
             case "createBusinessComponentButton":
-            case "createDataStructureButton":
+            case "createMessageStructureButton":
+            case "createFlowStructureButton":
                 return environmentConfig.isDevelopment();
                 
             case "importFlowButton":

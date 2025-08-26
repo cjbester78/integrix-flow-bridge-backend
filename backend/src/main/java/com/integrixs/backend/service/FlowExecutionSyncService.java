@@ -2,13 +2,11 @@ package com.integrixs.backend.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.integrixs.data.model.CommunicationAdapter;
-import com.integrixs.data.model.DataStructure;
 import com.integrixs.data.model.IntegrationFlow;
 import com.integrixs.data.model.FieldMapping;
 import com.integrixs.data.model.FlowStructure;
 import com.integrixs.data.model.FlowTransformation;
 import com.integrixs.data.repository.CommunicationAdapterRepository;
-import com.integrixs.data.repository.DataStructureRepository;
 import com.integrixs.data.repository.FieldMappingRepository;
 import com.integrixs.data.repository.FlowStructureRepository;
 import com.integrixs.engine.mapper.HierarchicalXmlFieldMapper;
@@ -35,9 +33,6 @@ public class FlowExecutionSyncService {
     
     @Autowired
     private CommunicationAdapterRepository adapterRepository;
-    
-    @Autowired
-    private DataStructureRepository dataStructureRepository;
     
     @Autowired
     private TransformationExecutionService transformationService;
@@ -386,54 +381,5 @@ public class FlowExecutionSyncService {
         }
     }
     
-    private String validateMessage(String message, DataStructure structure, Map<String, Object> context) throws Exception {
-        // TODO: Implement actual validation based on structure type
-        logger.debug("Validating message against structure: {}", structure.getName());
-        
-        switch (structure.getType().toLowerCase()) {
-            case "xml":
-            case "xsd":
-                // Basic XML validation
-                return validateXmlMessage(message, structure);
-                
-            case "json":
-                // Basic JSON validation
-                return validateJsonMessage(message, structure);
-                
-            case "delimited":
-            case "fixed_width":
-                // Flat file validation
-                return validateFlatFileMessage(message, structure);
-                
-            default:
-                return message;
-        }
-    }
-    
-    private String validateXmlMessage(String message, DataStructure structure) throws Exception {
-        // For now, just check if it's valid XML
-        try {
-            javax.xml.parsers.DocumentBuilderFactory.newInstance()
-                .newDocumentBuilder()
-                .parse(new java.io.ByteArrayInputStream(message.getBytes()));
-            return message;
-        } catch (Exception e) {
-            throw new IllegalArgumentException("Invalid XML message: " + e.getMessage());
-        }
-    }
-    
-    private String validateJsonMessage(String message, DataStructure structure) throws Exception {
-        // For now, just check if it's valid JSON
-        try {
-            objectMapper.readTree(message);
-            return message;
-        } catch (Exception e) {
-            throw new IllegalArgumentException("Invalid JSON message: " + e.getMessage());
-        }
-    }
-    
-    private String validateFlatFileMessage(String message, DataStructure structure) throws Exception {
-        // TODO: Implement flat file validation
-        return message;
-    }
+    // TODO: Implement validation methods for FlowStructure and MessageStructure when needed
 }

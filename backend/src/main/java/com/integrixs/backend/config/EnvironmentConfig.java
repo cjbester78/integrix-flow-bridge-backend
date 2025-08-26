@@ -103,9 +103,16 @@ public class EnvironmentConfig {
     }
     
     /**
-     * Check if creating data structures is allowed
+     * Check if creating message structures is allowed
      */
-    public boolean canCreateDataStructures() {
+    public boolean canCreateMessageStructures() {
+        return !enforceRestrictions || isDevelopment();
+    }
+    
+    /**
+     * Check if creating flow structures is allowed
+     */
+    public boolean canCreateFlowStructures() {
         return !enforceRestrictions || isDevelopment();
     }
     

@@ -2,13 +2,11 @@ package com.integrixs.backend.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.integrixs.data.model.CommunicationAdapter;
-import com.integrixs.data.model.DataStructure;
 import com.integrixs.data.model.FlowStatus;
 import com.integrixs.data.model.FlowStructure;
 import com.integrixs.data.model.FlowTransformation;
 import com.integrixs.data.model.IntegrationFlow;
 import com.integrixs.data.repository.CommunicationAdapterRepository;
-import com.integrixs.data.repository.DataStructureRepository;
 import com.integrixs.data.repository.FlowStructureRepository;
 import com.integrixs.data.repository.FlowTransformationRepository;
 import com.integrixs.data.repository.IntegrationFlowRepository;
@@ -51,9 +49,6 @@ public class IntegrationEndpointService {
     
     @Autowired
     private CommunicationAdapterRepository adapterRepository;
-    
-    @Autowired
-    private DataStructureRepository dataStructureRepository;
     
     @Autowired
     private FlowStructureRepository flowStructureRepository;
